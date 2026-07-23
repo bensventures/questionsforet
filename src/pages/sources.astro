@@ -1,0 +1,245 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Citation from '../components/Citation.astro';
+import SourceTypeBadge from '../components/SourceTypeBadge.astro';
+import {
+  TYPE_ORDER,
+  THEME_ORDER,
+  THEME_LABELS,
+  TYPE_META,
+  sortSources,
+  type SourceType,
+} from '../lib/sources';
+
+const sources = (await getCollection('sources')).sort(sortSources);
+
+// Counts per type, for the legend.
+const countByType = Object.fromEntries(
+  TYPE_ORDER.map((t) => [t, 0]),
+) as Record<SourceType, number>;
+for (const s of sources) countByType[s.data.type]++;
+
+// Only offer theme filters that actually occur in the bibliography.
+const themesPresent = THEME_ORDER.filter((theme) =>
+  sources.some((s) => s.data.themes.includes(theme)),
+);
+---
+
+<Base
+  titre="Toutes les sources"
+  description="La bibliographie complète du site, filtrable par type de source et par thème. Chaque entrée porte un badge indiquant sa solidité méthodologique."
+  large
+>
+  <h1>Toutes les sources</h1>
+  <p class="lede">
+    La bibliographie du site, ouverte et filtrable. Le badge de chaque entrée
+    indique la nature de la source, du travail évalué par les pairs à la prise
+    de position affirmée. La rigueur est censée être visible, pas enfouie.
+  </p>
+
+  <section class="legende" aria-label="Types de source">
+    {
+      TYPE_ORDER.map((type) => (
+        <SourceTypeBadge type={type} count={countByType[type]} />
+      ))
+    }
+  </section>
+
+  <form id="filtres" class="filtres" aria-label="Filtrer les sources">
+    <fieldset>
+      <legend>Type</legend>
+      {
+        TYPE_ORDER.map((type) => (
+          <label class="filtre-option">
+            <input type="checkbox" name="type" value={type} />
+            {TYPE_META[type].label}
+          </label>
+        ))
+      }
+    </fieldset>
+
+    <fieldset>
+      <legend>Thème</legend>
+      {
+        themesPresent.map((theme) => (
+          <label class="filtre-option">
+            <input type="checkbox" name="theme" value={theme} />
+            {THEME_LABELS[theme]}
+          </label>
+        ))
+      }
+    </fieldset>
+
+    <div class="filtres__pied">
+      <button type="reset" class="reset">Tout afficher</button>
+      <p class="compte" aria-live="polite">
+        <strong id="compte">{sources.length}</strong> source{
+          sources.length > 1 ? 's' : ''
+        }
+      </p>
+    </div>
+  </form>
+
+  <ul class="liste-sources" role="list">
+    {
+      sources.map((s) => (
+        <li data-source data-type={s.data.type} data-themes={s.data.themes.join(' ')}>
+          <Citation source={s.data} />
+          <p class="themes-source">
+            {s.data.themes.map((t) => (
+              <span class="theme-tag">{THEME_LABELS[t]}</span>
+            ))}
+          </p>
+        </li>
+      ))
+    }
+  </ul>
+</Base>
+
+<style>
+  .legende {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .filtres {
+    display: grid;
+    gap: 1rem;
+    margin: 1.5rem 0 2rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  .filtres fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 1rem;
+  }
+
+  .filtres legend {
+    float: left;
+    width: 5rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    padding: 0;
+  }
+
+  .filtre-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .filtres__pied {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-top: 1px solid var(--rule);
+    padding-top: 0.9rem;
+  }
+
+  .reset {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--bg);
+    cursor: pointer;
+  }
+  .reset:hover {
+    border-color: var(--muted);
+  }
+
+  .compte {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .liste-sources {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .liste-sources > li {
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .liste-sources > li[hidden] {
+    display: none;
+  }
+
+  .themes-source {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.5rem 0 0;
+  }
+
+  .theme-tag {
+    font-size: 0.75rem;
+    color: var(--muted);
+    background: var(--rule);
+    border-radius: 4px;
+    padding: 0.05em 0.45em;
+  }
+</style>
+
+<script>
+  // Progressive enhancement: the full list is server-rendered and fully
+  // readable without JavaScript. This only hides entries when filters are set.
+  const form = document.getElementById('filtres') as HTMLFormElement | null;
+  const compte = document.getElementById('compte');
+  if (form && compte) {
+    const items = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-source]'),
+    );
+
+    const checkedValues = (name: string) =>
+      Array.from(
+        form.querySelectorAll<HTMLInputElement>(
+          `input[name="${name}"]:checked`,
+        ),
+      ).map((input) => input.value);
+
+    const apply = () => {
+      const types = checkedValues('type');
+      const themes = checkedValues('theme');
+      let visible = 0;
+      for (const el of items) {
+        const itemThemes = (el.dataset.themes ?? '').split(' ');
+        const okType = types.length === 0 || types.includes(el.dataset.type ?? '');
+        const okTheme =
+          themes.length === 0 || themes.some((t) => itemThemes.includes(t));
+        const show = okType && okTheme;
+        el.hidden = !show;
+        if (show) visible++;
+      }
+      compte.textContent = String(visible);
+    };
+
+    form.addEventListener('change', apply);
+    // The browser clears inputs after the reset event, so re-apply next tick.
+    form.addEventListener('reset', () => window.setTimeout(apply));
+    apply();
+  }
+</script>

@@ -1,0 +1,725 @@
+# Bibliographie du site.
+# Le champ `type` qualifie la solidité de la source et s'affiche au lecteur.
+# Le champ `archive` est rempli par scripts/archive-sources.ts.
+
+# --- Régime de feu, paradoxe de suppression, contexte -------------------------
+
+- id: kreider-2024
+  auteurs: Kreider M. R. et al.
+  annee: 2024
+  titre: >-
+    Fire suppression makes wildfires more severe and accentuates impacts of
+    climate change and fuel accumulation
+  support: Nature Communications
+  url: https://www.nature.com/articles/s41467-024-46702-0
+  type: pair
+  langue: en
+  themes: [regime-feu, climat]
+
+- id: metailie-savoir-bruler
+  auteurs: Métailié J.-P. et al.
+  annee: null
+  titre: >-
+    Le savoir-brûler dans les Pyrénées : réglementation et déprise agropastorale
+  support: Presses universitaires de Perpignan
+  url: https://books.openedition.org/pupvd/11728
+  type: ouvrage
+  themes: [brulage-dirige, pastoralisme]
+
+- id: revertegat-2025-vulnefeu
+  auteurs: >-
+    Revertegat C., Rigolot É., Dupuy J.-L., Dupire S., Toutchkov M.,
+    Ruffault J., Deuffic P., Boutte B., Pimont F.
+  annee: 2025
+  titre: Synthèse sur la vulnérabilité des peuplements forestiers au feu
+  support: INRAE, projet AFORCE VULNEFEU
+  url: https://www.reseau-aforce.fr/sites/reseau-aforce/files/2025-07/Rapport-Vulnefeu04-compressed.pdf
+  type: rapport
+  themes: [essences, combustible, regime-feu, climat]
+
+- id: durand-2023
+  auteurs: Durand et al.
+  annee: 2023
+  titre: Mission d'inspection sur l'évolution du danger d'incendie en France
+  support: Rapport interministériel
+  url: https://www.reseau-aforce.fr/sites/reseau-aforce/files/2025-07/Rapport-Vulnefeu04-compressed.pdf
+  type: institutionnel
+  themes: [climat, regime-feu]
+  reserve: Cité de seconde main via la synthèse VULNEFEU ; retrouver la source primaire.
+
+# --- Humidité, structure forestière, microclimat ------------------------------
+
+- id: millikin-2024
+  auteurs: Millikin R. L. et al.
+  annee: 2024
+  titre: The impact of fuel thinning on the microclimate in coastal rainforest stands
+  support: Fire, 7(8):285
+  url: https://doi.org/10.3390/fire7080285
+  type: pair
+  langue: en
+  themes: [combustible, hydrologie]
+
+- id: greiser-2023
+  auteurs: Greiser C., De Frenne P. et al.
+  annee: 2023
+  titre: >-
+    Higher soil moisture increases microclimate temperature buffering in
+    temperate forests
+  support: Agricultural and Forest Meteorology
+  url: https://www.sciencedirect.com/science/article/pii/S016819232300518X
+  type: pair
+  langue: en
+  themes: [hydrologie, combustible]
+
+- id: fuel-moisture-structure-2022
+  auteurs: Collectif
+  annee: 2022
+  titre: The sensitivity of fuel moisture to forest structure effects on microclimate
+  support: Agricultural and Forest Meteorology
+  url: https://www.sciencedirect.com/science/article/abs/pii/S0168192322000508
+  type: pair
+  langue: en
+  themes: [combustible, hydrologie]
+
+- id: alizadeh-2024
+  auteurs: Alizadeh M. R. et al.
+  annee: 2024
+  titre: Land–atmosphere precursors to fuel loading
+  support: Geophysical Research Letters
+  url: https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2023GL105324
+  type: pair
+  langue: en
+  themes: [hydrologie, combustible]
+
+- id: grec-sud-foret-mediterraneenne
+  auteurs: GREC-SUD
+  annee: null
+  titre: Changement climatique et forêt méditerranéenne
+  support: GREC-SUD
+  url: https://www.grec-sud.fr/article-cahier/les-articles-du-cahier-agriculture-et-foret/le-changement-climatique-une-nouvelle-contrainte-pour-la-foret-mediterraneenne/
+  type: rapport
+  themes: [climat, combustible]
+
+# --- Braises et projection ----------------------------------------------------
+
+- id: pybrands-2023
+  auteurs: Collectif
+  annee: 2023
+  titre: A fast, physically based model of firebrand transport by bushfire plumes
+  support: Agricultural and Forest Meteorology
+  url: https://www.sciencedirect.com/science/article/abs/pii/S0168192323005294
+  type: pair
+  langue: en
+  themes: [bati, regime-feu]
+
+- id: biology-insights-braises-2025
+  auteurs: Biology Insights
+  annee: 2025
+  titre: How far can an ember travel from a wildfire ?
+  support: Biology Insights
+  url: https://biologyinsights.com/how-far-can-an-ember-travel-from-a-wildfire/
+  type: vulgarisation
+  langue: en
+  themes: [bati]
+  reserve: Source de vulgarisation ; privilégier la source primaire pour tout usage officiel.
+
+# --- Durcissement du bâti et espace défendable --------------------------------
+
+- id: cohen-home-ignition-zone
+  auteurs: Cohen J. D. et al.
+  annee: null
+  titre: Home ignition zone — les maisons s'enflamment surtout par les braises
+  support: Washington State Building Code Council (recueil d'extraits)
+  url: https://sbcc.wa.gov/sites/default/files/2023-11/Key%20Defensible%20Space%20Quotes%20From%20Wildfire%20Experts.pdf
+  type: institutionnel
+  langue: en
+  themes: [bati]
+
+- id: syphard-2019
+  auteurs: Syphard A. D., Brennan T. J., Keeley J. E.
+  annee: 2019
+  titre: Factors associated with structure loss in the 2013–2018 California wildfires
+  support: Fire, 2(3):49
+  url: https://www.mdpi.com/2571-6255/2/3/49
+  type: pair
+  langue: en
+  themes: [bati]
+
+- id: wui-structures-2025
+  auteurs: Collectif
+  annee: 2025
+  titre: Fire risk to structures in California's wildland-urban interface
+  support: Nature Communications
+  url: https://www.nature.com/articles/s41467-025-63386-2
+  type: pair
+  langue: en
+  themes: [bati]
+
+- id: calfire-defensible-space
+  auteurs: CAL FIRE
+  annee: null
+  titre: Defensible space — importance des cinq premiers mètres
+  support: fire.ca.gov
+  url: https://www.fire.ca.gov/dspace
+  type: institutionnel
+  langue: en
+  themes: [bati]
+
+- id: syphard-2014
+  auteurs: Syphard A. D., Brennan T. J., Keeley J. E.
+  annee: 2014
+  titre: >-
+    The role of defensible space for residential structure protection during
+    wildfires
+  support: International Journal of Wildland Fire, 23:1165–1175
+  url: https://consbio.org/publications/defensible-space-for-residential-structure-protection-during-wildfires/
+  type: pair
+  langue: en
+  themes: [bati, debroussaillement]
+
+- id: fire-safe-marin-zones
+  auteurs: Valachovic, Quarles & Swain (UC ANR 8695)
+  annee: null
+  titre: Zonation de l'espace défendable et scénarios d'ignition
+  support: Fire Safe Marin
+  url: https://firesafemarin.org/create-a-fire-smart-yard/defensible-space/defensible-space-zones/
+  type: institutionnel
+  langue: en
+  themes: [bati]
+
+- id: heat-is-on-2025
+  auteurs: The Heat Is On
+  annee: 2025
+  titre: Revue de littérature sur l'efficacité de l'aménagement paysager défensif
+  support: Substack
+  url: https://theheatison.substack.com/p/can-landscaping-protect-homes-in
+  type: vulgarisation
+  langue: en
+  themes: [bati]
+  reserve: Blog de chercheur ; utile en mise en perspective, non citable seul.
+
+# --- Débroussaillement, strates, herbe et conversion de type ------------------
+
+- id: pimont-2019-debroussaillement
+  auteurs: Pimont F. et al.
+  annee: 2019
+  titre: Intérêt du débroussaillement pour la sécurité des constructions
+  support: Forêt Méditerranéenne, 2019/2:185–192
+  url: https://www.foret-mediterraneenne.org/upload/biblio/FORET_MED_2019_2_185-192.pdf
+  type: rapport
+  themes: [debroussaillement, bati]
+
+- id: wragg-2018
+  auteurs: Wragg P. D. et al.
+  annee: 2018
+  titre: Forbs, grasses, and grassland fire behaviour
+  support: Journal of Ecology
+  url: https://besjournals.onlinelibrary.wiley.com/doi/10.1111/1365-2745.12980
+  type: pair
+  langue: en
+  themes: [debroussaillement, combustible]
+
+- id: csfs-grasslands
+  auteurs: Colorado State Forest Service
+  annee: null
+  titre: Grass-dominated landscapes — feux rapides et faible préavis
+  support: csfs.colostate.edu
+  url: https://csfs.colostate.edu/wildfire-mitigation/grasslands/overview/
+  type: institutionnel
+  langue: en
+  themes: [combustible]
+
+- id: nisic-wildland-fire
+  auteurs: US National Invasive Species Information Center
+  annee: null
+  titre: Wildland fire — cycle herbe-feu et conversion d'écosystèmes
+  support: invasivespeciesinfo.gov
+  url: https://www.invasivespeciesinfo.gov/subject/wildland-fire
+  type: institutionnel
+  langue: en
+  themes: [combustible, post-incendie]
+
+- id: balch-dantonio
+  auteurs: Balch J., D'Antonio C. et al.
+  annee: null
+  titre: >-
+    Graminées annuelles envahissantes : charge, continuité et conversion des
+    garrigues
+  support: PMC
+  url: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6309004/
+  type: pair
+  langue: en
+  themes: [combustible, post-incendie]
+
+- id: chaparral-institute
+  auteurs: California Chaparral Institute
+  annee: null
+  titre: Maisons entourées d'herbe et pertes comparées
+  support: californiachaparral.org
+  url: https://www.californiachaparral.org/fire/protecting-your-home/
+  type: plaidoyer
+  langue: en
+  themes: [bati, debroussaillement]
+
+- id: canopee-debroussailler
+  auteurs: Prévosto B. / Canopée
+  annee: 2020
+  titre: Faut-il débroussailler davantage les forêts ?
+  support: canopee.ong / Sciences Eaux & Territoires
+  url: https://www.canopee.ong/faq/les-incendies-de-forets/faut-il-debroussailler-davantage-les-forets/
+  type: plaidoyer
+  themes: [debroussaillement, combustible]
+
+# --- Hydrologie de paysage et rétention d'eau --------------------------------
+
+- id: fairfax-whittle-2020
+  auteurs: Fairfax E. & Whittle A.
+  annee: 2020
+  titre: >-
+    Smokey the Beaver — beaver-dammed riparian corridors stay green during
+    wildfire
+  support: Ecological Applications, 30(8):e02225
+  url: https://esajournals.onlinelibrary.wiley.com/doi/10.1002/eap.2225
+  type: pair
+  langue: en
+  themes: [hydrologie]
+
+- id: az-animals-castors-2026
+  auteurs: A-Z Animals
+  annee: 2026
+  titre: Les rivières à castors classées en refuges anti-feu
+  support: a-z-animals.com
+  url: https://a-z-animals.com/articles/how-reintroducing-beavers-creates-fireproof-wetlands/
+  type: vulgarisation
+  langue: en
+  themes: [hydrologie]
+  reserve: Rapporte une étude GSA ; retrouver la source primaire avant citation.
+
+- id: fao-sivanappan
+  auteurs: Sivanappan R. K. (FAO)
+  annee: null
+  titre: Technologies for water harvesting and soil moisture conservation
+  support: FAO
+  url: https://www.fao.org/4/w7314e/w7314e0q.htm
+  type: institutionnel
+  langue: en
+  themes: [hydrologie]
+
+- id: water-harvesting-review-2025
+  auteurs: Collectif
+  annee: 2025
+  titre: 'Water harvesting and groundwater recharge: a comprehensive review'
+  support: Water (MDPI), 17(7):976
+  url: https://www.mdpi.com/2073-4441/17/7/976
+  type: pair
+  langue: en
+  themes: [hydrologie]
+
+- id: agriculture-institute-bunds
+  auteurs: Agriculture Institute
+  annee: null
+  titre: Ditch and contour bunds for groundwater recharge
+  support: agriculture.institute
+  url: https://agriculture.institute/water-harvesting-conservation-utilisation/ditch-contour-bunds-groundwater-recharge/
+  type: vulgarisation
+  langue: en
+  themes: [hydrologie]
+
+# --- Coupures vertes, sylvopastoralisme --------------------------------------
+
+- id: medforest-silvopastoralism-2024
+  auteurs: MedForest
+  annee: 2024
+  titre: Silvo-pastoralism as a tool for landscape resilience to forest fires
+  support: medforest.net
+  url: https://medforest.net/2024/10/04/silvo-pastoralism-as-a-tool-for-greater-landscape-resilience-to-forest-fires/
+  type: vulgarisation
+  langue: en
+  themes: [pastoralisme]
+
+- id: sardaigne-grazing-2024
+  auteurs: Collectif
+  annee: 2024
+  titre: Assessing the role of forest grazing in reducing fire severity
+  support: Fire, 7(11):409
+  url: https://doi.org/10.3390/fire7110409
+  type: pair
+  langue: en
+  themes: [pastoralisme, combustible]
+
+- id: land-grazing-2020
+  auteurs: Collectif
+  annee: 2020
+  titre: Sustainable land management, wildfire risk and the role of grazing
+  support: Land (MDPI), 9(1):21
+  url: https://www.mdpi.com/2073-445X/9/1/21
+  type: pair
+  langue: en
+  themes: [pastoralisme]
+
+- id: ruiz-mirazo-2011
+  auteurs: Ruiz-Mirazo J. et al.
+  annee: 2011
+  titre: Two-year evaluation of fuelbreaks grazed by livestock
+  support: Agriculture, Ecosystems & Environment, 141:13–22
+  url: https://www.sciencedirect.com/science/article/abs/pii/S0167880911000405
+  type: pair
+  langue: en
+  themes: [pastoralisme]
+
+- id: extremadura-agroforestry-2022
+  auteurs: Collectif
+  annee: 2022
+  titre: Collaborative agroforestry to mitigate wildfires in Extremadura
+  support: Agroforestry Systems
+  url: https://pubmed.ncbi.nlm.nih.gov/36249598/
+  type: pair
+  langue: en
+  themes: [pastoralisme]
+
+- id: quinta-da-franca-2025
+  auteurs: Collectif
+  annee: 2025
+  titre: Integrated fire management and closer-to-nature forestry, Quinta da França
+  support: Forests, 16:1306
+  url: https://doi.org/10.3390/f16081306
+  type: pair
+  langue: en
+  themes: [pastoralisme, essences]
+
+- id: grazing-tradeoffs-2026
+  auteurs: Collectif
+  annee: 2026
+  titre: 'How can grazing mitigate wildfires ? Review of fuel management and trade-offs'
+  support: Sustainability, 18:718
+  url: https://doi.org/10.3390/su18020718
+  type: pair
+  langue: en
+  themes: [pastoralisme]
+
+- id: rossi-fuelbreaks
+  auteurs: Rossi J.-L. et al.
+  annee: null
+  titre: 'Fuelbreaks: a part of wildfire prevention'
+  support: PreventionWeb
+  url: https://www.preventionweb.net/files/66111_f311rossifuelbreaks.pdf
+  type: rapport
+  langue: en
+  themes: [debroussaillement]
+
+# --- Brûlage dirigé -----------------------------------------------------------
+
+- id: wikipedia-brulage-pastoral
+  auteurs: Wikipédia
+  annee: null
+  titre: Brûlage pastoral et écobuage
+  support: fr.wikipedia.org
+  url: https://fr.wikipedia.org/wiki/Br%C3%BBlage_pastoral
+  type: vulgarisation
+  themes: [brulage-dirige]
+  reserve: Encyclopédie collaborative ; à remplacer par une source primaire.
+
+- id: green-et-vert-2026
+  auteurs: Green et Vert
+  annee: 2026
+  titre: Le retour du brûlage dirigé contre la naïveté du zéro feu
+  support: greenetvert.fr
+  url: https://www.greenetvert.fr/incendies-le-retour-du-brulage-dirige-contre-la-naivete-du-zero-feu/
+  type: vulgarisation
+  themes: [brulage-dirige]
+
+- id: fernandes-2022
+  auteurs: Fernandes P. et al.
+  annee: 2022
+  titre: >-
+    Evaluating the effect of prescribed burning on the reduction of wildfire
+    extent in Portugal
+  support: Forest Ecology and Management
+  url: https://www.sciencedirect.com/science/article/pii/S0378112722002961
+  type: pair
+  langue: en
+  themes: [brulage-dirige]
+
+- id: prescribed-burning-shrublands-2024
+  auteurs: Collectif
+  annee: 2024
+  titre: >-
+    Prescribed burning mitigates the severity of subsequent wildfires in
+    Mediterranean shrublands
+  support: Fire Ecology, 20
+  url: https://fireecology.springeropen.com/articles/10.1186/s42408-023-00233-z
+  type: pair
+  langue: en
+  themes: [brulage-dirige]
+
+- id: reburning-humid-2023
+  auteurs: Collectif
+  annee: 2023
+  titre: >-
+    The effectiveness of past wildfire at limiting reburning is short-lived in a
+    Mediterranean humid climate
+  support: Fire Ecology
+  url: https://link.springer.com/article/10.1186/s42408-023-00227-x
+  type: pair
+  langue: en
+  themes: [brulage-dirige]
+
+- id: thinning-burning-2022
+  auteurs: Collectif
+  annee: 2022
+  titre: The influence of thinning and prescribed burning on future forest fires
+  support: Environmental Research Letters
+  url: https://iopscience.iop.org/article/10.1088/1748-9326/ac6312
+  type: pair
+  langue: en
+  themes: [brulage-dirige, combustible]
+
+- id: prescribed-burning-cost-2021
+  auteurs: Collectif
+  annee: 2021
+  titre: Prescribed burning as a cost-effective way to address climate change
+  support: Annals of Forest Science
+  url: https://link.springer.com/article/10.1007/s13595-021-01115-7
+  type: pair
+  langue: en
+  themes: [brulage-dirige, climat]
+
+- id: ofme-bd24
+  auteurs: Réseau des équipes de brûlage dirigé
+  annee: null
+  titre: Actes des Rencontres — savoir-brûler et multifonctionnalité
+  support: OFME
+  url: https://www.ofme.org/documents/textesdfci/BD24.pdf
+  type: rapport
+  themes: [brulage-dirige]
+
+- id: ribet-rigolot
+  auteurs: Ribet N., Rigolot É.
+  annee: 2007
+  titre: 'Le brûlage dirigé dans le Mercantour : savoirs, décisions, procédures locales'
+  support: Natures Sciences Sociétés
+  url: https://www.cairn.info/revue-natures-sciences-societes-2007-3-page-233.htm
+  type: pair
+  themes: [brulage-dirige]
+
+- id: pastoralisme-bearn-ecobuage
+  auteurs: Pastoralisme Béarn
+  annee: null
+  titre: 'Écobuage : conditions, encadrement, comportements inattendus'
+  support: pastoralisme-bearn.fr
+  url: https://pastoralisme-bearn.fr/ecobuage-brulage-pastoral/
+  type: vulgarisation
+  themes: [brulage-dirige, pastoralisme]
+
+- id: ofme-bd18-fumees
+  auteurs: Barboni T. et al. (Rencontres brûlage dirigé)
+  annee: null
+  titre: Toxicité des fumées lors de brûlages dirigés
+  support: OFME
+  url: https://www.ofme.org/documents/textesdfci/BD18.pdf
+  type: rapport
+  themes: [brulage-dirige]
+
+# --- Éclaircie et canopée -----------------------------------------------------
+
+- id: bigelow-north-2012
+  auteurs: Bigelow S. W., North M.
+  annee: 2012
+  titre: Microclimate effects of fuels-reduction and group-selection silviculture
+  support: Forest Ecology and Management
+  url: https://www.sciencedirect.com/science/article/abs/pii/S0378112711005901
+  type: pair
+  langue: en
+  themes: [combustible, hydrologie]
+
+- id: banerjee-2020
+  auteurs: Banerjee T. et al.
+  annee: 2020
+  titre: >-
+    Effects of canopy midstory management and fuel moisture on wildfire
+    behavior
+  support: Scientific Reports, 10
+  url: https://www.nature.com/articles/s41598-020-74338-9
+  type: pair
+  langue: en
+  themes: [combustible]
+
+# --- Post-incendie ------------------------------------------------------------
+
+- id: baeza-santana
+  auteurs: Baeza M. J., Santana V. et al.
+  annee: null
+  titre: Post-fire recovery of Mediterranean forests towards open shrublands
+  support: PMC
+  url: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7004039/
+  type: pair
+  langue: en
+  themes: [post-incendie, essences]
+
+- id: challot-1987
+  auteurs: Challot A.
+  annee: 1987
+  titre: Quels arbres planter dans la zone rouge ?
+  support: Forêt Méditerranéenne
+  url: https://www.foret-mediterraneenne.org/upload/biblio/FORET_MED_1987_2_185.pdf
+  type: rapport
+  themes: [post-incendie, essences]
+
+- id: calanques-replanter
+  auteurs: Parc national des Calanques
+  annee: null
+  titre: Faut-il couper les arbres brûlés et planter après l'incendie ?
+  support: calanques-parcnational.fr
+  url: https://www.calanques-parcnational.fr/fr/faut-il-couper-les-arbres-brules-et-planter-apres-lincendie
+  type: institutionnel
+  themes: [post-incendie, essences]
+
+# --- Inflammabilité des essences ---------------------------------------------
+
+- id: valette-1990
+  auteurs: Valette J.-C.
+  annee: 1990
+  titre: >-
+    Inflammabilités des espèces forestières méditerranéennes. Conséquences sur
+    la combustibilité des formations forestières
+  support: Revue forestière française, 42(spécial):76–92
+  url: https://hal.science/hal-03425168
+  type: pair
+  themes: [essences, combustible]
+
+- id: valette-moro-1990
+  auteurs: Valette J.-C., Moro C.
+  annee: 1990
+  titre: Inflammabilité des espèces forestières méditerranéennes
+  support: INRA URFM Avignon
+  url: https://hal.inrae.fr/hal-02852813
+  type: rapport
+  themes: [essences, combustible]
+
+- id: pimont-2014-arbres-feu
+  auteurs: Pimont F. et al.
+  annee: 2014
+  titre: Réponse des arbres méditerranéens au passage du feu
+  support: Forêt Méditerranéenne
+  url: https://hal.science/hal-03556465
+  type: rapport
+  themes: [essences, post-incendie]
+
+- id: barrere-2023
+  auteurs: Barrere J. et al.
+  annee: 2023
+  titre: >-
+    Sensibilité des espèces d'arbres aux perturbations en France et en Espagne
+  support: Global Change Biology
+  url: https://www.canopee.ong/faq/les-incendies-de-forets/quels-sont-les-arbres-les-plus-sensibles-aux-incendies/
+  type: pair
+  themes: [essences]
+  reserve: URL provisoire vers une reprise ; retrouver le DOI de l'article original.
+
+- id: popovic-2021
+  auteurs: Popović Z. et al.
+  annee: 2021
+  titre: Traits des arbres influant sur leur inflammabilité — synthèse de 85 études
+  support: Science of the Total Environment
+  url: https://doi.org/10.1016/j.scitotenv.2021.149625
+  type: pair
+  langue: en
+  themes: [essences, combustible]
+
+- id: ormeno-2009
+  auteurs: Ormeño E. et al.
+  annee: 2009
+  titre: Terpènes et inflammabilité des litières de pins méditerranéens
+  support: Forest Ecology and Management
+  url: https://www.sciencedirect.com/science/article/abs/pii/S0378112708007020
+  type: pair
+  themes: [essences, combustible]
+
+- id: curt-2022
+  auteurs: Curt T. et al.
+  annee: 2022
+  titre: Feux de végétation
+  support: Éditions Quae
+  url: https://www.quae.com/produit/1741/9782759235063/feux-de-vegetation
+  type: ouvrage
+  themes: [essences, combustible, regime-feu]
+
+- id: della-rocca-2017
+  auteurs: Della Rocca G., Madrigal J. et al.
+  annee: 2017
+  titre: Relevance of terpenoids on flammability of Mediterranean species
+  support: iForest, 10:766–775
+  url: https://iforest.sisef.org/abstract/?id=ifor2327-010
+  type: pair
+  langue: en
+  themes: [essences]
+
+- id: mixed-forests-flammability-2018
+  auteurs: Collectif
+  annee: 2018
+  titre: >-
+    Flammability of two Mediterranean mixed forests — non-additive effect of
+    fuel mixtures
+  support: Frontiers in Plant Science
+  url: https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2018.00825/full
+  type: pair
+  langue: en
+  themes: [essences, combustible]
+
+- id: alexandrian-rigolot-1992
+  auteurs: Alexandrian D., Rigolot É.
+  annee: 1992
+  titre: Sensibilité du pin d'Alep à l'incendie
+  support: Forêt Méditerranéenne, 13(3):185–198
+  url: https://www.foret-mediterraneenne.org/upload/biblio/FORET_MED_1992_3_185.pdf
+  type: rapport
+  themes: [essences]
+
+- id: canopee-arbres-sensibles
+  auteurs: Canopée
+  annee: 2023
+  titre: Quels sont les arbres les plus sensibles aux incendies ?
+  support: canopee.ong
+  url: https://www.canopee.ong/faq/les-incendies-de-forets/quels-sont-les-arbres-les-plus-sensibles-aux-incendies/
+  type: plaidoyer
+  themes: [essences]
+
+- id: canopee-idees-recues
+  auteurs: Canopée
+  annee: 2025
+  titre: 36 idées reçues sur la forêt
+  support: canopee.ong
+  url: https://www.canopee.ong/dossiers/les-idees-recues-sur-la-foret/
+  type: plaidoyer
+  themes: [essences, climat]
+
+- id: canopee-forets-melangees
+  auteurs: Canopée
+  annee: 2023
+  titre: Les forêts mélangées et étagées sont-elles plus ou moins sensibles aux incendies ?
+  support: canopee.ong
+  url: https://www.canopee.ong/faq/les-incendies-de-forets/les-forets-melangees-et-etagees-sont-elles-plus-ou-moins-sensibles-aux-incendies/
+  type: plaidoyer
+  themes: [essences]
+
+# --- Pin noir -----------------------------------------------------------------
+
+- id: fady-perret-2020-pin-noir
+  auteurs: Fady B., Perret S. (INRAE)
+  annee: 2020
+  titre: >-
+    Pinus nigra subsp. nigra — pin noir d'Autriche. Fiche de conseil
+    d'utilisation des matériels forestiers de reproduction
+  support: Ministère de l'Agriculture
+  url: https://agriculture.gouv.fr/telecharger/87410
+  type: institutionnel
+  themes: [essences, climat]
+
+- id: climessences-pin-noir
+  auteurs: ClimEssences
+  annee: null
+  titre: Pinus nigra ssp. nigra — fiche essence
+  support: climessences.fr
+  url: https://climessences.fr/pinus-nigra-ssp-nigra-arn-pin-noir-dautriche
+  type: institutionnel
+  themes: [essences, climat]

@@ -1,0 +1,42 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  titre: string;
+  description?: string;
+  /** Use the wider column (e.g. the sources index). */
+  large?: boolean;
+}
+
+const { titre, description, large = false } = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{titre}</title>
+    {description && <meta name="description" content={description} />}
+    <meta name="generator" content={Astro.generator} />
+  </head>
+  <body>
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
+    <header class="site-header">
+      <a class="site-title" href="/">Forêt &amp; feu</a>
+      <nav>
+        <a href="/sources">Toutes les sources</a>
+      </nav>
+    </header>
+    <main id="contenu" class={large ? 'wide' : undefined}>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <p>
+        Vulgarisation sourcée sur la forêt et le feu de végétation. Chaque
+        affirmation renvoie à une source dont la nature est indiquée.
+      </p>
+    </footer>
+  </body>
+</html>

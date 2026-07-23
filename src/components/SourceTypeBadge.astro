@@ -1,0 +1,72 @@
+---
+import { TYPE_META, type SourceType } from '../lib/sources';
+
+interface Props {
+  type: SourceType;
+  /** Show the count in parentheses (used by the legend). */
+  count?: number;
+}
+
+const { type, count } = Astro.props;
+const meta = TYPE_META[type];
+---
+
+<span class={`badge badge--${type}`} title={meta.description}>
+  {meta.label}{count !== undefined && <span class="badge__count">{count}</span>}
+</span>
+
+<style>
+  .badge {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35em;
+    padding: 0.1em 0.55em;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+    border: 1px solid var(--badge-border, currentColor);
+    background: var(--badge-bg, transparent);
+    color: var(--badge-fg, inherit);
+  }
+
+  .badge__count {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+  }
+
+  /* One colour per type. Hue signals the nature of the source, not a value
+     judgement: a plaidoyer is not "worse", it simply carries a stance. */
+  .badge--pair {
+    --badge-bg: #e6f4ea;
+    --badge-fg: #1b5e20;
+    --badge-border: #a5d6a7;
+  }
+  .badge--ouvrage {
+    --badge-bg: #e0f2f1;
+    --badge-fg: #00695c;
+    --badge-border: #80cbc4;
+  }
+  .badge--rapport {
+    --badge-bg: #e3f2fd;
+    --badge-fg: #0d47a1;
+    --badge-border: #90caf9;
+  }
+  .badge--institutionnel {
+    --badge-bg: #e8eaf6;
+    --badge-fg: #283593;
+    --badge-border: #9fa8da;
+  }
+  .badge--vulgarisation {
+    --badge-bg: #fff8e1;
+    --badge-fg: #b25000;
+    --badge-border: #ffe082;
+  }
+  .badge--plaidoyer {
+    --badge-bg: #fce4ec;
+    --badge-fg: #ad1457;
+    --badge-border: #f48fb1;
+  }
+</style>

@@ -1,0 +1,95 @@
+---
+import { getEntry } from 'astro:content';
+import SourceTypeBadge from './SourceTypeBadge.astro';
+import type { Source } from '../lib/sources';
+
+/**
+ * A single bibliographic reference, always shown with its type badge.
+ * Pass either a resolved `source` (e.g. from a collection query) or an `id`
+ * to look up. An unknown id throws, so a broken citation fails the build.
+ */
+interface Props {
+  id?: string;
+  source?: Source;
+}
+
+const { id, source } = Astro.props;
+
+let data = source;
+if (!data) {
+  if (!id) throw new Error('Citation : fournir `id` ou `source`.');
+  const entry = await getEntry('sources', id);
+  if (!entry) throw new Error(`Citation : source inconnue « ${id} ».`);
+  data = entry.data;
+}
+
+const { auteurs, annee, titre, support, url, archive, type, langue, reserve } = data;
+---
+
+<article class="citation" id={`source-${data.id}`}>
+  <p class="citation__ref">
+    <span class="citation__auteurs">{auteurs}</span>{
+      annee != null && <> ({annee})</>
+    }. <span class="citation__titre">{titre}</span>. <span
+      class="citation__support">{support}</span>.
+  </p>
+  <p class="citation__meta">
+    <SourceTypeBadge type={type} />
+    {langue === 'en' && <span class="citation__langue">en anglais</span>}
+    <a class="citation__lien" href={url}>consulter</a>
+    {
+      archive && (
+        <a class="citation__lien" href={archive}>
+          version archivée
+        </a>
+      )
+    }
+  </p>
+  {reserve && <p class="citation__reserve">Réserve&#160;: {reserve}</p>}
+</article>
+
+<style>
+  .citation {
+    margin: 0;
+  }
+
+  .citation__ref {
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .citation__titre {
+    font-style: italic;
+  }
+
+  .citation__support {
+    color: var(--muted);
+  }
+
+  .citation__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin: 0.4rem 0 0;
+    font-size: 0.85rem;
+  }
+
+  .citation__langue {
+    color: var(--muted);
+    font-variant: small-caps;
+  }
+
+  .citation__lien {
+    font-weight: 600;
+  }
+
+  .citation__reserve {
+    margin: 0.4rem 0 0;
+    padding: 0.4rem 0.7rem;
+    border-left: 3px solid var(--warn-border);
+    background: var(--warn-bg);
+    font-size: 0.85rem;
+    color: var(--warn-fg);
+  }
+</style>
