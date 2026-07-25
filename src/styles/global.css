@@ -125,3 +125,22 @@ a:hover {
   font-size: 1.1rem;
   color: var(--muted);
 }
+
+/* Inline citation marker, produced by the remark-citations plugin from
+   [[cite:id]] and linking to the entry in the page's Sources list. */
+.cite-ref {
+  font-size: 0.7em;
+  line-height: 0;
+  margin-left: 0.1em;
+}
+.cite-ref a {
+  text-decoration: none;
+  font-weight: 700;
+  padding: 0 0.15em;
+}
+.cite-ref a::before {
+  content: '[';
+}
+.cite-ref a::after {
+  content: ']';
+}

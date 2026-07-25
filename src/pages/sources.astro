@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Citation from '../components/Citation.astro';
 import SourceTypeBadge from '../components/SourceTypeBadge.astro';
+import ThemeTags from '../components/ThemeTags.astro';
 import {
   TYPE_ORDER,
   THEME_ORDER,
@@ -86,11 +87,9 @@ const themesPresent = THEME_ORDER.filter((theme) =>
       sources.map((s) => (
         <li data-source data-type={s.data.type} data-themes={s.data.themes.join(' ')}>
           <Citation source={s.data} />
-          <p class="themes-source">
-            {s.data.themes.map((t) => (
-              <span class="theme-tag">{THEME_LABELS[t]}</span>
-            ))}
-          </p>
+          <div class="themes-source">
+            <ThemeTags themes={s.data.themes} />
+          </div>
         </li>
       ))
     }
@@ -189,18 +188,7 @@ const themesPresent = THEME_ORDER.filter((theme) =>
   }
 
   .themes-source {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    margin: 0.5rem 0 0;
-  }
-
-  .theme-tag {
-    font-size: 0.75rem;
-    color: var(--muted);
-    background: var(--rule);
-    border-radius: 4px;
-    padding: 0.05em 0.45em;
+    margin-top: 0.5rem;
   }
 </style>
 

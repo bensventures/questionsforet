@@ -1,0 +1,187 @@
+---
+import { getCollection, getEntries, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Citation from '../../components/Citation.astro';
+import ThemeTags from '../../components/ThemeTags.astro';
+import { frenchTypography as fr } from '../../lib/typography.mjs';
+
+export async function getStaticPaths() {
+  // Drafts are visible while developing, hidden from the production build.
+  const questions = await getCollection('questions', ({ data }) =>
+    import.meta.env.PROD ? !data.brouillon : true,
+  );
+  return questions.map((question) => ({
+    params: { id: question.id },
+    props: { question },
+  }));
+}
+
+const { question } = Astro.props;
+const { titre, chapo, verdict, themes, publie, modifie, brouillon } = question.data;
+
+const { Content } = await render(question);
+const sources = await getEntries(question.data.sources);
+const dossiers = await getEntries(question.data.approfondit);
+
+const dateFmt = new Intl.DateTimeFormat('fr-FR', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<Base titre={fr(titre)} description={fr(chapo)}>
+  <article class="question">
+    {brouillon && <p class="brouillon">Brouillon — non publié.</p>}
+
+    <header class="question__entete">
+      <ThemeTags themes={themes} link />
+      <h1>{fr(titre)}</h1>
+      <p class="lede">{fr(chapo)}</p>
+    </header>
+
+    {
+      verdict && (
+        <aside class="verdict" aria-label="En bref">
+          <span class="verdict__label">En bref</span>
+          <p>{fr(verdict)}</p>
+        </aside>
+      )
+    }
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    {
+      dossiers.length > 0 && (
+        <nav class="approfondir" aria-labelledby="approfondir-titre">
+          <h2 id="approfondir-titre">Pour aller plus loin</h2>
+          <ul>
+            {dossiers.map((d) => (
+              <li>
+                <a href={`/dossiers/${d.id}`}>{d.data.titre}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
+
+    {
+      sources.length > 0 && (
+        <section class="sources-question" aria-labelledby="sources-titre">
+          <h2 id="sources-titre">Sources</h2>
+          <ol class="sources-question__liste">
+            {sources.map((s) => (
+              <li>
+                <Citation source={s.data} />
+              </li>
+            ))}
+          </ol>
+        </section>
+      )
+    }
+
+    <footer class="question__pied">
+      <p>
+        Publié le {dateFmt.format(publie)}{
+          modifie && <> · mis à jour le {dateFmt.format(modifie)}</>
+        }.
+      </p>
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .brouillon {
+    margin: 0 0 1rem;
+    padding: 0.4rem 0.7rem;
+    background: var(--warn-bg);
+    border: 1px dashed var(--warn-border);
+    border-radius: 6px;
+    color: var(--warn-fg);
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .question__entete h1 {
+    margin: 0.5rem 0;
+  }
+
+  .verdict {
+    margin: 1.75rem 0;
+    padding: 1rem 1.2rem;
+    border-left: 4px solid var(--accent);
+    background: #fff;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .verdict__label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+  }
+
+  .verdict p {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  /* Body copy generated from Markdown. */
+  .prose :global(h2) {
+    font-family: var(--serif);
+    margin-top: 2rem;
+  }
+  .prose :global(p) {
+    margin: 1rem 0;
+  }
+  .prose :global(a) {
+    color: var(--accent);
+  }
+  .prose :global(figure) {
+    margin: 2rem 0;
+  }
+  .prose :global(figure img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: #fff;
+  }
+  .prose :global(figcaption) {
+    margin-top: 0.6rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .approfondir,
+  .sources-question {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .approfondir h2,
+  .sources-question h2 {
+    font-size: 1.25rem;
+  }
+
+  .sources-question__liste {
+    display: grid;
+    gap: 1.25rem;
+    padding-left: 1.2rem;
+  }
+
+  .question__pied {
+    margin-top: 2.5rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+</style>

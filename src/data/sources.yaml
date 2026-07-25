@@ -723,3 +723,22 @@
   url: https://climessences.fr/pinus-nigra-ssp-nigra-arn-pin-noir-dautriche
   type: institutionnel
   themes: [essences, climat]
+
+- id: gilloz-2026-ifn-diois
+  auteurs: Gilloz B.
+  annee: 2026
+  titre: >-
+    Régénération feuillue et densité des pinèdes du Pays Diois — analyse des
+    données brutes de l'IFN
+  support: Zenodo
+  url: https://doi.org/10.5281/zenodo.21548011
+  archive: https://archive.softwareheritage.org/swh:1:dir:28d3421ef2e407220fc9ca1d6cf5b185f4e035bc
+  type: analyse-primaire
+  langue: fr
+  themes: [essences, combustible, post-incendie]
+  reserve: >-
+    Analyse personnelle, non revue par les pairs. DOI concept (pointe toujours
+    vers la dernière version ; à la rédaction, v1.0.1). Dénombrements
+    d'échantillon IFN, sans valeur d'inventaire ; le contraste pin noir / pin
+    sylvestre résiste au contrôle de station mais repose sur un effectif trop
+    faible pour un test concluant.

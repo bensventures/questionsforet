@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Research lives in its own repo (foret-diois-ifn); keep it out of the site repo
+/research/

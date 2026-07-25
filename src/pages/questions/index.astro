@@ -1,0 +1,98 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ThemeTags from '../../components/ThemeTags.astro';
+import { frenchTypography as fr } from '../../lib/typography.mjs';
+
+const questions = (
+  await getCollection('questions', ({ data }) =>
+    import.meta.env.PROD ? !data.brouillon : true,
+  )
+).sort((a, b) => b.data.publie.valueOf() - a.data.publie.valueOf());
+---
+
+<Base
+  titre="Questions"
+  description="Des réponses courtes et sourcées aux questions fréquentes sur la forêt et le feu de végétation."
+>
+  <h1>Questions</h1>
+  <p class="lede">
+    Des réponses courtes à des questions précises, chacune adossée à ses
+    sources. Un point d'entrée pour qui arrive par une recherche sur une
+    question donnée.
+  </p>
+
+  {
+    questions.length === 0 ? (
+      <p>Aucune question publiée pour le moment.</p>
+    ) : (
+      <ul class="liste-questions" role="list">
+        {questions.map((q) => (
+          <li>
+            <a class="carte" href={`/questions/${q.id}`}>
+              <h2>
+                {fr(q.data.titre)}
+                {q.data.brouillon && <span class="tag-brouillon">brouillon</span>}
+              </h2>
+              <p class="carte__chapo">{fr(q.data.chapo)}</p>
+            </a>
+            <ThemeTags themes={q.data.themes} />
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</Base>
+
+<style>
+  .liste-questions {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  .liste-questions > li {
+    padding-bottom: 1.75rem;
+    border-bottom: 1px solid var(--rule);
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .carte {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .carte h2 {
+    font-size: 1.3rem;
+    margin: 0 0 0.35rem;
+    color: var(--accent);
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+
+  .carte:hover h2 {
+    text-decoration: underline;
+  }
+
+  .carte__chapo {
+    margin: 0;
+    color: var(--fg);
+  }
+
+  .tag-brouillon {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--warn-fg);
+    background: var(--warn-bg);
+    border: 1px dashed var(--warn-border);
+    border-radius: 4px;
+    padding: 0.05em 0.4em;
+  }
+</style>

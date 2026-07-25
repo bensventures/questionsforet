@@ -11,9 +11,17 @@ import type { Source } from '../lib/sources';
 interface Props {
   id?: string;
   source?: Source;
+  /** One-line rendering, for reuse under quiz items and inline lists. */
+  compact?: boolean;
+  /**
+   * Emit an `id` anchor on the element. Disabled by default in compact mode
+   * because the same source can legitimately repeat on one page (e.g. across
+   * several quiz answers), and duplicate ids are invalid HTML.
+   */
+  anchor?: boolean;
 }
 
-const { id, source } = Astro.props;
+const { id, source, compact = false, anchor = !compact } = Astro.props;
 
 let data = source;
 if (!data) {
@@ -24,33 +32,60 @@ if (!data) {
 }
 
 const { auteurs, annee, titre, support, url, archive, type, langue, reserve } = data;
+const elementId = anchor ? `source-${data.id}` : undefined;
 ---
 
-<article class="citation" id={`source-${data.id}`}>
-  <p class="citation__ref">
-    <span class="citation__auteurs">{auteurs}</span>{
-      annee != null && <> ({annee})</>
-    }. <span class="citation__titre">{titre}</span>. <span
-      class="citation__support">{support}</span>.
-  </p>
-  <p class="citation__meta">
-    <SourceTypeBadge type={type} />
-    {langue === 'en' && <span class="citation__langue">en anglais</span>}
-    <a class="citation__lien" href={url}>consulter</a>
-    {
-      archive && (
-        <a class="citation__lien" href={archive}>
-          version archivée
+{
+  compact ? (
+    <p class="citation citation--compact" id={elementId}>
+      <span class="citation__auteurs">{auteurs}</span>
+      {annee != null && <> ({annee})</>}.{' '}
+      <span class="citation__titre">{titre}</span>.{' '}
+      <SourceTypeBadge type={type} />
+      <a class="citation__lien" href={url}>
+        consulter
+      </a>
+    </p>
+  ) : (
+    <article class="citation" id={elementId}>
+      <p class="citation__ref">
+        <span class="citation__auteurs">{auteurs}</span>
+        {annee != null && <> ({annee})</>}.{' '}
+        <span class="citation__titre">{titre}</span>.{' '}
+        <span class="citation__support">{support}</span>.
+      </p>
+      <p class="citation__meta">
+        <SourceTypeBadge type={type} />
+        {langue === 'en' && <span class="citation__langue">en anglais</span>}
+        <a class="citation__lien" href={url}>
+          consulter
         </a>
-      )
-    }
-  </p>
-  {reserve && <p class="citation__reserve">Réserve&#160;: {reserve}</p>}
-</article>
+        {archive && (
+          <a class="citation__lien" href={archive}>
+            version archivée
+          </a>
+        )}
+      </p>
+      {reserve && <p class="citation__reserve">Réserve&#160;: {reserve}</p>}
+    </article>
+  )
+}
 
 <style>
   .citation {
     margin: 0;
+  }
+
+  .citation--compact {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+  .citation--compact .citation__titre {
+    font-style: italic;
   }
 
   .citation__ref {

@@ -1,0 +1,52 @@
+---
+import { THEME_LABELS, type Theme } from '../lib/sources';
+
+interface Props {
+  themes: Theme[];
+  /** Link each tag to the filtered sources page. */
+  link?: boolean;
+}
+
+const { themes, link = false } = Astro.props;
+---
+
+<ul class="theme-tags" role="list">
+  {
+    themes.map((t) => (
+      <li>
+        {link ? (
+          <a class="theme-tag" href={`/sources#theme-${t}`}>
+            {THEME_LABELS[t]}
+          </a>
+        ) : (
+          <span class="theme-tag">{THEME_LABELS[t]}</span>
+        )}
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .theme-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .theme-tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    background: var(--rule);
+    border-radius: 4px;
+    padding: 0.05em 0.45em;
+    text-decoration: none;
+  }
+
+  a.theme-tag:hover {
+    color: var(--fg);
+  }
+</style>

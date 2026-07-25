@@ -1,0 +1,105 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ThemeTags from '../../components/ThemeTags.astro';
+import { frenchTypography as fr } from '../../lib/typography.mjs';
+
+const FORMAT_LABELS: Record<string, string> = {
+  quiz: 'quiz',
+  comparateur: 'comparateur',
+  visualisation: 'visualisation',
+  carte: 'carte',
+};
+
+const outils = (
+  await getCollection('outils', ({ data }) =>
+    import.meta.env.PROD ? !data.brouillon : true,
+  )
+).sort((a, b) => b.data.publie.valueOf() - a.data.publie.valueOf());
+---
+
+<Base
+  titre="Outils"
+  description="Quiz, comparateurs et visualisations interactives sur la forêt et le feu."
+>
+  <h1>Outils</h1>
+  <p class="lede">
+    Des objets interactifs pour explorer une idée par soi-même — à commencer par
+    un vrai/faux sur les idées reçues.
+  </p>
+
+  {
+    outils.length === 0 ? (
+      <p>Aucun outil publié pour le moment.</p>
+    ) : (
+      <ul class="liste-outils" role="list">
+        {outils.map((o) => (
+          <li>
+            <a class="carte" href={`/outils/${o.id}`}>
+              <span class="carte__format">{FORMAT_LABELS[o.data.format]}</span>
+              <h2>
+                {fr(o.data.titre)}
+                {o.data.brouillon && <span class="tag-brouillon">brouillon</span>}
+              </h2>
+              <p class="carte__chapo">{fr(o.data.chapo)}</p>
+            </a>
+            <ThemeTags themes={o.data.themes} />
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</Base>
+
+<style>
+  .liste-outils {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 1.75rem;
+  }
+  .liste-outils > li {
+    padding-bottom: 1.75rem;
+    border-bottom: 1px solid var(--rule);
+    display: grid;
+    gap: 0.6rem;
+  }
+  .carte {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+  .carte__format {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+  .carte h2 {
+    font-size: 1.3rem;
+    margin: 0.2rem 0 0.35rem;
+    color: var(--accent);
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+  .carte:hover h2 {
+    text-decoration: underline;
+  }
+  .carte__chapo {
+    margin: 0;
+  }
+  .tag-brouillon {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--warn-fg);
+    background: var(--warn-bg);
+    border: 1px dashed var(--warn-border);
+    border-radius: 4px;
+    padding: 0.05em 0.4em;
+  }
+</style>

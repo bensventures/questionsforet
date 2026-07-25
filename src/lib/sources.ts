@@ -34,15 +34,21 @@ export const TYPE_META: Record<
     description: "publication d'une agence publique ou d'un organisme officiel",
     rank: 4,
   },
+  'analyse-primaire': {
+    label: 'analyse primaire',
+    description:
+      'analyse de données originale, traçable et reproductible, non évaluée par les pairs',
+    rank: 5,
+  },
   vulgarisation: {
     label: 'vulgarisation',
     description: 'presse, blog ou site de vulgarisation',
-    rank: 5,
+    rank: 6,
   },
   plaidoyer: {
     label: 'plaidoyer',
     description: 'organisation portant une position affirmée',
-    rank: 6,
+    rank: 7,
   },
 };
 

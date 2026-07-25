@@ -1,0 +1,386 @@
+---
+import { getCollection, getEntry, getEntries, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Citation from '../../components/Citation.astro';
+import ThemeTags from '../../components/ThemeTags.astro';
+import { frenchTypography as fr } from '../../lib/typography.mjs';
+
+export async function getStaticPaths() {
+  const outils = await getCollection('outils', ({ data }) =>
+    import.meta.env.PROD ? !data.brouillon : true,
+  );
+  return outils.map((outil) => ({
+    params: { id: outil.id },
+    props: { outil },
+  }));
+}
+
+const { outil } = Astro.props;
+const { titre, chapo, themes, brouillon } = outil.data;
+
+const { Content } = await render(outil);
+
+// Resolve the sources cited by each affirmation, and the full bibliography.
+// French typography is applied to the frontmatter prose here (the remark
+// plugin only reaches Markdown bodies).
+const affirmations = await Promise.all(
+  outil.data.affirmations.map(async (a) => ({
+    ...a,
+    enonce: fr(a.enonce),
+    verdict: fr(a.verdict),
+    explication: fr(a.explication),
+    sourcesResolues: await getEntries(a.sources),
+  })),
+);
+const biblio = await getEntries(outil.data.sources);
+
+// Closing CTA card. The linked page is resolved only if `lien` is set.
+const cloture = outil.data.cloture;
+const clotureLien = cloture?.lien ? await getEntry(cloture.lien) : null;
+---
+
+<Base titre={fr(titre)} description={fr(chapo)}>
+  <article class="outil">
+    {brouillon && <p class="brouillon">Brouillon — non publié.</p>}
+
+    <header>
+      <ThemeTags themes={themes} link />
+      <h1>{fr(titre)}</h1>
+      <p class="lede">{fr(chapo)}</p>
+    </header>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    {
+      affirmations.length > 0 && (
+        <section class="quiz" aria-label="Quiz vrai ou faux">
+          <p class="quiz-score" aria-live="polite">
+            <strong id="quiz-repondu">0</strong> / {affirmations.length}{' '}
+            répondue{affirmations.length > 1 ? 's' : ''} ·{' '}
+            <strong id="quiz-bonnes">0</strong> bonne
+            {affirmations.length > 1 ? 's' : ''} réponse
+            {affirmations.length > 1 ? 's' : ''}
+          </p>
+
+          <ol class="quiz-liste">
+            {affirmations.map((a) => (
+              <li class="quiz-item" data-reponse={String(a.reponse)}>
+                <p class="quiz-enonce">{a.enonce}</p>
+
+                <div class="quiz-choix" role="group" aria-label="Votre réponse">
+                  <button type="button" data-choix="true">
+                    Vrai
+                  </button>
+                  <button type="button" data-choix="false">
+                    Faux
+                  </button>
+                </div>
+
+                <div class="quiz-reveal">
+                  <span class={`verdict-badge verdict--${a.ton}`}>
+                    {a.verdict}
+                  </span>
+                  <p class="quiz-explication">{a.explication}</p>
+                  {a.sourcesResolues.length > 0 && (
+                    <div class="quiz-sources">
+                      {a.sourcesResolues.map((s) => (
+                        <Citation source={s.data} compact />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )
+    }
+
+    {
+      cloture && (
+        <aside class="cloture">
+          <p class="cloture__kicker">Pour finir — hors barème</p>
+          <p class="cloture__question">{fr(cloture.question)}</p>
+          <p class="cloture__amorce">{fr(cloture.amorce)}</p>
+          {clotureLien && (
+            <a class="cloture__cta" href={`/questions/${clotureLien.id}`}>
+              {fr(cloture.libelleLien)}
+              <span aria-hidden="true"> →</span>
+            </a>
+          )}
+        </aside>
+      )
+    }
+
+    {
+      biblio.length > 0 && (
+        <section class="sources-outil" aria-labelledby="sources-titre">
+          <h2 id="sources-titre">Toutes les sources de cet outil</h2>
+          <ol class="sources-outil__liste">
+            {biblio.map((s) => (
+              <li>
+                <Citation source={s.data} />
+              </li>
+            ))}
+          </ol>
+        </section>
+      )
+    }
+  </article>
+</Base>
+
+<style>
+  .brouillon {
+    margin: 0 0 1rem;
+    padding: 0.4rem 0.7rem;
+    background: var(--warn-bg);
+    border: 1px dashed var(--warn-border);
+    border-radius: 6px;
+    color: var(--warn-fg);
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  header h1 {
+    margin: 0.5rem 0;
+  }
+
+  .prose :global(p) {
+    margin: 1rem 0;
+  }
+
+  /* --- Quiz ------------------------------------------------------------- */
+
+  .quiz {
+    margin-top: 2rem;
+  }
+
+  .quiz-score {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    margin: 0 0 1.5rem;
+    padding: 0.6rem 0.9rem;
+    background: var(--fg);
+    color: var(--bg);
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+  .quiz-score strong {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .quiz-liste {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: affirmation;
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .quiz-item {
+    counter-increment: affirmation;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .quiz-enonce {
+    margin: 0 0 0.9rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+  .quiz-enonce::before {
+    content: counter(affirmation) '. ';
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .quiz-choix {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .quiz-choix button {
+    flex: 1;
+    font: inherit;
+    font-weight: 600;
+    padding: 0.55rem 1rem;
+    border: 1.5px solid var(--rule);
+    border-radius: 8px;
+    background: var(--bg);
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .quiz-choix button:hover:not(:disabled) {
+    border-color: var(--muted);
+  }
+  .quiz-choix button:disabled {
+    cursor: default;
+    opacity: 0.9;
+  }
+
+  /* Answered states, applied by the script. */
+  .quiz-choix button.choix-attendu {
+    border-color: #2e7d32;
+    background: #e6f4ea;
+    color: #1b5e20;
+  }
+  .quiz-choix button.choix-mauvais {
+    border-color: #c62828;
+    background: #fdecea;
+    color: #b71c1c;
+  }
+
+  .quiz-reveal {
+    margin-top: 1rem;
+    padding-top: 0.9rem;
+    border-top: 1px dashed var(--rule);
+  }
+
+  .verdict-badge {
+    display: inline-block;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.15em 0.6em;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+  }
+  .verdict--vert {
+    background: #e6f4ea;
+    color: #1b5e20;
+  }
+  .verdict--ambre {
+    background: #fff8e1;
+    color: #b25000;
+  }
+  .verdict--rouge {
+    background: #fdecea;
+    color: #b71c1c;
+  }
+
+  .quiz-explication {
+    margin: 0.3rem 0 0;
+  }
+
+  .quiz-sources {
+    margin-top: 0.9rem;
+    display: grid;
+    gap: 0.4rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  /* --- Carte de clôture (CTA, hors quiz) ------------------------------- */
+
+  .cloture {
+    margin-top: 1.75rem;
+    padding: 1.6rem 1.5rem;
+    border-radius: 12px;
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  .cloture__kicker {
+    margin: 0 0 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.8;
+  }
+
+  .cloture__question {
+    margin: 0 0 0.75rem;
+    font-family: var(--serif);
+    font-size: 1.4rem;
+    line-height: 1.25;
+    font-weight: 700;
+  }
+
+  .cloture__amorce {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    opacity: 0.95;
+  }
+
+  .cloture__cta {
+    display: inline-block;
+    margin-top: 1.2rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    background: var(--accent-fg);
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .cloture__cta:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .sources-outil {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+  }
+  .sources-outil h2 {
+    font-size: 1.25rem;
+  }
+  .sources-outil__liste {
+    display: grid;
+    gap: 1.25rem;
+    padding-left: 1.2rem;
+  }
+</style>
+
+<script>
+  // Interactive vrai/faux. Progressive enhancement: without JavaScript every
+  // verdict and explanation is already visible below its statement; this script
+  // hides them until the reader has committed to an answer, then scores.
+  const items = Array.from(document.querySelectorAll<HTMLElement>('.quiz-item'));
+  const reponduEl = document.getElementById('quiz-repondu');
+  const bonnesEl = document.getElementById('quiz-bonnes');
+
+  let repondu = 0;
+  let bonnes = 0;
+
+  for (const item of items) {
+    const reveal = item.querySelector<HTMLElement>('.quiz-reveal');
+    const buttons = Array.from(
+      item.querySelectorAll<HTMLButtonElement>('.quiz-choix button'),
+    );
+    if (!reveal || buttons.length === 0) continue;
+
+    reveal.hidden = true;
+    const correct = item.dataset.reponse === 'true';
+    let answered = false;
+
+    for (const btn of buttons) {
+      btn.addEventListener('click', () => {
+        if (answered) return;
+        answered = true;
+
+        const choix = btn.dataset.choix === 'true';
+        const bon = choix === correct;
+
+        const attendu = buttons.find((b) => (b.dataset.choix === 'true') === correct);
+        attendu?.classList.add('choix-attendu');
+        if (!bon) btn.classList.add('choix-mauvais');
+        for (const b of buttons) b.disabled = true;
+
+        reveal.hidden = false;
+
+        repondu++;
+        if (bon) bonnes++;
+        if (reponduEl) reponduEl.textContent = String(repondu);
+        if (bonnesEl) bonnesEl.textContent = String(bonnes);
+      });
+    }
+  }
+</script>
