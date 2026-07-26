@@ -32,7 +32,7 @@ const dateFmt = new Intl.DateTimeFormat('fr-FR', {
 
 <Base titre={fr(titre)} description={fr(chapo)}>
   <article class="question">
-    {brouillon && <p class="brouillon">Brouillon — non publié.</p>}
+    {brouillon && <p class="brouillon">Brouillon (non publié).</p>}
 
     <header class="question__entete">
       <ThemeTags themes={themes} link />
@@ -111,25 +111,29 @@ const dateFmt = new Intl.DateTimeFormat('fr-FR', {
 
   .verdict {
     margin: 1.75rem 0;
-    padding: 1rem 1.2rem;
-    border-left: 4px solid var(--accent);
-    background: #fff;
+    padding: 1.1rem 1.3rem;
+    border-left: 4px solid var(--ember);
+    background: var(--surface);
     border-radius: 0 8px 8px 0;
+    box-shadow: var(--shadow);
   }
 
   .verdict__label {
     display: block;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--accent);
-    margin-bottom: 0.3rem;
+    letter-spacing: 0.09em;
+    color: var(--ember);
+    margin-bottom: 0.35rem;
   }
 
   .verdict p {
     margin: 0;
-    font-size: 1.05rem;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 1.15rem;
+    line-height: 1.4;
   }
 
   /* Body copy generated from Markdown. */
@@ -152,7 +156,8 @@ const dateFmt = new Intl.DateTimeFormat('fr-FR', {
     height: auto;
     border: 1px solid var(--rule);
     border-radius: 8px;
-    background: #fff;
+    background: var(--surface);
+    box-shadow: var(--shadow);
   }
   .prose :global(figcaption) {
     margin-top: 0.6rem;

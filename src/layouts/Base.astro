@@ -1,4 +1,8 @@
 ---
+// Polices auto-hébergées (aucune requête externe, CSP-safe).
+import '@fontsource-variable/fraunces/full.css';
+import '@fontsource-variable/hanken-grotesk/index.css';
+import '@fontsource-variable/hanken-grotesk/wght-italic.css';
 import '../styles/global.css';
 
 interface Props {
@@ -24,7 +28,7 @@ const { titre, description, large = false } = Astro.props;
   <body>
     <a class="skip-link" href="#contenu">Aller au contenu</a>
     <header class="site-header">
-      <a class="site-title" href="/">Forêt &amp; feu</a>
+      <a class="site-title" href="/">Forêt <span class="amp">&amp;</span> feu</a>
       <nav>
         <a href="/questions">Questions</a>
         <a href="/outils">Outils</a>

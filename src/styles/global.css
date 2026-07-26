@@ -1,20 +1,46 @@
+/* =========================================================================
+   « Encre & braise » — système visuel du site
+   Manuel de terrain naturaliste : papier parchemin, encre chaude, accent
+   braise (feu), vert pin (forêt). Un seul thème, assumé et cohérent.
+   ========================================================================= */
+
 :root {
-  --bg: #fbfbf9;
-  --fg: #1c1b19;
-  --muted: #6b675f;
-  --rule: #e4e1d9;
-  --accent: #7a3b1d;
-  --accent-fg: #ffffff;
-  --warn-bg: #fff8e1;
-  --warn-border: #e6a817;
-  --warn-fg: #6b4e00;
+  color-scheme: light;
 
-  --content-width: 44rem;
-  --wide-width: 60rem;
+  /* Palette */
+  --paper: #f1e9da; /* fond de page (parchemin chaud) */
+  --paper-2: #e9dfca; /* plus profond, pour la profondeur du dégradé */
+  --surface: #fbf6ea; /* cartes / surfaces surélevées */
+  --ink: #221e17; /* texte principal (presque noir, chaud) */
+  --ink-soft: #6a6050; /* texte atténué */
+  --rule: #d6cab2; /* filets / bordures */
 
-  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --serif: ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --ember: #b0431c; /* accent primaire — le feu */
+  --ember-strong: #832f0e; /* survol / pressé */
+  --ember-tint: #f2ddcd; /* lavis braise */
+  --pine: #2c5340; /* secondaire — la forêt */
+  --pine-tint: #dfe8dd;
+
+  /* Alias conservés (les styles scoped s'appuient dessus) */
+  --bg: var(--paper);
+  --fg: var(--ink);
+  --muted: var(--ink-soft);
+  --accent: var(--ember);
+  --accent-fg: #fbf6ea; /* texte sur braise */
+
+  /* Mentions / brouillon */
+  --warn-bg: #f4e9c8;
+  --warn-border: #cc9a35;
+  --warn-fg: #6a4b0d;
+
+  --content-width: 42rem;
+  --wide-width: 62rem;
+
+  --serif: 'Fraunces Variable', Fraunces, 'Iowan Old Style', Georgia, serif;
+  --sans: 'Hanken Grotesk Variable', 'Hanken Grotesk', system-ui, sans-serif;
+
+  --shadow: 0 1px 2px rgba(34, 30, 23, 0.05),
+    0 14px 30px -18px rgba(34, 30, 23, 0.35);
 }
 
 *,
@@ -26,65 +52,137 @@
 html {
   font-size: 112.5%;
   -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--fg);
+  min-height: 100vh;
+  color: var(--ink);
+  background-color: var(--paper);
+  /* Atmosphère : deux halos (braise / pin) sur un dégradé parchemin. */
+  background-image: radial-gradient(
+      1100px 560px at 100% -8%,
+      rgba(176, 67, 28, 0.07),
+      transparent 60%
+    ),
+    radial-gradient(
+      820px 480px at -8% 108%,
+      rgba(44, 83, 64, 0.07),
+      transparent 55%
+    ),
+    linear-gradient(var(--paper), var(--paper-2));
+  background-attachment: fixed;
   font-family: var(--sans);
-  line-height: 1.6;
-  text-underline-offset: 0.15em;
+  font-size: 1rem;
+  line-height: 1.65;
+  text-underline-offset: 0.16em;
+}
+
+/* Grain de papier : très léger, pour la profondeur. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 main {
   display: block;
   max-width: var(--content-width);
   margin: 0 auto;
-  padding: 2.5rem 1.25rem 4rem;
+  padding: 3rem 1.25rem 5rem;
 }
 
 main.wide {
   max-width: var(--wide-width);
 }
 
+/* --- Typographie ------------------------------------------------------- */
+
 h1,
 h2,
 h3 {
   font-family: var(--serif);
-  line-height: 1.2;
-  font-weight: 700;
+  font-weight: 560;
+  line-height: 1.12;
+  font-optical-sizing: auto;
+  font-variation-settings: 'SOFT' 40, 'WONK' 0;
+  letter-spacing: -0.01em;
+  /* `pretty` : remplit les lignes normalement (contrairement à `balance` qui
+     les égalise en raccourcissant la première) tout en évitant les orphelins. */
+  text-wrap: pretty;
 }
 
 h1 {
-  font-size: 2rem;
-  margin: 0 0 0.5rem;
+  font-size: clamp(2.1rem, 1.55rem + 2.4vw, 3.1rem);
+  font-weight: 600;
+  margin: 0 0 0.6rem;
+}
+
+h2 {
+  font-size: clamp(1.4rem, 1.2rem + 0.9vw, 1.8rem);
+  margin: 2.4rem 0 0.75rem;
+}
+
+h3 {
+  font-size: 1.2rem;
+}
+
+p {
+  margin: 1rem 0;
 }
 
 a {
-  color: var(--accent);
+  color: var(--ember);
+  text-decoration-color: color-mix(in srgb, var(--ember) 35%, transparent);
+  text-decoration-thickness: 1.5px;
+  transition: text-decoration-color 0.15s ease;
 }
-
 a:hover {
-  text-decoration-thickness: 2px;
+  text-decoration-color: currentColor;
 }
 
-/* Skip link, revealed on focus for keyboard users. */
+::selection {
+  background: color-mix(in srgb, var(--ember) 22%, transparent);
+}
+
+:focus-visible {
+  outline: 2.5px solid var(--ember);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.lede {
+  font-family: var(--serif);
+  font-weight: 380;
+  font-size: clamp(1.12rem, 1.02rem + 0.5vw, 1.32rem);
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--ink) 82%, var(--paper));
+  text-wrap: pretty;
+}
+
+/* Skip link */
 .skip-link {
   position: absolute;
   left: -999px;
   top: 0;
-  background: var(--fg);
-  color: var(--bg);
+  background: var(--ink);
+  color: var(--paper);
   padding: 0.5rem 0.9rem;
+  border-radius: 0 0 6px 0;
   z-index: 10;
 }
 .skip-link:focus {
-  left: 0.5rem;
-  top: 0.5rem;
+  left: 0;
+  top: 0;
 }
 
-/* --- Header / footer --------------------------------------------------- */
+/* --- En-tête / pied ---------------------------------------------------- */
 
 .site-header {
   display: flex;
@@ -93,54 +191,118 @@ a:hover {
   gap: 0.75rem 1.5rem;
   max-width: var(--wide-width);
   margin: 0 auto;
-  padding: 1rem 1.25rem;
+  padding: 1.25rem 1.25rem 1rem;
   border-bottom: 1px solid var(--rule);
 }
 
 .site-title {
   font-family: var(--serif);
-  font-weight: 700;
-  font-size: 1.15rem;
+  font-weight: 600;
+  font-size: 1.3rem;
+  letter-spacing: -0.01em;
   text-decoration: none;
-  color: var(--fg);
+  color: var(--ink);
+}
+.site-title .amp {
+  color: var(--ember);
+  font-style: italic;
+  font-variation-settings: 'SOFT' 60, 'WONK' 1;
+  padding: 0 0.05em;
 }
 
 .site-header nav {
   margin-left: auto;
   display: flex;
-  gap: 1.25rem;
-  font-size: 0.95rem;
+  gap: 1.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.site-header nav a {
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding-bottom: 0.15rem;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.site-header nav a:hover {
+  color: var(--ink);
+  border-color: var(--ember);
 }
 
 .site-footer {
   max-width: var(--wide-width);
-  margin: 0 auto;
-  padding: 2rem 1.25rem 3rem;
+  margin: 4rem auto 0;
+  padding: 1.75rem 1.25rem 3rem;
   border-top: 1px solid var(--rule);
-  color: var(--muted);
-  font-size: 0.9rem;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
 }
 
-.lede {
-  font-size: 1.1rem;
-  color: var(--muted);
-}
+/* --- Marqueur de citation inline (plugin remark-citations) ------------- */
 
-/* Inline citation marker, produced by the remark-citations plugin from
-   [[cite:id]] and linking to the entry in the page's Sources list. */
 .cite-ref {
   font-size: 0.7em;
   line-height: 0;
-  margin-left: 0.1em;
+  margin-left: 0.08em;
+  font-family: var(--sans);
+  font-feature-settings: 'tnum';
 }
 .cite-ref a {
   text-decoration: none;
   font-weight: 700;
-  padding: 0 0.15em;
+  color: var(--ember);
+  padding: 0 0.1em;
 }
 .cite-ref a::before {
   content: '[';
 }
 .cite-ref a::after {
   content: ']';
+}
+
+/* --- Révélation orchestrée au chargement ------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  main > *,
+  main > article > * {
+    animation: rise 0.62s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  /* L'article n'est qu'un conteneur : ce sont ses enfants qui se révèlent. */
+  main > article {
+    animation: none;
+  }
+
+  main > :nth-child(2),
+  main > article > :nth-child(2) {
+    animation-delay: 0.05s;
+  }
+  main > :nth-child(3),
+  main > article > :nth-child(3) {
+    animation-delay: 0.1s;
+  }
+  main > :nth-child(4),
+  main > article > :nth-child(4) {
+    animation-delay: 0.15s;
+  }
+  main > :nth-child(5),
+  main > article > :nth-child(5) {
+    animation-delay: 0.2s;
+  }
+  main > :nth-child(n + 6),
+  main > article > :nth-child(n + 6) {
+    animation-delay: 0.24s;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }

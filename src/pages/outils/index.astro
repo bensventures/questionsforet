@@ -24,7 +24,7 @@ const outils = (
 >
   <h1>Outils</h1>
   <p class="lede">
-    Des objets interactifs pour explorer une idée par soi-même — à commencer par
+    Des objets interactifs pour explorer une idée par soi-même, à commencer par
     un vrai/faux sur les idées reçues.
   </p>
 
@@ -60,10 +60,18 @@ const outils = (
     gap: 1.75rem;
   }
   .liste-outils > li {
-    padding-bottom: 1.75rem;
-    border-bottom: 1px solid var(--rule);
     display: grid;
     gap: 0.6rem;
+    padding: 1.3rem 1.4rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    transition: transform 0.18s ease, border-color 0.18s ease;
+  }
+  .liste-outils > li:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--ember) 45%, var(--rule));
   }
   .carte {
     display: block;
@@ -74,22 +82,23 @@ const outils = (
     font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--muted);
+    letter-spacing: 0.07em;
+    color: var(--ember);
   }
   .carte h2 {
-    font-size: 1.3rem;
+    font-size: 1.35rem;
     margin: 0.2rem 0 0.35rem;
-    color: var(--accent);
+    color: var(--ink);
     display: flex;
     align-items: baseline;
     gap: 0.6rem;
   }
   .carte:hover h2 {
-    text-decoration: underline;
+    color: var(--ember);
   }
   .carte__chapo {
     margin: 0;
+    color: var(--ink-soft);
   }
   .tag-brouillon {
     font-size: 0.7rem;

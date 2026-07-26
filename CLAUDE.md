@@ -101,6 +101,11 @@ français.
 
 **Casse.** Phrases capitalisées normalement, jamais de Titres En Capitales.
 
+**Pas de tiret cadratin (—).** Il sent le texte généré par IA. À la rédaction, ne
+pas en produire : selon le sens, employer une virgule (pause), un deux-points
+(explication, sans en cumuler deux dans la même phrase), un point (deux propositions
+distinctes) ou des parenthèses (incise, surtout si elle contient déjà des virgules).
+
 **Chiffres.** Toujours présentés comme des ordres de grandeur contextuels, jamais
 comme des cibles réglementaires. Les distances et obligations applicables relèvent de
 la réglementation locale et doivent renvoyer vers elle.
@@ -146,6 +151,22 @@ Projet Astro initialisé (squelette qui build proprement). En place :
 
 Prochaine étape suggérée : le composant de citation (badge de type visible) et la page
 « toutes les sources » filtrable, puis convertir le dossier « Vivre avec le feu ».
+
+## Identité visuelle : « encre & braise »
+
+Thème unique et assumé, ancré dans le sujet (manuel de terrain naturaliste) :
+parchemin chaud, encre brun-noir, accent **braise** (`--ember`, terre de Sienne
+brûlée) pour l'interaction et la sémantique du feu, **vert pin** (`--pine`) en
+secondaire. Tout passe par des tokens CSS dans `src/styles/global.css` — pour
+re-skiner, on touche aux variables, pas aux styles scoped des pages.
+
+- Polices auto-hébergées via Fontsource (dépendances de build, aucune requête
+  externe) : **Fraunces** (titres, caractère de vieille monographie) et **Hanken
+  Grotesk** (texte et interface). Importées dans `src/layouts/Base.astro`.
+- Motion sobre : une seule révélation orchestrée au chargement (`@keyframes rise`
+  + décalages), désactivée sous `prefers-reduced-motion`. Pas de JS ajouté.
+- Un seul thème clair, volontairement (pas de bascule sombre) : cohérence avant
+  exhaustivité, conforme au garde-fou « site sobre et rapide ».
 
 DISTILLED_AESTHETICS_PROMPT = """
 <frontend_aesthetics>

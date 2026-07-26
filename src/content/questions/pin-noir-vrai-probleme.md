@@ -34,7 +34,7 @@ cible.
 L'idée qu'un résineux flambe par nature, à cause de sa résine, est une
 simplification. Ce qui gouverne l'inflammabilité, c'est d'abord la teneur en eau
 du feuillage, la finesse des aiguilles, l'état de la litière et surtout la
-structure du peuplement — un couvert clair assèche le sol et laisse monter un
+structure du peuplement. Un couvert clair assèche le sol et laisse monter un
 sous-bois combustible. Le pin noir est même décrit comme une essence « évitante » :
 sans branches basses et à houppier haut, il résiste plutôt bien à un feu de
 surface peu intense, et ne devient vulnérable qu'au feu de cime. [[cite:revertegat-2025-vulnefeu]]
@@ -60,7 +60,7 @@ analyse des relevés de l'Inventaire forestier national sur le Pays Diois apport
 deux réponses, l'une rassurante en apparence, l'autre moins.
 
 Un cortège de feuillus (chênes, hêtre, érables) est présent sous la quasi-totalité
-des pinèdes échantillonnées — mais à faible abondance, et il accède rarement à la
+des pinèdes échantillonnées, mais à faible abondance, et il accède rarement à la
 strate des arbres. Surtout, en suivant les mêmes placettes à cinq ans d'intervalle,
 les pins se recrutent environ deux fois plus vite que les feuillus. Autrement dit,
 la présence de feuillus ne signe pas une diversification en cours : pour l'instant,
@@ -90,8 +90,8 @@ Le procès en inflammabilité rate donc sa cible. Le risque que porte le pin noi
 ne tient pas à une essence qui flamberait par nature, mais à des peuplements trop
 denses, laissés sans entretien, et incapables de se reconstituer si un grand feu
 les emporte. Cela déplace complètement le levier d'action : non pas « couper les
-pins noirs » — une coupe rase laisse un tapis d'herbe sèche au moins aussi
-inflammable et rouvre des sols que ces plantations retiennent [[cite:challot-1987]] — mais éclaircir,
+pins noirs » (une coupe rase laisse un tapis d'herbe sèche au moins aussi
+inflammable et rouvre des sols que ces plantations retiennent [[cite:challot-1987]]), mais éclaircir,
 introduire des feuillus, et accompagner une diversification qui, laissée à
 elle-même, ne vient pas assez vite.
 
@@ -103,7 +103,7 @@ montagne. [[cite:fady-perret-2020-pin-noir]]
 
 C'est pourquoi il faut se garder d'un amalgame. La critique des plantations
 résineuses, portée notamment par des associations de protection des forêts, vise
-d'abord un modèle industriel — la coupe rase de forêts diversifiées, remplacées
+d'abord un modèle industriel : la coupe rase de forêts diversifiées, remplacées
 par des monocultures destinées à l'approvisionnement de la filière bois. [[cite:canopee-idees-recues]]
 Ce procès-là, largement fondé, ne concerne pas les reboisements de montagne du
 Diois, faits pour retenir les sols et non pour produire. Le débat, ici, n'est pas

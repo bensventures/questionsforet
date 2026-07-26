@@ -105,7 +105,7 @@ const affirmation = z.object({
 
 /**
  * Carte de clôture d'un outil : non pas une affirmation de plus, mais un appel
- * à prolonger vers une page de fond. `lien` reste optionnel — tant qu'il est
+ * à prolonger vers une page de fond. `lien` reste optionnel : tant qu'il est
  * absent, la carte s'affiche sans bouton ; renseigné, `reference('questions')`
  * garantit au build que la question cible existe.
  */

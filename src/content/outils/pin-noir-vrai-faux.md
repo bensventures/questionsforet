@@ -2,7 +2,7 @@
 titre: Dix idées reçues sur le pin noir
 chapo: >-
   Planté par centaines de milliers d'hectares pour retenir les sols de montagne,
-  le pin noir d'Autriche concentre les malentendus — sur sa présence, sur son
+  le pin noir d'Autriche concentre les malentendus : sur sa présence, sur son
   rapport au feu, et sur ce qu'il faudrait en faire après un incendie.
 publie: 2026-07-23
 format: quiz
@@ -38,7 +38,7 @@ affirmations:
       aujourd'hui environ 21 millions de mètres cubes sur pied et constitue
       l'essence principale sur près de 190 000 hectares. Nuance importante :
       deux autres sous-espèces de Pinus nigra sont, elles, bien indigènes en
-      France — le pin de Salzmann dans le Gard, l'Hérault, la Lozère, l'Ardèche
+      France. Ce sont le pin de Salzmann dans le Gard, l'Hérault, la Lozère, l'Ardèche
       et les Pyrénées-Orientales, et le pin laricio en Corse.
     sources:
       - fady-perret-2020-pin-noir
@@ -67,7 +67,7 @@ affirmations:
       La résine et les terpènes jouent un rôle, mais secondaire, et la
       littérature ne leur reconnaît pas d'effet uniforme. Ce qui pèse le plus :
       la teneur en eau du feuillage, la finesse des aiguilles, l'état de la
-      litière, et surtout la structure du peuplement — un couvert clair assèche
+      litière, et surtout la structure du peuplement. Un couvert clair assèche
       le sol et laisse monter un sous-bois. Certains résineux comme le sapin, le
       Douglas ou le cèdre sont même considérés comme des barrières naturelles au
       feu. Point spécifique au pin noir : sa litière se décompose mal et
@@ -103,7 +103,7 @@ affirmations:
     explication: >-
       La fiche du ministère l'indique explicitement et anticipe une hausse des
       dégâts d'incendie en période sèche. Nuance utile : l'essence est décrite
-      comme évitante — pas de branches basses, houppier haut — donc plutôt
+      comme évitante (pas de branches basses, houppier haut), donc plutôt
       résistante à un feu de surface peu intense, mais sensible au feu de cime.
     sources:
       - fady-perret-2020-pin-noir
@@ -138,7 +138,7 @@ affirmations:
       processionnaire ne provoque pas de mortalité et la perte de croissance
       reste limitée. Deux points à retenir néanmoins : son aire progresse vers
       le nord avec le réchauffement, et ce sont les peuplements clairs exposés
-      au sud qui sont les plus atteints — ce qui compte au moment de décider
+      au sud qui sont les plus atteints, ce qui compte au moment de décider
       d'une éclaircie.
     sources:
       - fady-perret-2020-pin-noir
@@ -202,7 +202,7 @@ cloture:
     Alors, les plantations de pin noir ont-elles rendu nos montagnes plus
     inflammables ?
   amorce: >-
-    Celle-là ne se tranche pas d'un clic, et c'est ce qui la rend intéressante. D'abord parce qu'il faut savoir à quoi l'on compare : le pin noir du Diois n'a pas remplacé une chênaie, mais des versants mis à nu par des siècles de surpâturage, qu'il a servi à retenir. Ensuite parce que le procès qu'on entend souvent vise en réalité autre chose — non pas ces reboisements de montagne, mais le modèle industriel de coupe rase et de monoculture que la filière cherche à généraliser ailleurs. Deux débats distincts qu'on gagne à ne pas confondre. Ce qui vaut vraiment pour le pin noir, c'est ce que montrent les données locales : le problème n'est pas qu'il brûle, c'est qu'il ne se régénère pas.
+    Celle-là ne se tranche pas d'un clic, et c'est ce qui la rend intéressante. D'abord parce qu'il faut savoir à quoi l'on compare : le pin noir du Diois n'a pas remplacé une chênaie, mais des versants mis à nu par des siècles de surpâturage, qu'il a servi à retenir. Ensuite parce que le procès qu'on entend souvent vise en réalité autre chose : non pas ces reboisements de montagne, mais le modèle industriel de coupe rase et de monoculture que la filière cherche à généraliser ailleurs. Deux débats distincts qu'on gagne à ne pas confondre. Ce qui vaut vraiment pour le pin noir, c'est ce que montrent les données locales : le problème n'est pas qu'il brûle, c'est qu'il ne se régénère pas.
   lien: pin-noir-vrai-probleme
   libelleLien: Lire la réponse complète
 ---
@@ -214,7 +214,7 @@ coupable commode de l'inflammabilité des massifs, ou au contraire le considére
 comme une essence robuste sur laquelle on peut compter sans précaution.
 
 Les dix affirmations qui suivent circulent réellement. Certaines corrigent une
-méfiance excessive envers l'essence, d'autres corrigent l'excès inverse — c'est
+méfiance excessive envers l'essence, d'autres corrigent l'excès inverse, c'est
 volontaire. Un outil qui ne taperait que dans un sens perdrait sa crédibilité.
 
 Plusieurs réponses ne sont ni vraies ni fausses mais les deux à la fois. Ces

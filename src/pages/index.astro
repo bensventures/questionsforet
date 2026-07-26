@@ -3,23 +3,98 @@ import Base from '../layouts/Base.astro';
 ---
 
 <Base
-  titre="Forêt & feu — vulgarisation sourcée"
+  titre="Forêt & feu, vulgarisation sourcée"
   description="Un site de vulgarisation rigoureuse sur la forêt, le feu de végétation et la prévention, en français, avec ses sources en clair."
 >
-  <h1>Forêt &amp; feu</h1>
-  <p class="lede">
-    Un site de vulgarisation sur la forêt, le feu de végétation et la
-    prévention. Une idée par page, des chiffres toujours accompagnés de leur
-    contexte, et des sources dont la solidité est indiquée en clair.
+  <section class="hero">
+    <p class="hero__kicker">Vulgarisation sourcée · forêt &amp; feu</p>
+    <h1 class="hero__titre">
+      Ce qu'on croit savoir sur la forêt qui brûle, et ce que dit la recherche.
+    </h1>
+    <p class="lede">
+      Une idée par page, des chiffres toujours accompagnés de leur contexte, et
+      des sources dont la solidité est indiquée en clair. Ni discours de filière,
+      ni discours militant : la traçabilité, et l'honnêteté sur les controverses.
+    </p>
+  </section>
+
+  <nav class="portes" aria-label="Entrées du site">
+    <a class="porte" href="/questions">
+      <span class="porte__titre">Les questions</span>
+      <span class="porte__desc">Des réponses courtes et sourcées, une par question.</span>
+    </a>
+    <a class="porte" href="/outils">
+      <span class="porte__titre">Les outils</span>
+      <span class="porte__desc">Vrai/faux et objets interactifs pour tester ses idées reçues.</span>
+    </a>
+    <a class="porte" href="/sources">
+      <span class="porte__titre">Toutes les sources</span>
+      <span class="porte__desc">La bibliographie complète, filtrable par type et par thème.</span>
+    </a>
+  </nav>
+
+  <p class="note-construction">
+    Le site est en cours de construction : le socle documentaire est en place,
+    les premières pages arrivent.
   </p>
-
-  <p>Le site est en cours de construction. Déjà consultables&#160;:</p>
-
-  <ul>
-    <li><a href="/questions">Les questions</a> — réponses courtes et sourcées.</li>
-    <li>
-      <a href="/sources">Toutes les sources</a> — la bibliographie complète,
-      filtrable par type et par thème.
-    </li>
-  </ul>
 </Base>
+
+<style>
+  .hero {
+    margin-bottom: 2.5rem;
+  }
+  .hero__kicker {
+    margin: 0 0 1rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ember);
+  }
+  .hero__titre {
+    font-size: clamp(2.2rem, 1.5rem + 3.2vw, 3.4rem);
+    max-width: 16ch;
+  }
+
+  .portes {
+    display: grid;
+    gap: 0.9rem;
+  }
+  .porte {
+    display: grid;
+    gap: 0.2rem;
+    padding: 1.1rem 1.3rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--ember);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.18s ease;
+  }
+  .porte:hover {
+    transform: translateX(4px);
+  }
+  .porte__titre {
+    font-family: var(--serif);
+    font-size: 1.25rem;
+    font-weight: 560;
+    color: var(--ink);
+  }
+  .porte:hover .porte__titre {
+    color: var(--ember);
+  }
+  .porte__desc {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+
+  .note-construction {
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+  }
+</style>

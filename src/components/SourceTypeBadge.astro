@@ -20,11 +20,13 @@ const meta = TYPE_META[type];
     display: inline-flex;
     align-items: baseline;
     gap: 0.35em;
-    padding: 0.1em 0.55em;
-    border-radius: 999px;
-    font-size: 0.78rem;
+    padding: 0.12em 0.62em;
+    border-radius: 3px;
+    font-family: var(--sans);
+    font-size: 0.72rem;
     font-weight: 600;
-    line-height: 1.5;
+    letter-spacing: 0.01em;
+    line-height: 1.55;
     white-space: nowrap;
     border: 1px solid var(--badge-border, currentColor);
     background: var(--badge-bg, transparent);
@@ -34,44 +36,45 @@ const meta = TYPE_META[type];
   .badge__count {
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    opacity: 0.75;
+    opacity: 0.7;
   }
 
-  /* One colour per type. Hue signals the nature of the source, not a value
-     judgement: a plaidoyer is not "worse", it simply carries a stance. */
+  /* One colour per type, retuned to sit on warm parchment. Hue signals the
+     nature of the source, not a value judgement: a plaidoyer is not "worse",
+     it simply carries a stance. */
   .badge--pair {
-    --badge-bg: #e6f4ea;
-    --badge-fg: #1b5e20;
-    --badge-border: #a5d6a7;
+    --badge-bg: #e2ece0;
+    --badge-fg: #285018;
+    --badge-border: #bcd0b0;
   }
   .badge--ouvrage {
-    --badge-bg: #e0f2f1;
-    --badge-fg: #00695c;
-    --badge-border: #80cbc4;
+    --badge-bg: #dfeae7;
+    --badge-fg: #235a51;
+    --badge-border: #b3ccc5;
   }
   .badge--rapport {
-    --badge-bg: #e3f2fd;
-    --badge-fg: #0d47a1;
-    --badge-border: #90caf9;
+    --badge-bg: #e0e8f0;
+    --badge-fg: #2c4d70;
+    --badge-border: #b3c5da;
   }
   .badge--institutionnel {
-    --badge-bg: #e8eaf6;
-    --badge-fg: #283593;
-    --badge-border: #9fa8da;
+    --badge-bg: #e5e5ef;
+    --badge-fg: #3a3d70;
+    --badge-border: #bcbdd6;
   }
   .badge--analyse-primaire {
-    --badge-bg: #ede7f6;
-    --badge-fg: #4527a0;
-    --badge-border: #b39ddb;
+    --badge-bg: #e9e1f0;
+    --badge-fg: #573a7c;
+    --badge-border: #c9b9dd;
   }
   .badge--vulgarisation {
-    --badge-bg: #fff8e1;
-    --badge-fg: #b25000;
-    --badge-border: #ffe082;
+    --badge-bg: #f4e8c9;
+    --badge-fg: #815412;
+    --badge-border: #dcc389;
   }
   .badge--plaidoyer {
-    --badge-bg: #fce4ec;
-    --badge-fg: #ad1457;
-    --badge-border: #f48fb1;
+    --badge-bg: #f2ddd0;
+    --badge-fg: #9a3a1c;
+    --badge-border: #dcb5a0;
   }
 </style>

@@ -41,7 +41,7 @@ const clotureLien = cloture?.lien ? await getEntry(cloture.lien) : null;
 
 <Base titre={fr(titre)} description={fr(chapo)}>
   <article class="outil">
-    {brouillon && <p class="brouillon">Brouillon — non publié.</p>}
+    {brouillon && <p class="brouillon">Brouillon (non publié).</p>}
 
     <header>
       <ThemeTags themes={themes} link />
@@ -101,7 +101,7 @@ const clotureLien = cloture?.lien ? await getEntry(cloture.lien) : null;
     {
       cloture && (
         <aside class="cloture">
-          <p class="cloture__kicker">Pour finir — hors barème</p>
+          <p class="cloture__kicker">Pour finir · hors barème</p>
           <p class="cloture__question">{fr(cloture.question)}</p>
           <p class="cloture__amorce">{fr(cloture.amorce)}</p>
           {clotureLien && (
@@ -159,17 +159,20 @@ const clotureLien = cloture?.lien ? await getEntry(cloture.lien) : null;
 
   .quiz-score {
     position: sticky;
-    top: 0;
+    top: 0.6rem;
     z-index: 1;
     margin: 0 0 1.5rem;
-    padding: 0.6rem 0.9rem;
-    background: var(--fg);
-    color: var(--bg);
+    padding: 0.7rem 1rem;
+    background: var(--ink);
+    color: var(--paper);
     border-radius: 8px;
-    font-size: 0.9rem;
+    box-shadow: var(--shadow);
+    font-size: 0.85rem;
+    letter-spacing: 0.01em;
   }
   .quiz-score strong {
     font-variant-numeric: tabular-nums;
+    color: #f0b58c;
   }
 
   .quiz-liste {
@@ -183,21 +186,35 @@ const clotureLien = cloture?.lien ? await getEntry(cloture.lien) : null;
 
   .quiz-item {
     counter-increment: affirmation;
-    padding: 1.1rem 1.25rem;
+    position: relative;
+    padding: 1.15rem 1.3rem;
     border: 1px solid var(--rule);
     border-radius: 10px;
-    background: #fff;
+    background: var(--surface);
+    box-shadow: var(--shadow);
   }
 
   .quiz-enonce {
     margin: 0 0 0.9rem;
-    font-size: 1.05rem;
-    font-weight: 600;
+    font-family: var(--serif);
+    font-size: 1.12rem;
+    font-weight: 500;
+    line-height: 1.35;
   }
   .quiz-enonce::before {
-    content: counter(affirmation) '. ';
-    color: var(--muted);
+    content: counter(affirmation);
+    display: inline-grid;
+    place-items: center;
+    width: 1.5em;
+    height: 1.5em;
+    margin-right: 0.5em;
+    border-radius: 50%;
+    background: var(--ember-tint);
+    color: var(--ember-strong);
+    font-family: var(--sans);
+    font-size: 0.7rem;
     font-weight: 700;
+    vertical-align: 0.15em;
   }
 
   .quiz-choix {
@@ -226,14 +243,14 @@ const clotureLien = cloture?.lien ? await getEntry(cloture.lien) : null;
 
   /* Answered states, applied by the script. */
   .quiz-choix button.choix-attendu {
-    border-color: #2e7d32;
-    background: #e6f4ea;
-    color: #1b5e20;
+    border-color: var(--pine);
+    background: var(--pine-tint);
+    color: #21402f;
   }
   .quiz-choix button.choix-mauvais {
-    border-color: #c62828;
-    background: #fdecea;
-    color: #b71c1c;
+    border-color: var(--ember);
+    background: var(--ember-tint);
+    color: var(--ember-strong);
   }
 
   .quiz-reveal {
@@ -244,23 +261,25 @@ const clotureLien = cloture?.lien ? await getEntry(cloture.lien) : null;
 
   .verdict-badge {
     display: inline-block;
+    font-family: var(--sans);
     font-weight: 700;
-    font-size: 0.85rem;
-    padding: 0.15em 0.6em;
-    border-radius: 6px;
+    font-size: 0.8rem;
+    letter-spacing: 0.01em;
+    padding: 0.2em 0.65em;
+    border-radius: 4px;
     margin-bottom: 0.5rem;
   }
   .verdict--vert {
-    background: #e6f4ea;
-    color: #1b5e20;
+    background: var(--pine-tint);
+    color: #21402f;
   }
   .verdict--ambre {
-    background: #fff8e1;
-    color: #b25000;
+    background: #f4e8c9;
+    color: #815412;
   }
   .verdict--rouge {
-    background: #fdecea;
-    color: #b71c1c;
+    background: var(--ember-tint);
+    color: var(--ember-strong);
   }
 
   .quiz-explication {
@@ -279,10 +298,16 @@ const clotureLien = cloture?.lien ? await getEntry(cloture.lien) : null;
 
   .cloture {
     margin-top: 1.75rem;
-    padding: 1.6rem 1.5rem;
+    padding: 1.75rem 1.6rem;
     border-radius: 12px;
-    background: var(--accent);
+    background: var(--ember);
+    background-image: radial-gradient(
+      120% 140% at 100% 0%,
+      var(--ember-strong),
+      transparent 55%
+    );
     color: var(--accent-fg);
+    box-shadow: var(--shadow);
   }
 
   .cloture__kicker {
