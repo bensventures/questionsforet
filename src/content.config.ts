@@ -123,7 +123,7 @@ const outils = defineCollection({
     loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/outils' }),
     schema: z.object({
         ...champsCommuns,
-        format: z.enum(['quiz', 'comparateur', 'visualisation', 'carte']),
+        format: z.enum(['quiz', 'comparateur', 'visualisation', 'carte', 'simulation']),
         /** Renseigné pour les outils de format `quiz`. */
         affirmations: z.array(affirmation).default([]),
         /** Carte d'appel à l'action fermant la série, sans note. */

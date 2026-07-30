@@ -435,7 +435,7 @@
     Evaluating the effect of prescribed burning on the reduction of wildfire
     extent in Portugal
   support: Forest Ecology and Management
-  url: https://www.sciencedirect.com/science/article/pii/S0378112722002961
+  url: https://www.sciencedirect.com/science/article/abs/pii/S0378112722002961
   type: pair
   langue: en
   themes: [brulage-dirige]
@@ -742,3 +742,44 @@
     d'échantillon IFN, sans valeur d'inventaire ; le contraste pin noir / pin
     sylvestre résiste au contrôle de station mais repose sur un effectif trop
     faible pour un test concluant.
+# --- Densité et sévérité (transposition, cf. simulateur) ----------------------
+
+- id: repeto-deudero-2025
+  auteurs: >-
+    Repeto-Deudero I., Ojeda F., Gómez-González S., Miranda A.,
+    Cruz-Alonso V., Pausas J. G.
+  annee: 2025
+  titre: The legacy of pine plantations on fire severity
+  support: Journal of Applied Ecology, 62:3156–3168
+  url: https://doi.org/10.1111/1365-2664.70176
+  type: pair
+  langue: en
+  themes: [essences, post-incendie, combustible, regime-feu]
+  reserve: >-
+    Trois incendies espagnols, plantations de pin radiata, maritime et
+    sylvestre ; le pin noir a été classé par les auteurs hors de la catégorie
+    « plantation ». Le seuil d'environ 440 tiges/ha ne vaut que pour les
+    peuplements non gérés, et sa transposition à un contexte préalpin est une
+    inférence.
+
+- id: ojeda-2026
+  auteurs: >-
+    Ojeda F., Repeto-Deudero I., Pérez-Gómez Á., Gómez-González S.,
+    Pausas J. G.
+  annee: 2026
+  titre: >-
+    Beyond the forest-centric bias: rethinking extensive pine plantations in
+    Mediterranean landscapes
+  support: Trees, Forests and People, 25:101301
+  url: https://doi.org/10.1016/j.tfp.2026.101301
+  type: pair
+  langue: en
+  themes: [essences, combustible, hydrologie, post-incendie]
+  reserve: >-
+    Article de perspective à thèse assumée (critique du « biais
+    forêt-centrique »), et non étude primaire. Porte sur les reboisements du
+    XXe siècle dans l'ouest de la péninsule Ibérique, majoritairement en pin
+    maritime, installés sur des landes méditerranéennes. Le constat d'érosion
+    accrue est attribué au terrassement mécanique de plantation : il ne se
+    transpose pas aux banquettes RTM françaises du XIXe siècle, faites à la
+    main sur des versants réellement dénudés.

@@ -19,6 +19,7 @@ sources:
   - metailie-savoir-bruler
   - canopee-idees-recues
   - gilloz-2026-ifn-diois
+  - repeto-deudero-2025
 approfondit: []
 brouillon: true
 ---
@@ -81,7 +82,7 @@ ces forêts se densifient en pins plus qu'elles ne se diversifient. [[cite:gillo
 </figure>
 
 Dans le même temps, la majorité des peuplements dépassent nettement les seuils de
-densité que la littérature associe à une sévérité de feu accrue [[cite:revertegat-2025-vulnefeu]],
+densité que la littérature associe à une sévérité de feu accrue [[cite:repeto-deudero-2025]],
 sans gestion active généralisée pour les desserrer. [[cite:gilloz-2026-ifn-diois]]
 
 ## Ce qu'il faut en retenir

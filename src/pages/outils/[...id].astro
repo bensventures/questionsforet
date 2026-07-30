@@ -3,6 +3,7 @@ import { getCollection, getEntry, getEntries, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Citation from '../../components/Citation.astro';
 import ThemeTags from '../../components/ThemeTags.astro';
+import Simulateur from '../../components/outils/Simulateur.astro';
 import { frenchTypography as fr } from '../../lib/typography.mjs';
 
 export async function getStaticPaths() {
@@ -16,7 +17,8 @@ export async function getStaticPaths() {
 }
 
 const { outil } = Astro.props;
-const { titre, chapo, themes, brouillon } = outil.data;
+const { titre, chapo, themes, brouillon, format } = outil.data;
+const isSimulation = format === 'simulation';
 
 const { Content } = await render(outil);
 
@@ -39,7 +41,7 @@ const cloture = outil.data.cloture;
 const clotureLien = cloture?.lien ? await getEntry(cloture.lien) : null;
 ---
 
-<Base titre={fr(titre)} description={fr(chapo)}>
+<Base titre={fr(titre)} description={fr(chapo)} large={isSimulation}>
   <article class="outil">
     {brouillon && <p class="brouillon">Brouillon (non publié).</p>}
 
@@ -52,6 +54,8 @@ const clotureLien = cloture?.lien ? await getEntry(cloture.lien) : null;
     <div class="prose">
       <Content />
     </div>
+
+    {isSimulation && <Simulateur modelSources={biblio} />}
 
     {
       affirmations.length > 0 && (
@@ -115,7 +119,7 @@ const clotureLien = cloture?.lien ? await getEntry(cloture.lien) : null;
     }
 
     {
-      biblio.length > 0 && (
+      !isSimulation && biblio.length > 0 && (
         <section class="sources-outil" aria-labelledby="sources-titre">
           <h2 id="sources-titre">Toutes les sources de cet outil</h2>
           <ol class="sources-outil__liste">

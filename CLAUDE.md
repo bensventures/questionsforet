@@ -168,6 +168,98 @@ re-skiner, on touche aux variables, pas aux styles scoped des pages.
 - Un seul thème clair, volontairement (pas de bascule sombre) : cohérence avant
   exhaustivité, conforme au garde-fou « site sobre et rapide ».
 
+## Simulateur « Vivre avec le feu »
+
+Outil `outils` de `format: simulation` (`src/content/outils/vivre-avec-le-feu.md`).
+Brief de conception dans `research/simulation/` (avec le prototype d'origine).
+
+- Code dans `src/sim/` : logique **pure** testable (`model`, `fire`, `season`,
+  `tools`, `terrain`, `score`) séparée du rendu (`render`) et de l'orchestration
+  DOM (`index.ts` → `mount()`). Tout l'aléa passe par un **RNG à graine**
+  (`rng.ts`) : une partie est fonction de (graine, décisions), ce qui rend les
+  garde-fous pédagogiques (brief §8) vérifiables par test headless.
+- Chargé en îlot vanilla sur la seule page du simulateur (`<script>` dans
+  `src/components/outils/Simulateur.astro`), avec repli lisible sans JS.
+- Chaque levier porte ses ids de sources dans `src/sim/params.ts` (`TOOLS`) ;
+  ces ids doivent figurer dans le `sources` du frontmatter (validés par
+  `reference()`), et alimentent le panneau « sources du modèle » rendu côté
+  serveur via `<Citation>`.
+- **Phase A faite** : portage fidèle du prototype, re-skiné aux tokens, RNG à
+  graine, panneau sources.
+- **B1 fait** : densité de tiges comme état continu (`density`), croissance
+  spontanée (fermeture du paysage), statut géré/non géré avec mémoire
+  (`managedFor`), pénalité de sévérité pour les peuplements denses non gérés
+  (seuil ~440, cf. [[repeto-deudero-2025]] + gilloz), éclaircie recentrée sur la
+  densité et distincte du débroussaillement (sous-bois). Indicateur « paysage
+  fermé » + repère densité au survol. Test headless : le do-nothing ferme le
+  paysage (64→100 %) et perd, l'éclaircie le contient.
+- **B2 fait** : braises à longue portée (queue de projection qui franchit toute
+  coupure), allumage du bâti par braise dépendant seulement du durcissement
+  (zone 0 ÷5), journal distinguant les foyers allumés à distance. Test headless :
+  un périmètre débroussaillé maximal ne sauve pas le village (survie ~59 %),
+  la zone 0 fait nettement mieux (~76 %). Défendabilité des secours = B4.
+- **B3 fait** : régénération différenciée. Espèces de pin (`species` noir/alep),
+  âge des peuplements (`age`) et survie individuelle au feu de surface (l'âge
+  protège, le feu de cime tue). Après feu : les feuillus rejettent, le pin
+  d'Alep se ressème (et envahit un peu), le **pin noir ne revient pas** (bascule
+  en garrigue/friche). Test headless : le couvert de pin s'effondre en do-nothing
+  (42→7), pin noir brûlé ne revient jamais en pin.
+- **B4 fait** : défendabilité des secours (Pimont 2019). Pente normalisée 0–1 ;
+  `defendable(grid, bâti)` = pente assez douce + apron débroussaillé (`sous` bas)
+  d'une profondeur suffisante (plus profond si pente moyenne, impossible si trop
+  raide). Le front est bloqué si défendable, mais **les braises passent quand
+  même** (seule la zone 0 les arrête). Statut « défendable » au survol, journal
+  distinguant les foyers pris par le front. Test headless : apron seul 62 %,
+  zone 0 seule 72 %, **les deux 82 %** — aucun levier seul ne suffit (§8.4).
+- **B5 fait** : paradoxe de la suppression (Kreider 2024). Politique permanente
+  « éteindre les départs » (bascule, −3 PA/an, OFF au départ) qui étouffe les
+  départs les années calmes mais échoue en sécheresse/vent extrêmes ; un feu
+  supprimé ne fait pas le travail d'éclaircie (les vieux peuplements qui
+  survivent à un feu de surface sont éclaircis + mémoire « géré »), donc le
+  paysage reste plus fermé. Horizon porté à 45 étés (mode court 12, choisi à
+  l'intro). Test headless (16 graines, 45 ans, sans gestion) : suppression =
+  paysage plus fermé en moyenne (79 % vs 72 %, robuste) et pire feu de cime
+  extrême en agrégat (178 vs 165 cellules) ; c'est une tendance, pas une
+  garantie par partie.
+- **B6 fait** (dernière étape) : score refondu en **quatre jauges non
+  simultanément maximisables** (`src/sim/score.ts`, `bilan()`) — bâti & vies,
+  résilience du paysage (récompense mosaïque/feuillus, pénalise la conversion du
+  pin noir en friche), biodiversité & pastoral, économie de moyens (coût cumulé
+  `spentCum`) ; plus de note unique. **Grand feu garanti** à date stochastique
+  (`bigFireYear`, moitié arrière de la partie) : sécheresse/vent extrêmes,
+  départs forcés dans les peuplements les plus fermés, suppression impuissante.
+  Placement du village revu (terrain doux, défendable en principe). Tests
+  headless : grand feu 16/16, jauges départagent mosaïque vs friche, bâti répond
+  au jeu (défense ciblée ~40 vs do-nothing ~5), aucune stratégie ne maximise les
+  quatre.
+
+**Phase B terminée.** Un playtest a donné lieu à un **amendement au brief**
+(`research/simulation/BRIEF_SIMULATEUR.md`, §amendement) : l'échec était illisible,
+la charge cognitive trop forte. L'amendement demande, dans l'ordre : (1-3) rendre
+l'échec lisible sans toucher au modèle, puis (4+) un niveau « politiques publiques »
+par secteurs, doctrine de lutte à crans, deux monnaies (budget + acceptabilité),
+partenaires finis. **Consigne explicite du §9 : tester 1-3 avant de faire 4+.**
+
+- **Amendement §2 fait (échec lisible, ne touche pas la dynamique du modèle)** :
+  - **2.1** écran de fin sans verdict unique : quatre jauges, chacune avec un
+    commentaire qualitatif (`score.ts`, `qual*()`). « Brûler n'est pas perdre »
+    dit explicitement.
+  - **2.2 compte rendu après feu** (`src/sim/report.ts`, `afterFireReport`) :
+    chaque ligne attribue un résultat à une décision (zone 0 qui tient, bâti non
+    durci allumé par braise, front non défendable par pente/profondeur, versant
+    dense non géré rebrûlé, pin noir qui ne repart pas, coupure pâturée éteinte).
+    Compteurs d'attribution ajoutés à `FireRun` dans `fire.ts`.
+  - **2.3 jauges de variables lentes** : panneau « Tableau de bord » (densité
+    moyenne avec repère de seuil, paysage fermé, sous gestion, bâti durci,
+    sécheresse), en tendance (barre + repère + flèche année sur année).
+- **À FAIRE ensuite (amendement §3-8), seulement après playtest de 2.x** :
+  secteurs + politiques, doctrine de lutte à crans, deux monnaies, partenaires
+  finis, calibration (cibles §8 : >80 % bâti, 30-60 % brûlé vécu comme normal,
+  quatre mauvaises stratégies → quatre fins distinctes). Re-tester les 7 garde-fous.
+
+Tests headless dans le scratchpad de session ; à pérenniser dans
+`src/sim/__tests__/` avec un lanceur (vitest) quand on voudra.
+
 DISTILLED_AESTHETICS_PROMPT = """
 <frontend_aesthetics>
 You tend to converge toward generic, "on distribution" outputs. In frontend design, this creates what users call the "AI slop" aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight. Focus on:
