@@ -15,11 +15,13 @@ themes:
 sources:
   - fady-perret-2020-pin-noir
   - revertegat-2025-vulnefeu
+  - repeto-deudero-2025
+  - ecorce-pin-noir-2025
+  - cambium-brulage-2023
   - challot-1987
   - metailie-savoir-bruler
   - canopee-idees-recues
   - gilloz-2026-ifn-diois
-  - repeto-deudero-2025
 approfondit: []
 brouillon: true
 ---
@@ -44,13 +46,28 @@ s'accumule. [[cite:revertegat-2025-vulnefeu]]
 
 ## Le vrai problème : il ne se régénère pas après le feu
 
-C'est ici que le pin noir se distingue, et pas en sa faveur. Contrairement au pin
-d'Alep, il n'a pas de cônes qui s'ouvrent sous l'effet de la chaleur pour
-ressemer le sol après un incendie. Ses graines sont peu nombreuses, sa
-germination après feu très variable, et sa régénération faible. [[cite:fady-perret-2020-pin-noir]]
-Après un feu de cime sévère, une pinède de pin noir ne se répare donc pas
-d'elle-même : là où le peuplement disparaît, rien ne garantit qu'un nouveau
-s'installe.
+Face au feu, le pin noir se défend mieux qu'on ne le dit souvent. Son écorce
+épaisse protège efficacement le cambium, mieux d'ailleurs que celle du pin
+maritime ou du pin pignon, et un sujet adulte survit ordinairement à un feu de
+surface. [[cite:cambium-brulage-2023]] Il peut même refaire des aiguilles après
+que la chaleur a roussi son houppier, tant que les bourgeons ont été épargnés.
+Ce n'est donc pas une essence fragile : c'est le feu de cime qui la tue, celui
+qui détruit les bourgeons eux-mêmes, et là aucune épaisseur d'écorce n'y change
+rien. [[cite:ecorce-pin-noir-2025]]
+
+C'est à ce moment que le pin noir se distingue, et pas en sa faveur. Un chêne
+dont le houppier a brûlé rejette du pied ; un pin n'a pas cette ressource, faute
+de bourgeons dormants sous son écorce. Il ne dispose que du houppier qu'il porte,
+et il n'en a qu'un. Contrairement au pin d'Alep, il n'a pas non plus de cônes qui
+s'ouvrent sous l'effet de la chaleur pour ressemer le sol : ses graines sont peu
+nombreuses, sa germination après feu très variable, sa régénération
+faible. [[cite:fady-perret-2020-pin-noir]] Là où un feu de cime a emporté le
+peuplement, rien ne garantit donc qu'un nouveau s'installe.
+
+Il y a même une ombre supplémentaire : les blessures de feu prédisposent les
+arbres survivants aux ravageurs et aux champignons, auxquels le pin noir est
+particulièrement sensible. Passer l'incendie ne garantit pas de passer les trois
+années suivantes. [[cite:ecorce-pin-noir-2025]]
 
 ## Densité et diversification : ce que montrent les données du Diois
 

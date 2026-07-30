@@ -783,3 +783,27 @@
     accrue est attribué au terrassement mécanique de plantation : il ne se
     transpose pas aux banquettes RTM françaises du XIXe siècle, faites à la
     main sur des versants réellement dénudés.
+
+- id: ecorce-pin-noir-2025
+  auteurs: Collectif
+  annee: 2025
+  titre: >-
+    Morpho-physiological traits and flammability of bark in a post-fire black
+    pine population
+  support: Fire, 8(9):342
+  url: https://doi.org/10.3390/fire8090342
+  type: pair
+  langue: en
+  themes: [essences, post-incendie]
+
+- id: cambium-brulage-2023
+  auteurs: Collectif
+  annee: 2023
+  titre: >-
+    Empirical modelling of stem cambium heating caused by prescribed burning in
+    Mediterranean pine forest
+  support: Fire, 6(11):430
+  url: https://doi.org/10.3390/fire6110430
+  type: pair
+  langue: en
+  themes: [essences, brulage-dirige]
