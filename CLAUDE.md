@@ -252,10 +252,57 @@ partenaires finis. **Consigne explicite du §9 : tester 1-3 avant de faire 4+.**
   - **2.3 jauges de variables lentes** : panneau « Tableau de bord » (densité
     moyenne avec repère de seuil, paysage fermé, sous gestion, bâti durci,
     sécheresse), en tendance (barre + repère + flèche année sur année).
-- **À FAIRE ensuite (amendement §3-8), seulement après playtest de 2.x** :
-  secteurs + politiques, doctrine de lutte à crans, deux monnaies, partenaires
-  finis, calibration (cibles §8 : >80 % bâti, 30-60 % brûlé vécu comme normal,
-  quatre mauvaises stratégies → quatre fins distinctes). Re-tester les 7 garde-fous.
+- **Amendement §3.2 fait (découpage en secteurs)** : `src/sim/sectors.ts`, pur
+  et testable. Couronnes de hameaux, versants d'adret/ubac, fonds de vallon,
+  cœurs de massif ; `Cell.sector` + `GameState.sectors`, calculé une fois dans
+  `terrain.ts` et **figé** pour la partie (c'est un découpage administratif).
+  Deux réglages qui portent du sens : **plafond de 120 parcelles** par secteur
+  (le relief seul donnait des secteurs de 55 % de la carte, une politique y
+  aurait traité tout le massif d'un clic, contre le garde-fou §7) avec
+  bissection au-delà ; et **3 couronnes au maximum**, le reste du bâti diffus
+  tombant dans le versant qui l'entoure, ce qui est exactement ce que le mitage
+  fait à une commune. Rendu : limites toujours visibles en filigrane, bouton
+  « Secteurs » (lavis par nature + noms), secteur survolé souligné. Test
+  headless (60 graines) : 8 à 14 secteurs, 12 à 125 parcelles, tous d'un seul
+  tenant, noms uniques.
+- **Amendement §3.1, §3.3, §3.4, §4, §6 faits (politiques)** : `src/sim/policies.ts`.
+  Sept politiques désignées **sur un secteur**, jamais globales. **Deux
+  monnaies** : PA et acceptabilité (`state.accept`), avec régénération lente,
+  ponction des politiques contraignantes et **fenêtre post-incendie** plafonnée
+  (`windowCeiling`, sans quoi la jauge sature et la seconde monnaie cesse d'en
+  être une). **Inertie d'adoption** : `ramp` sur 2 à 5 tours. **Coût
+  proportionnel au périmètre** (`perimeterScale`) : sans cela le joueur désigne
+  toujours le plus grand secteur, et « traiter tout le massif » redevient
+  abordable. Les leviers ponctuels (§6) tombent à quatre : durcir, débroussailler,
+  planter mosaïque, planter pin.
+- **Amendement §5 fait (doctrine de lutte à crans)** : `DOCTRINE` dans
+  `params.ts`, remplace la bascule booléenne. Cran 1 extinction systématique
+  (3 PA, 0 acceptabilité), cran 2 sauf conditions favorables, cran 3 feu géré
+  (1 PA, 3 acceptabilité/an). Changer de cran coûte. Les départs en conditions
+  maîtrisables et loin du bâti sont laissés courir selon le cran. **Aucun
+  avertissement sur la conséquence différée du cran 1** : elle se lit dans les
+  jauges lentes ; seul le compte rendu du grand feu l'explicite, rétrospectivement.
+  Test headless (20 graines) : à l'année 20 le cran 1 paraît au moins aussi bon,
+  à la fin il laisse le paysage plus fermé et le grand feu passe davantage en cime.
+- **Deux corrections de fond trouvées par les tests**, à ne pas réintroduire :
+  1. `burnedPct` comptait `burnedCum` (chaque passage du feu), donc l'écran de
+     fin annonçait « 331 % de la carte parcourue ». Il compte désormais
+     `burnedEver`, les parcelles brûlées au moins une fois.
+  2. La jauge de résilience notait la parcelle sur son type courant, si bien
+     qu'une pinède détruite par un feu de cime **améliorait** le score (garrigue
+     45 > pin 35). Une perte de couvert forestier (`wasT` boisé, type actuel non
+     boisé) est maintenant pénalisée à 15.
+- **À FAIRE (amendement §3.5 puis §8)** : partenaires finis (éleveurs, équipe de
+  brûlage, en nombre limité, se perdant si on ne les sollicite pas), puis
+  calibration. **Deux problèmes de calibration ouverts, mesurés** :
+  - le bâti s'effondre quelle que soit la stratégie sur 45 étés (5 % sans
+    gestion, 25 à 67 % en jouant), très loin de la cible §8 de > 80 % ; brûlé
+    ~75 % contre 30-60 % attendus ;
+  - **« tout débroussailler » (OLD sur trois couronnes) est actuellement la
+    meilleure stratégie sur l'axe bâti (67 %)**, ce qui heurte de front le
+    garde-fou « pas de victoire par périmètre autour du village » : traiter
+    l'apron rend le bâti défendable et les braises ne suffisent pas à le punir.
+    À reprendre en priorité à la calibration.
 
 Tests headless dans le scratchpad de session ; à pérenniser dans
 `src/sim/__tests__/` avec un lanceur (vitest) quand on voudra.
