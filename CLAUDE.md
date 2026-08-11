@@ -170,142 +170,92 @@ re-skiner, on touche aux variables, pas aux styles scoped des pages.
 
 ## Simulateur « Vivre avec le feu »
 
-Outil `outils` de `format: simulation` (`src/content/outils/vivre-avec-le-feu.md`).
-Brief de conception dans `research/simulation/` (avec le prototype d'origine).
+Outil `outils` de `format: simulation`. **La v2 est gelée** (`src/sim/FROZEN.md`)
+et la page reste en `brouillon: true`. Le modèle v3 est spécifié avant
+implémentation dans `research/simulation/v3/BRIEF_SIMULATEUR_V3.md`, patch
+compris, et ce document remplace le brief initial et son amendement, devenus
+historiques.
 
-- Code dans `src/sim/` : logique **pure** testable (`model`, `fire`, `season`,
-  `tools`, `terrain`, `score`) séparée du rendu (`render`) et de l'orchestration
-  DOM (`index.ts` → `mount()`). Tout l'aléa passe par un **RNG à graine**
-  (`rng.ts`) : une partie est fonction de (graine, décisions), ce qui rend les
-  garde-fous pédagogiques (brief §8) vérifiables par test headless.
-- Chargé en îlot vanilla sur la seule page du simulateur (`<script>` dans
-  `src/components/outils/Simulateur.astro`), avec repli lisible sans JS.
-- Chaque levier porte ses ids de sources dans `src/sim/params.ts` (`TOOLS`) ;
-  ces ids doivent figurer dans le `sources` du frontmatter (validés par
-  `reference()`), et alimentent le panneau « sources du modèle » rendu côté
-  serveur via `<Citation>`.
-- **Phase A faite** : portage fidèle du prototype, re-skiné aux tokens, RNG à
-  graine, panneau sources.
-- **B1 fait** : densité de tiges comme état continu (`density`), croissance
-  spontanée (fermeture du paysage), statut géré/non géré avec mémoire
-  (`managedFor`), pénalité de sévérité pour les peuplements denses non gérés
-  (seuil ~440, cf. [[repeto-deudero-2025]] + gilloz), éclaircie recentrée sur la
-  densité et distincte du débroussaillement (sous-bois). Indicateur « paysage
-  fermé » + repère densité au survol. Test headless : le do-nothing ferme le
-  paysage (64→100 %) et perd, l'éclaircie le contient.
-- **B2 fait** : braises à longue portée (queue de projection qui franchit toute
-  coupure), allumage du bâti par braise dépendant seulement du durcissement
-  (zone 0 ÷5), journal distinguant les foyers allumés à distance. Test headless :
-  un périmètre débroussaillé maximal ne sauve pas le village (survie ~59 %),
-  la zone 0 fait nettement mieux (~76 %). Défendabilité des secours = B4.
-- **B3 fait** : régénération différenciée. Espèces de pin (`species` noir/alep),
-  âge des peuplements (`age`) et survie individuelle au feu de surface (l'âge
-  protège, le feu de cime tue). Après feu : les feuillus rejettent, le pin
-  d'Alep se ressème (et envahit un peu), le **pin noir ne revient pas** (bascule
-  en garrigue/friche). Test headless : le couvert de pin s'effondre en do-nothing
-  (42→7), pin noir brûlé ne revient jamais en pin.
-- **B4 fait** : défendabilité des secours (Pimont 2019). Pente normalisée 0–1 ;
-  `defendable(grid, bâti)` = pente assez douce + apron débroussaillé (`sous` bas)
-  d'une profondeur suffisante (plus profond si pente moyenne, impossible si trop
-  raide). Le front est bloqué si défendable, mais **les braises passent quand
-  même** (seule la zone 0 les arrête). Statut « défendable » au survol, journal
-  distinguant les foyers pris par le front. Test headless : apron seul 62 %,
-  zone 0 seule 72 %, **les deux 82 %** — aucun levier seul ne suffit (§8.4).
-- **B5 fait** : paradoxe de la suppression (Kreider 2024). Politique permanente
-  « éteindre les départs » (bascule, −3 PA/an, OFF au départ) qui étouffe les
-  départs les années calmes mais échoue en sécheresse/vent extrêmes ; un feu
-  supprimé ne fait pas le travail d'éclaircie (les vieux peuplements qui
-  survivent à un feu de surface sont éclaircis + mémoire « géré »), donc le
-  paysage reste plus fermé. Horizon porté à 45 étés (mode court 12, choisi à
-  l'intro). Test headless (16 graines, 45 ans, sans gestion) : suppression =
-  paysage plus fermé en moyenne (79 % vs 72 %, robuste) et pire feu de cime
-  extrême en agrégat (178 vs 165 cellules) ; c'est une tendance, pas une
-  garantie par partie.
-- **B6 fait** (dernière étape) : score refondu en **quatre jauges non
-  simultanément maximisables** (`src/sim/score.ts`, `bilan()`) — bâti & vies,
-  résilience du paysage (récompense mosaïque/feuillus, pénalise la conversion du
-  pin noir en friche), biodiversité & pastoral, économie de moyens (coût cumulé
-  `spentCum`) ; plus de note unique. **Grand feu garanti** à date stochastique
-  (`bigFireYear`, moitié arrière de la partie) : sécheresse/vent extrêmes,
-  départs forcés dans les peuplements les plus fermés, suppression impuissante.
-  Placement du village revu (terrain doux, défendable en principe). Tests
-  headless : grand feu 16/16, jauges départagent mosaïque vs friche, bâti répond
-  au jeu (défense ciblée ~40 vs do-nothing ~5), aucune stratégie ne maximise les
-  quatre.
+Pourquoi la reprise : en v2, état de la végétation, propagation, score et rendu
+vivaient dans le même bloc. Aucune variable ne pouvait être raisonnée isolément
+et la calibration se faisait à l'aveugle. Trois règles priment désormais sur
+toute fonctionnalité : aucun état sans processus, aucun levier sans chaîne
+causale visible, aucune variable de résultat sans expression visuelle.
 
-**Phase B terminée.** Un playtest a donné lieu à un **amendement au brief**
-(`research/simulation/BRIEF_SIMULATEUR.md`, §amendement) : l'échec était illisible,
-la charge cognitive trop forte. L'amendement demande, dans l'ordre : (1-3) rendre
-l'échec lisible sans toucher au modèle, puis (4+) un niveau « politiques publiques »
-par secteurs, doctrine de lutte à crans, deux monnaies (budget + acceptabilité),
-partenaires finis. **Consigne explicite du §9 : tester 1-3 avant de faire 4+.**
+**Architecture en trois couches**, la séparation étant vérifiable par le fait
+que le noyau tourne sous Node sans navigateur :
 
-- **Amendement §2 fait (échec lisible, ne touche pas la dynamique du modèle)** :
-  - **2.1** écran de fin sans verdict unique : quatre jauges, chacune avec un
-    commentaire qualitatif (`score.ts`, `qual*()`). « Brûler n'est pas perdre »
-    dit explicitement.
-  - **2.2 compte rendu après feu** (`src/sim/report.ts`, `afterFireReport`) :
-    chaque ligne attribue un résultat à une décision (zone 0 qui tient, bâti non
-    durci allumé par braise, front non défendable par pente/profondeur, versant
-    dense non géré rebrûlé, pin noir qui ne repart pas, coupure pâturée éteinte).
-    Compteurs d'attribution ajoutés à `FireRun` dans `fire.ts`.
-  - **2.3 jauges de variables lentes** : panneau « Tableau de bord » (densité
-    moyenne avec repère de seuil, paysage fermé, sous gestion, bâti durci,
-    sécheresse), en tendance (barre + repère + flèche année sur année).
-- **Amendement §3.2 fait (découpage en secteurs)** : `src/sim/sectors.ts`, pur
-  et testable. Couronnes de hameaux, versants d'adret/ubac, fonds de vallon,
-  cœurs de massif ; `Cell.sector` + `GameState.sectors`, calculé une fois dans
-  `terrain.ts` et **figé** pour la partie (c'est un découpage administratif).
-  Deux réglages qui portent du sens : **plafond de 120 parcelles** par secteur
-  (le relief seul donnait des secteurs de 55 % de la carte, une politique y
-  aurait traité tout le massif d'un clic, contre le garde-fou §7) avec
-  bissection au-delà ; et **3 couronnes au maximum**, le reste du bâti diffus
-  tombant dans le versant qui l'entoure, ce qui est exactement ce que le mitage
-  fait à une commune. Rendu : limites toujours visibles en filigrane, bouton
-  « Secteurs » (lavis par nature + noms), secteur survolé souligné. Test
-  headless (60 graines) : 8 à 14 secteurs, 12 à 125 parcelles, tous d'un seul
-  tenant, noms uniques.
-- **Amendement §3.1, §3.3, §3.4, §4, §6 faits (politiques)** : `src/sim/policies.ts`.
-  Sept politiques désignées **sur un secteur**, jamais globales. **Deux
-  monnaies** : PA et acceptabilité (`state.accept`), avec régénération lente,
-  ponction des politiques contraignantes et **fenêtre post-incendie** plafonnée
-  (`windowCeiling`, sans quoi la jauge sature et la seconde monnaie cesse d'en
-  être une). **Inertie d'adoption** : `ramp` sur 2 à 5 tours. **Coût
-  proportionnel au périmètre** (`perimeterScale`) : sans cela le joueur désigne
-  toujours le plus grand secteur, et « traiter tout le massif » redevient
-  abordable. Les leviers ponctuels (§6) tombent à quatre : durcir, débroussailler,
-  planter mosaïque, planter pin.
-- **Amendement §5 fait (doctrine de lutte à crans)** : `DOCTRINE` dans
-  `params.ts`, remplace la bascule booléenne. Cran 1 extinction systématique
-  (3 PA, 0 acceptabilité), cran 2 sauf conditions favorables, cran 3 feu géré
-  (1 PA, 3 acceptabilité/an). Changer de cran coûte. Les départs en conditions
-  maîtrisables et loin du bâti sont laissés courir selon le cran. **Aucun
-  avertissement sur la conséquence différée du cran 1** : elle se lit dans les
-  jauges lentes ; seul le compte rendu du grand feu l'explicite, rétrospectivement.
-  Test headless (20 graines) : à l'année 20 le cran 1 paraît au moins aussi bon,
-  à la fin il laisse le paysage plus fermé et le grand feu passe davantage en cime.
-- **Deux corrections de fond trouvées par les tests**, à ne pas réintroduire :
-  1. `burnedPct` comptait `burnedCum` (chaque passage du feu), donc l'écran de
-     fin annonçait « 331 % de la carte parcourue ». Il compte désormais
-     `burnedEver`, les parcelles brûlées au moins une fois.
-  2. La jauge de résilience notait la parcelle sur son type courant, si bien
-     qu'une pinède détruite par un feu de cime **améliorait** le score (garrigue
-     45 > pin 35). Une perte de couvert forestier (`wasT` boisé, type actuel non
-     boisé) est maintenant pénalisée à 15.
-- **À FAIRE (amendement §3.5 puis §8)** : partenaires finis (éleveurs, équipe de
-  brûlage, en nombre limité, se perdant si on ne les sollicite pas), puis
-  calibration. **Deux problèmes de calibration ouverts, mesurés** :
-  - le bâti s'effondre quelle que soit la stratégie sur 45 étés (5 % sans
-    gestion, 25 à 67 % en jouant), très loin de la cible §8 de > 80 % ; brûlé
-    ~75 % contre 30-60 % attendus ;
-  - **« tout débroussailler » (OLD sur trois couronnes) est actuellement la
-    meilleure stratégie sur l'axe bâti (67 %)**, ce qui heurte de front le
-    garde-fou « pas de victoire par périmètre autour du village » : traiter
-    l'apron rend le bâti défendable et les braises ne suffisent pas à le punir.
-    À reprendre en priorité à la calibration.
+- `src/model/` — noyau pur, `avancer(état, décisions) → état`, déterministe à
+  graine fixée. Aucune référence au rendu. Le feu calcule et renvoie la trace
+  des braises ; il n'anime pas.
+- `src/harness/` — exécution sans interface, cinq stratégies scriptées,
+  assertions du §12 et du patch 3. À construire **avant** tout réglage.
+- interface — en dernier, une fois la calibration passée (§14). Construire
+  l'interface avant reproduirait exactement la situation de la v2.
 
-Tests headless dans le scratchpad de session ; à pérenniser dans
-`src/sim/__tests__/` avec un lanceur (vitest) quand on voudra.
+**Écarts au brief assumés**, à ne pas défaire sans raison :
+
+- `friche` est un type à part entière, avec une vitesse de propagation de 1,8
+  contre 0,75 pour la chênaie (assertion 4 du patch 3) ;
+- une cellule vaut **50 m**, pas 25. À 25 m, être défendable imposait de traiter
+  deux anneaux complets par maison, ce que le plafond d'entretien rendait
+  inatteignable : mesuré, 3 % du bâti seulement était défendable et toute la
+  mécanique du patch 1 restait lettre morte. Conséquence inscrite par
+  l'amendement 2 B.2 : **ni la zone 0 ni la plage 5–20 m ne sont représentables
+  dans la grille**, ce sont des attributs de construction (`durcissement`,
+  `profondeurTraitee`). Ne pas tenter de les y remettre ;
+- une construction n'est confrontée au front qu'une fois par incendie. Sans
+  cela, chaque voisine en feu la testait à chaque pas de temps et le front
+  écrasait mécaniquement les braises.
+
+**Trois bugs trouvés par le harnais**, qui justifient à eux seuls son
+antériorité : la sévérité n'était pas normalisée (toutes les parcelles
+finissaient en houppier consommé, et les trois issues du §8.1 redevenaient
+deux) ; le « % brûlé » comptait les passages et non les parcelles distinctes ;
+l'arbitrage d'abandon budgétaire ne pouvait couper que le contrôle des OLD,
+jamais l'éclaircie déficitaire, si bien que la conformité s'effondrait à 6 %.
+
+**Amendement 2 appliqué intégralement.** La surface brûlée n'est plus une cible
+mais une observation avec garde-fou 20–80 %, et n'est **jamais** scorée : en
+poser une borne haute revenait à faire de la minimisation du feu un objectif,
+c'est-à-dire le réflexe que le jeu doit défaire. La cible de densité porte sur
+la **fraction stratégique** (couronnes et secteurs sous contrat), pas sur le
+massif. Le plafond d'entretien ne vise que le traitement forestier : les
+cinquante mètres autour des maisons relèvent de l'obligation légale, le
+propriétaire exécute et paie, le joueur ne finance que le **contrôle**, dont le
+taux de conformité plafonne sous 100 % et lui échappe. L'assertion 1 ne porte
+que sur les constructions conformes.
+
+**Calibration : les douze critères du §12 sont tenus** (50 parties × 40 tours,
+`src/harness/calibrer.ts`). Joueur compétent : 85 % du bâti, 60 % de la fraction
+stratégique sous le seuil, 61 % de surface parcourue (observation), 4,5
+renoncements par partie. Les quatre mauvaises stratégies finissent différemment
+et la compétente est battue sur quatre axes.
+
+**Stratégie de diagnostic à conserver** : `durcissementSeul` dans
+`src/harness/strategies.ts`. Elle n'est pas l'une des cinq du §12, elle teste la
+thèse centrale du brief — le durcissement est-il vraiment le meilleur
+investissement ? Verdict : 85 % du bâti pour 163 dépensés, contre 54 % au
+périmètre seul. La thèse tient dans l'implémentation, et le levier reste
+médiocre sur tous les axes de paysage (21 % de fraction stratégique, 0 % de
+mosaïque), donc le dilemme n'est pas résolu par lui.
+
+**Trois défauts de modèle trouvés par ce test**, à ne pas réintroduire :
+
+1. Les secours étaient un **substitut** et non une couche supplémentaire :
+   l'échec d'une équipe détruisait une maison qu'un durcissement seul aurait
+   sauvée. Être défendable rendait donc plus exposé qu'être durci et ignoré du
+   front, et la stratégie qui finançait le contrôle des OLD y perdait du bâti.
+   Un échec des secours retombe désormais sur l'état propre de la construction.
+2. L'éclaircie ne portait pas sur les couronnes, alors que l'amendement 2 range
+   les couronnes dans la fraction stratégique dont on demande de tenir la
+   densité : on exigeait une cible sans donner de levier.
+3. L'arbitrage d'abandon budgétaire ne pouvait couper que le contrôle des OLD,
+   jamais l'éclaircie déficitaire, si bien que la conformité s'effondrait à 6 %.
+
+**Ce qu'on ne fait pas** : relever le plafond de conformité (0,78) pour faire
+passer un test. Ce paramètre porte un fait de terrain documenté — le
+non-respect des OLD est massif — et ne se règle pas pour convenir à une cible.
 
 DISTILLED_AESTHETICS_PROMPT = """
 <frontend_aesthetics>
