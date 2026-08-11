@@ -22,7 +22,8 @@ sources:
   - metailie-savoir-bruler
   - canopee-idees-recues
   - gilloz-2026-ifn-diois
-approfondit: []
+approfondit:
+  - vivre-avec-le-feu
 brouillon: true
 ---
 

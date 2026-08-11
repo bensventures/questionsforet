@@ -1,0 +1,128 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ThemeTags from '../../components/ThemeTags.astro';
+import { frenchTypography as fr } from '../../lib/typography.mjs';
+import { tempsDeLecture } from '../../lib/lecture';
+
+const dossiers = (
+  await getCollection('dossiers', ({ data }) =>
+    import.meta.env.PROD ? !data.brouillon : true,
+  )
+).sort((a, b) => b.data.publie.valueOf() - a.data.publie.valueOf());
+---
+
+<Base
+  titre="Dossiers"
+  description="Des synthèses longues sur la forêt et le feu de végétation, structurées en parties et adossées à leurs sources."
+>
+  <h1>Dossiers</h1>
+  <p class="lede">
+    Des synthèses de fond, plus longues que les questions et structurées en
+    parties. On y prend le temps des nuances et des controverses, sans jamais
+    avancer un chiffre sans sa source.
+  </p>
+
+  {
+    dossiers.length === 0 ? (
+      <p>Aucun dossier publié pour le moment.</p>
+    ) : (
+      <ul class="liste-dossiers" role="list">
+        {dossiers.map((d) => (
+          <li>
+            <a class="carte" href={`/dossiers/${d.id}`}>
+              <h2>
+                {fr(d.data.titre)}
+                {d.data.brouillon && <span class="tag-brouillon">brouillon</span>}
+              </h2>
+              <p class="carte__meta">
+                <span>≈&#160;{tempsDeLecture(d.body)}&#160;min de lecture</span>
+                {d.data.territoire && (
+                  <>
+                    <span aria-hidden="true"> · </span>
+                    <span>{fr(d.data.territoire)}</span>
+                  </>
+                )}
+              </p>
+              <p class="carte__chapo">{fr(d.data.chapo)}</p>
+            </a>
+            <ThemeTags themes={d.data.themes} />
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</Base>
+
+<style>
+  .liste-dossiers {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  .liste-dossiers > li {
+    display: grid;
+    gap: 0.7rem;
+    padding: 1.4rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    /* Les dossiers portent le filet pin : la forêt plutôt que la braise,
+       pour les distinguer des questions au premier coup d'œil. */
+    border-left: 4px solid var(--pine);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    transition: transform 0.18s ease, border-color 0.18s ease;
+  }
+  .liste-dossiers > li:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--pine) 45%, var(--rule));
+    border-left-color: var(--pine);
+  }
+
+  .carte {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .carte h2 {
+    font-size: 1.45rem;
+    margin: 0 0 0.35rem;
+    color: var(--ink);
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .carte:hover h2 {
+    color: var(--ember);
+  }
+
+  .carte__meta {
+    margin: 0 0 0.5rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+  }
+
+  .carte__chapo {
+    margin: 0;
+    color: var(--ink-soft);
+  }
+
+  .tag-brouillon {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--warn-fg);
+    background: var(--warn-bg);
+    border: 1px dashed var(--warn-border);
+    border-radius: 4px;
+    padding: 0.05em 0.4em;
+  }
+</style>

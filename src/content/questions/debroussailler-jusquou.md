@@ -22,7 +22,8 @@ sources:
   - csfs-grasslands
   - canopee-debroussailler
   - revertegat-2025-vulnefeu
-approfondit: []
+approfondit:
+  - vivre-avec-le-feu
 brouillon: true
 ---
 

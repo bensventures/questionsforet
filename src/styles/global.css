@@ -240,6 +240,16 @@ a:hover {
   font-size: 0.88rem;
 }
 
+/* --- Tableaux larges (plugin rehype-table-wrap) ------------------------ */
+
+/* Seul le tableau défile, jamais la page. */
+.table-wrap {
+  overflow-x: auto;
+}
+.table-wrap:focus-visible {
+  outline-offset: 4px;
+}
+
 /* --- Marqueur de citation inline (plugin remark-citations) ------------- */
 
 .cite-ref {

@@ -1,0 +1,367 @@
+---
+import { getCollection, getEntries, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Citation from '../../components/Citation.astro';
+import ThemeTags from '../../components/ThemeTags.astro';
+import { frenchTypography as fr } from '../../lib/typography.mjs';
+import { tempsDeLecture } from '../../lib/lecture';
+
+export async function getStaticPaths() {
+  // Drafts are visible while developing, hidden from the production build.
+  const dossiers = await getCollection('dossiers', ({ data }) =>
+    import.meta.env.PROD ? !data.brouillon : true,
+  );
+  return dossiers.map((dossier) => ({
+    params: { id: dossier.id },
+    props: { dossier },
+  }));
+}
+
+const { dossier } = Astro.props;
+const { titre, chapo, themes, publie, modifie, brouillon, avertissement, territoire } =
+  dossier.data;
+
+const { Content, headings } = await render(dossier);
+const sources = await getEntries(dossier.data.sources);
+
+// Sommaire: top-level parts only. A 6000-word dossier with every sub-heading
+// listed would be a wall of links, which is the opposite of a summary.
+const parties = headings.filter((h) => h.depth === 2);
+
+// Reverse link: the questions that declare this dossier in `approfondit`.
+// Building it here keeps the relation declared in one place only (the
+// question's frontmatter), so the two can never contradict each other.
+const questionsLiees = (
+  await getCollection('questions', ({ data }) =>
+    import.meta.env.PROD ? !data.brouillon : true,
+  )
+).filter((q) => q.data.approfondit.some((ref) => ref.id === dossier.id));
+
+const dateFmt = new Intl.DateTimeFormat('fr-FR', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<Base titre={fr(titre)} description={fr(chapo)}>
+  <article class="dossier">
+    {brouillon && <p class="brouillon">Brouillon (non publié).</p>}
+
+    <header class="dossier__entete">
+      <ThemeTags themes={themes} link />
+      <h1>{fr(titre)}</h1>
+      <p class="lede">{fr(chapo)}</p>
+      <p class="dossier__meta">
+        <span class="dossier__kicker">Dossier</span>
+        <span>≈&#160;{tempsDeLecture(dossier.body)}&#160;min de lecture</span>
+        {territoire && <span>{fr(territoire)}</span>}
+      </p>
+    </header>
+
+    {
+      avertissement && (
+        <aside class="avertissement" aria-label="Avertissement">
+          <p>{fr(avertissement)}</p>
+        </aside>
+      )
+    }
+
+    {
+      parties.length > 1 && (
+        <nav class="sommaire" aria-labelledby="sommaire-titre">
+          <h2 id="sommaire-titre">Au sommaire</h2>
+          <ol>
+            {parties.map((p) => (
+              <li>
+                <a href={`#${p.slug}`}>{p.text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    {
+      questionsLiees.length > 0 && (
+        <nav class="questions-liees" aria-labelledby="questions-liees-titre">
+          <h2 id="questions-liees-titre">Les questions qui en découlent</h2>
+          <ul>
+            {questionsLiees.map((q) => (
+              <li>
+                <a href={`/questions/${q.id}`}>{fr(q.data.titre)}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
+
+    {
+      sources.length > 0 && (
+        <section class="sources-dossier" aria-labelledby="sources-titre">
+          <h2 id="sources-titre">Sources</h2>
+          <p class="sources-dossier__note">
+            Numérotées dans l'ordre des appels de citation du texte. Chaque
+            entrée porte la nature de la source.
+          </p>
+          <ol class="sources-dossier__liste">
+            {sources.map((s) => (
+              <li>
+                <Citation source={s.data} />
+              </li>
+            ))}
+          </ol>
+        </section>
+      )
+    }
+
+    <footer class="dossier__pied">
+      <p>
+        Publié le {dateFmt.format(publie)}{
+          modifie && <> · mis à jour le {dateFmt.format(modifie)}</>
+        }.
+      </p>
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .brouillon {
+    margin: 0 0 1rem;
+    padding: 0.4rem 0.7rem;
+    background: var(--warn-bg);
+    border: 1px dashed var(--warn-border);
+    border-radius: 6px;
+    color: var(--warn-fg);
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .dossier__entete h1 {
+    margin: 0.5rem 0;
+  }
+
+  .dossier__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.8rem;
+    margin: 1rem 0 0;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+  }
+  .dossier__meta > span + span::before {
+    content: '·';
+    margin-right: 0.8rem;
+    color: var(--rule);
+  }
+  .dossier__kicker {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--pine);
+  }
+  .dossier__meta > .dossier__kicker + span::before {
+    content: none;
+  }
+
+  /* Mention rappelant qu'un dossier ne remplace pas un diagnostic de terrain. */
+  .avertissement {
+    margin: 1.75rem 0;
+    padding: 0.9rem 1.1rem;
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: 8px;
+    color: var(--warn-fg);
+  }
+  .avertissement p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  /* --- Sommaire --------------------------------------------------------- */
+
+  .sommaire {
+    margin: 2rem 0;
+    padding: 1.2rem 1.4rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--pine);
+    border-radius: 0 8px 8px 0;
+    box-shadow: var(--shadow);
+  }
+
+  .sommaire h2 {
+    margin: 0 0 0.7rem;
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--pine);
+  }
+
+  .sommaire ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: partie;
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .sommaire li {
+    counter-increment: partie;
+    display: flex;
+    gap: 0.6rem;
+    line-height: 1.4;
+  }
+  .sommaire li::before {
+    content: counter(partie, decimal-leading-zero);
+    flex: none;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    padding-top: 0.15em;
+  }
+
+  .sommaire a {
+    font-family: var(--serif);
+    font-size: 1.02rem;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .sommaire a:hover {
+    color: var(--ember);
+    text-decoration: underline;
+  }
+
+  /* --- Corps du dossier -------------------------------------------------- */
+
+  .prose :global(h2) {
+    font-family: var(--serif);
+    margin-top: 2.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--rule);
+    /* `scroll-behavior: smooth` étant global, on dégage l'ancre du bord haut. */
+    scroll-margin-top: 1.5rem;
+  }
+  .prose :global(h3) {
+    margin-top: 2rem;
+    scroll-margin-top: 1.5rem;
+  }
+  .prose :global(p) {
+    margin: 1rem 0;
+  }
+  .prose :global(a) {
+    color: var(--accent);
+  }
+  .prose :global(ul),
+  .prose :global(ol) {
+    margin: 1rem 0;
+    padding-left: 1.3rem;
+  }
+  .prose :global(li) {
+    margin: 0.4rem 0;
+  }
+  .prose :global(blockquote) {
+    margin: 1.75rem 0;
+    padding: 0.2rem 0 0.2rem 1.1rem;
+    border-left: 3px solid var(--ember);
+    color: var(--ink-soft);
+    font-family: var(--serif);
+    font-size: 1.05rem;
+  }
+  .prose :global(hr) {
+    margin: 2.5rem 0;
+    border: 0;
+    border-top: 1px solid var(--rule);
+  }
+  .prose :global(figure) {
+    margin: 2rem 0;
+  }
+  .prose :global(figure img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  .prose :global(figcaption) {
+    margin-top: 0.6rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  /* Le défilement des tableaux larges est traité globalement (.table-wrap). */
+  .prose :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.75rem 0;
+    font-size: 0.9rem;
+  }
+  .prose :global(th),
+  .prose :global(td) {
+    text-align: left;
+    padding: 0.5rem 0.7rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  .prose :global(thead th) {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+
+  /* --- Pieds de page ----------------------------------------------------- */
+
+  .questions-liees,
+  .sources-dossier {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .questions-liees h2,
+  .sources-dossier h2 {
+    font-size: 1.25rem;
+    margin-top: 0;
+  }
+
+  .questions-liees ul {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+  .questions-liees li {
+    margin: 0.45rem 0;
+  }
+
+  .sources-dossier__note {
+    margin: 0 0 1.25rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .sources-dossier__liste {
+    display: grid;
+    gap: 1.25rem;
+    padding-left: 1.2rem;
+  }
+
+  .dossier__pied {
+    margin-top: 2.5rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+</style>
