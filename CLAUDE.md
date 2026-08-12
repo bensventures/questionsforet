@@ -44,7 +44,26 @@ pour garder l'écosystème remark : directives des encadrés d'avertissement, no
 future coquille de citation, et le plugin de typographie française. La configuration
 Markdown vit donc dans `astro.config.mjs`.
 
-**Déploiement :** Cloudflare Pages ou Netlify, build statique.
+**Déploiement :** Cloudflare, build statique, sur `questionsforet.fr`. Cloudflare
+ne propose plus la création de projets Pages : le site part donc en **Workers
+Static Assets**, dépôt `bensventures/questionsforet` connecté, `npm run build`
+puis `npx wrangler deploy`. Les requêtes vers des fichiers statiques ne sont pas
+facturées et aucun code de Worker n'est déployé, seulement `dist/`.
+
+Trois points à ne pas défaire :
+
+- `wrangler.jsonc` **fige** `compatibility_date`. Sans valeur explicite, wrangler
+  retient la date du jour, qui peut dépasser d'un jour le binaire de la machine
+  de build et faire échouer le déploiement. Son `name` doit rester celui du
+  Worker existant, sous peine d'en créer un second.
+- `public/_headers` porte une CSP stricte (`script-src 'self'`, aucune origine
+  externe). Elle tient parce que le site ne fait aucune requête sortante :
+  toute dépendance externe ajoutée plus tard y échouera visiblement, ce qui est
+  le comportement recherché.
+- `vite.build.assetsInlineLimit` dans `astro.config.mjs` ne sort du HTML que les
+  scripts, afin qu'aucun script inline n'oblige la CSP à tolérer
+  `'unsafe-inline'`. Le CSS scoped, lui, reste inline : une requête de moins au
+  premier rendu, ce qui compte pour un lecteur arrivé par une recherche web.
 
 **Licence :** CC BY-SA envisagée, pour permettre la réutilisation en réunion publique.
 À confirmer.

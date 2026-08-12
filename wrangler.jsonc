@@ -1,0 +1,22 @@
+{
+  // Déploiement du site statique par Workers Static Assets (`npx wrangler deploy`,
+  // la commande réglée côté Cloudflare). Aucun code de Worker : `assets.directory`
+  // suffit, Cloudflare sert les fichiers de `dist/` tels quels, `public/_headers`
+  // compris (jusqu'à 100 règles, appliquées aux réponses statiques).
+  //
+  // `name` doit correspondre EXACTEMENT au Worker créé lors de la configuration :
+  // un nom différent déploierait un second Worker à côté du premier.
+  "name": "questionsforet",
+
+  // Date figée, et non celle du jour. Sans valeur explicite, wrangler retient la
+  // date courante, qui peut dépasser d'un jour la version du binaire présente sur
+  // la machine de build : c'est l'erreur « requires compatibility date 2026-08-12,
+  // newest date supported ... 2026-08-11 ». Le site n'exécutant aucun code de
+  // Worker, la valeur est sans effet sur son comportement ; seule sa stabilité
+  // compte. À ne relever que si un jour un Worker est réellement ajouté.
+  "compatibility_date": "2026-08-01",
+
+  "assets": {
+    "directory": "./dist"
+  }
+}
