@@ -8,6 +8,17 @@ import rehypeTableWrap from './src/plugins/rehype-table-wrap.mjs';
 
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://questionsforet.fr',
+  vite: {
+    build: {
+      // Les scripts ne sont jamais mis en ligne dans le HTML : un script inline
+      // obligerait la CSP de `public/_headers` à autoriser 'unsafe-inline' pour
+      // `script-src`. `undefined` laisse le comportement par défaut aux autres
+      // ressources, donc le CSS de page reste inline (une requête de moins au
+      // premier rendu, ce qui compte pour un lecteur arrivé par une recherche).
+      assetsInlineLimit: (file) => (file.endsWith('.js') ? false : undefined),
+    },
+  },
   markdown: {
     // Astro 7 defaults to the Sätteri processor, which does not run remark
     // plugins. We switch back to the remark/rehype pipeline for its ecosystem

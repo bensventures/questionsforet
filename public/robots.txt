@@ -1,0 +1,6 @@
+# Le site est fait pour être trouvé par une recherche sur une question précise :
+# rien n'est bloqué. Les pages en `brouillon: true` ne sont pas construites en
+# production, elles n'ont donc pas besoin d'être exclues ici.
+
+User-agent: *
+Allow: /
