@@ -25,7 +25,6 @@ avertissement: >-
   cités sont des ordres de grandeur contextuels, non des cibles réglementaires.
   Les distances et obligations applicables relèvent de la réglementation locale
   (OLD, arrêtés préfectoraux).
-brouillon: true
 sources:
   - kreider-2024
   - metailie-savoir-bruler

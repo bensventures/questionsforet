@@ -49,6 +49,13 @@ export interface Cellule {
   pente: number;
   /** 0–1. Module l'humidité locale. */
   expositionSud: number;
+  /**
+   * Altitude normalisée 0–1. Observation pure, comme `saisonsDepuisFeu` :
+   * aucune règle ne la lit. Elle est conservée pour la couche de rendu, dont le
+   * §1.6 tire les courbes de niveau ; `positionTopo` en dérive déjà, mais une
+   * classe en quatre valeurs ne permet pas de tracer une isoligne.
+   */
+  altitude: number;
   positionTopo: PositionTopo;
   /** 0–1, 1 = au bord d'une route. Détermine le coût des travaux (§10). */
   accessibilite: number;
@@ -115,6 +122,15 @@ export interface Cellule {
   /** La parcelle a-t-elle brûlé au moins une fois ? Sert au « % brûlé » du
    *  bilan : un cumul de passages dépasse 100 % et ne veut plus rien dire. */
   dejaBrulee: boolean;
+  /**
+   * Tours écoulés depuis le dernier passage du feu, `Infinity` si la parcelle
+   * n'a jamais brûlé. Observation pure : **rien dans le modèle ne la lit**, et
+   * elle ne doit rien piloter. Elle existe pour la couche de rendu, dont le
+   * §4.4 du langage de paysage fait s'effacer chaque trace à son propre rythme
+   * (sol brûlé 3 saisons, houppier roussi 6, chicot 30) : c'est ce décalage qui
+   * donne à lire le paysage comme une histoire.
+   */
+  saisonsDepuisFeu: number;
 }
 
 /** Météo du tour. Exogène : le joueur ne peut rien dessus (§5). */

@@ -250,6 +250,7 @@ export function simulerFeu(etat: Etat, departs: number[], rng: Rng, bilan = bila
           bilan.parcourues++;
           etat.cumul.parcourues++;
           if (!c.dejaBrulee) { c.dejaBrulee = true; etat.cumul.parcouruesDistinctes++; }
+          c.saisonsDepuisFeu = 0;
         }
         actif = true;
 

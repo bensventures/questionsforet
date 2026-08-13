@@ -248,6 +248,42 @@ export const LUTTE = {
 };
 
 /**
+ * Normalisation de la pente.
+ *
+ * `Cellule.pente` est déclarée « 0–1 normalisé » et tous les seuils du modèle
+ * sont écrits sur cette échelle. Elle recevait pourtant le gradient d'altitude
+ * brut, dont 97 % des valeurs tombaient sous 0,2 : `penteMoyenne` (0,35) et
+ * `penteImpossible` (0,72) n'étaient jamais franchis, la pénalité de pente sur
+ * la défendabilité était donc lettre morte, la conversion en garrigue après feu
+ * inatteignable, et « le feu monte » n'avait presque aucune assise mécanique.
+ *
+ * On normalise sur le relief effectivement engendré, comme le fait déjà
+ * l'exposition juste à côté, et on l'ancre sur un énoncé plutôt que sur une
+ * constante muette : **les 5 % les plus raides d'une carte sont franchement
+ * au-delà du seuil où la lutte est gênée, sans être pour autant hors de
+ * portée** ; l'impossibilité reste l'exception. Le reste de la distribution
+ * suit.
+ *
+ * L'ancrage a été choisi au harnais, pas au jugé, parce qu'il porte à
+ * conséquence : `economie.ts` multiplie le coût des travaux par la pente
+ * (`× 1,8` pour l'entretien, `× 2,4` pour l'éclaircie), coefficients écrits
+ * pour une plage 0–1 qui n'était jamais atteinte. Les réveiller renchérit tout
+ * le travail forestier. Ancré à `penteImpossible` (0,72), l'éclaircie devient
+ * déficitaire presque partout et la fraction stratégique sous le seuil de
+ * densité tombe à 34 %, contre les 50 % attendus au §12 ; à 0,55 elle reste à
+ * 49 %, encore sous la cible. À 0,50 la calibration est tenue (53 %), et c'est
+ * le réglage le plus engageant qui la tienne.
+ *
+ * Reste un manque assumé : à cette échelle, `penteImpossible` n'est franchi
+ * que par une cellule sur mille. Le rendre vraiment praticable demanderait de
+ * revoir les coefficients de coût, ce qui est une autre décision.
+ */
+export const RELIEF = {
+  quantile: 0.95,
+  valeur: 0.5,
+};
+
+/**
  * Conformité aux OLD (amendement 2, B.1). Le contrôle fait monter le taux, mais
  * il plafonne : une part des propriétaires n'exécute pas, et le joueur n'y peut
  * rien directement. Sans contrôle, la conformité se relâche.

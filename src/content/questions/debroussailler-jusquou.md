@@ -24,7 +24,6 @@ sources:
   - revertegat-2025-vulnefeu
 approfondit:
   - vivre-avec-le-feu
-brouillon: true
 ---
 
 Dans une grande partie du sud-est de la France, débroussailler autour de sa

@@ -84,6 +84,14 @@ export function avancer(etat: Etat, decisions: Decisions, rng: Rng): Tour {
   // 2. Météo du tour. Exogène : rien de ce que fait le joueur ne la change.
   tirerMeteo(etat, rng);
 
+  // Vieillissement des traces, **avant** l'allumage : une parcelle parcourue ce
+  // tour-ci doit finir le tour à zéro, sinon la couche de rendu ne peut pas
+  // distinguer le front de l'année d'une cicatrice de l'an dernier. Observation
+  // pure, qu'aucune règle ne lit (voir `Cellule.saisonsDepuisFeu`).
+  for (const c of etat.grille) {
+    if (c.saisonsDepuisFeu < Number.MAX_SAFE_INTEGER) c.saisonsDepuisFeu++;
+  }
+
   // 3. Allumage, doctrine, feu. Un seul bilan traverse les trois étapes, sinon
   //    les départs éteints ne sont comptés nulle part.
   const bilan = bilanVide();

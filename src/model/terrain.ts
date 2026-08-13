@@ -1,6 +1,6 @@
 import type { Cellule, Etat, PositionTopo, TypeVeg } from './types';
 import type { Rng } from './rng';
-import { W, H, TYPES, DENSITE, CLIMAT, HORIZON } from './params';
+import { W, H, TYPES, DENSITE, CLIMAT, HORIZON, RELIEF } from './params';
 import { idx, dans, borne } from './util';
 import { decouperSecteurs } from './secteurs';
 
@@ -83,16 +83,31 @@ export function creerEtat(graine: number, rng: Rng, toursMax = HORIZON.long): Et
   }
   const echelle = quantile(gradY.map(Math.abs), 0.85) || 1e-6;
 
+  // ---- pente : normalisée elle aussi sur le relief engendré (RELIEF) ----
+  // Deux passes sont nécessaires : l'échelle dépend de toute la distribution.
+  const penteBrute: number[] = [];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const dzy = gradY[idx(x, y)];
+      const dzx = alt[idx(Math.min(W - 1, x + 1), y)] - alt[idx(Math.max(0, x - 1), y)];
+      penteBrute[idx(x, y)] = Math.hypot(dzx, dzy);
+    }
+  }
+  const echellePente = (quantile(penteBrute, RELIEF.quantile) || 1e-6) / RELIEF.valeur;
+
   // ---- cellules ----
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const el = alt[idx(x, y)];
       const dzy = gradY[idx(x, y)];
-      const dzx = alt[idx(Math.min(W - 1, x + 1), y)] - alt[idx(Math.max(0, x - 1), y)];
-      const pente = Math.hypot(dzx, dzy);
+      const pente = borne(penteBrute[idx(x, y)] / echellePente, 0, 1);
       // 0.5 = terrain plat, 1 = plein sud, 0 = plein nord.
       const expositionSud = borne(0.5 - dzy / (2 * echelle), 0, 1);
-      const positionTopo = topoDe(el, pente);
+      // `topoDe` garde la pente **brute** : son seuil de crête est calibré sur
+      // cette échelle, et le passer au normalisé reclasserait la topographie,
+      // donc l'humidité et le découpage en secteurs. Le correctif porte sur le
+      // champ documenté, pas sur la génération du relief.
+      const positionTopo = topoDe(el, penteBrute[idx(x, y)]);
 
       // Le type découle de la station : c'est la seule façon d'avoir un couvert
       // initial qu'un processus aurait pu produire (règle 1). La répartition
@@ -113,7 +128,7 @@ export function creerEtat(graine: number, rng: Rng, toursMax = HORIZON.long): Et
 
       grille.push({
         x, y,
-        pente, expositionSud, positionTopo,
+        pente, expositionSud, positionTopo, altitude: el,
         accessibilite: 0, // calculé plus bas, une fois les routes posées
         distanceBati: 99,
         secteur: -1,
@@ -134,6 +149,7 @@ export function creerEtat(graine: number, rng: Rng, toursMax = HORIZON.long): Et
         regenDans: 0,
         mortaliteDifferee: 0,
         dejaBrulee: false,
+        saisonsDepuisFeu: Infinity,
       });
     }
   }

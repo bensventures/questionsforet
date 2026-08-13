@@ -24,7 +24,6 @@ sources:
   - gilloz-2026-ifn-diois
 approfondit:
   - vivre-avec-le-feu
-brouillon: true
 ---
 
 Dans le sud-est de la France, chaque grand incendie relance le même procès : les

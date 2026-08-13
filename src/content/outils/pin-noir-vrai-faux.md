@@ -24,7 +24,6 @@ sources:
   - challot-1987
   - calanques-replanter
   - canopee-arbres-sensibles
-brouillon: true
 
 affirmations:
   - id: indigene
