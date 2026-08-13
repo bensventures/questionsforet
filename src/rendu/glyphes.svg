@@ -1,0 +1,119 @@
+<!--
+  Sprite de glyphes du simulateur « Vivre avec le feu ».
+
+  ENGENDRÉ par scripts/extraire-glyphes.mjs depuis la carte de référence
+  (research/simulation/v3/design_handoff_carte_de_reference_v3/). Ne pas modifier à
+  la main : relancer le script après toute mise à jour du handoff.
+
+  Les identifiants sont ceux du handoff, à la lettre, pour que le rapprochement
+  avec la documentation de design reste immédiat.
+
+  Teinte : la masse de feuillage porte `fill="currentColor"` et reçoit la rampe
+  d'humidité par un `style="color: …"` posé sur le `<use>` (src/rendu/palette.ts).
+  Les nuances internes et les marqueurs ■/○ des pins restent littéraux : ils
+  identifient l'essence et ne suivent pas l'humidité.
+
+  MASQUAGE : par la taille, jamais par `display:none`. Un `<use>` va chercher
+  un symbole dans un sprite masqué ainsi ; un `fill="url(#motif)"` n'y trouve
+  rien, et les motifs de sous-bois disparaissent sans erreur ni avertissement.
+  Vérifié au rendu : motif absent avec `display:none`, présent avec la taille
+  nulle, symboles servis dans les deux cas.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+<symbol id="m-chene" viewBox="0 0 64 96">
+        <path d="M32 90 V72" stroke="oklch(0.38 0.03 60)" stroke-width="7" stroke-linecap="round" fill="none" />
+        <path d="M32 78 L19 68 M32 80 L46 69" stroke="oklch(0.38 0.03 60)" stroke-width="3" stroke-linecap="round" fill="none" />
+        <path d="M32 24 C50 22 62 32 61 44 C60 58 48 68 32 68 C16 68 4 58 3 44 C2 32 14 22 32 24 Z" fill="currentColor" stroke="oklch(0.38 0.07 145)" stroke-width="1.4" />
+      </symbol>
+<symbol id="m-chene-roussi" viewBox="0 0 64 96">
+        <path d="M32 90 V72" stroke="oklch(0.38 0.03 60)" stroke-width="7" stroke-linecap="round" fill="none" />
+        <path d="M32 78 L19 68 M32 80 L46 69" stroke="oklch(0.38 0.03 60)" stroke-width="3" stroke-linecap="round" fill="none" />
+        <path d="M32 24 C50 22 62 32 61 44 C60 58 48 68 32 68 C16 68 4 58 3 44 C2 32 14 22 32 24 Z" fill="oklch(0.58 0.13 55)" stroke="oklch(0.44 0.10 50)" stroke-width="1.4" />
+      </symbol>
+<symbol id="m-souche" viewBox="0 0 64 96">
+        <path d="M14 92 C17 82 22 78 25 70 L25 66 L39 66 L39 70 C42 78 47 82 50 92 Z" fill="oklch(0.34 0.035 45)" />
+        <path d="M28 68 C26 58 30 48 36 40" stroke="oklch(0.52 0.09 142)" stroke-width="4" stroke-linecap="round" fill="none" />
+        <ellipse cx="38" cy="35" rx="11" ry="9" fill="oklch(0.58 0.10 142)" stroke="oklch(0.42 0.08 145)" stroke-width="1.2" />
+      </symbol>
+<symbol id="m-hetre" viewBox="0 0 64 96">
+        <path d="M27 90 C27 72 29 56 30 24 L34 24 C35 56 37 72 37 90 Z" fill="oklch(0.90 0.012 95)" stroke="oklch(0.42 0.02 90)" stroke-width="1.3" />
+        <path d="M31 46 L16 36 M33 40 L48 32 M31 30 L19 21 M33 26 L45 18" stroke="oklch(0.42 0.02 90)" stroke-width="1.6" stroke-linecap="round" fill="none" />
+        <path d="M4 36 C4 28 10 23 17 24 C23 25 27 30 28 36 C22 42 12 43 4 36 Z" fill="currentColor" stroke="oklch(0.44 0.08 135)" stroke-width="1.3" />
+        <path d="M37 34 C38 27 44 22 51 23 C58 24 62 30 60 37 C53 43 43 42 37 34 Z" fill="currentColor" stroke="oklch(0.44 0.08 135)" stroke-width="1.3" />
+        <path d="M13 18 C11 10 18 4 27 4 C36 3 44 7 46 14 C48 21 42 26 34 26 C24 27 15 24 13 18 Z" fill="currentColor" stroke="oklch(0.44 0.08 135)" stroke-width="1.3" />
+      </symbol>
+<symbol id="m-pin" viewBox="0 0 64 96">
+        <path d="M32 74 V56" stroke="oklch(0.32 0.02 45)" stroke-width="5" stroke-linecap="butt" fill="none" />
+        <g transform="translate(32 8) scale(0.97 0.8) translate(-32 -8)">
+          <path d="M33 8 L37 16 L34 18 L40 24 L36 26 L43 33 L39 35 L47 43 L42 45 L52 53 L47 55 L57 64 L48 63 L50 66 L41 65 L38 67 L31 65 L25 67 L22 64 L14 66 L16 63 L7 64 L16 55 L11 53 L21 45 L16 43 L24 35 L20 33 L27 26 L23 24 L29 18 L26 16 Z" fill="currentColor" stroke="oklch(0.28 0.045 160)" stroke-width="1.4" />
+        </g>
+        <rect x="25" y="78" width="14" height="14" fill="oklch(0.28 0.045 160)" />
+      </symbol>
+<symbol id="m-pin3" viewBox="0 0 64 96">
+        <path d="M32 74 V44" stroke="oklch(0.32 0.02 45)" stroke-width="5.4" stroke-linecap="butt" fill="none" />
+        <path d="M32 52 L23 46 M32 50 L42 45" stroke="oklch(0.32 0.02 45)" stroke-width="1.8" stroke-linecap="round" fill="none" />
+        <g transform="translate(32 8) scale(0.93 0.62) translate(-32 -8)">
+          <path d="M33 8 L37 16 L34 18 L40 24 L36 26 L43 33 L39 35 L47 43 L42 45 L52 53 L47 55 L57 64 L48 63 L50 66 L41 65 L38 67 L31 65 L25 67 L22 64 L14 66 L16 63 L7 64 L16 55 L11 53 L21 45 L16 43 L24 35 L20 33 L27 26 L23 24 L29 18 L26 16 Z" fill="currentColor" stroke="oklch(0.28 0.045 160)" stroke-width="1.7" />
+        </g>
+        <rect x="25" y="78" width="14" height="14" fill="oklch(0.28 0.045 160)" />
+      </symbol>
+<symbol id="m-pin-roussi" viewBox="0 0 64 96">
+        <path d="M32 74 V56" stroke="oklch(0.32 0.02 45)" stroke-width="5" stroke-linecap="butt" fill="none" />
+        <g transform="translate(32 8) scale(0.97 0.8) translate(-32 -8)">
+          <path d="M33 8 L37 16 L34 18 L40 24 L36 26 L43 33 L39 35 L47 43 L42 45 L52 53 L47 55 L57 64 L48 63 L50 66 L41 65 L38 67 L31 65 L25 67 L22 64 L14 66 L16 63 L7 64 L16 55 L11 53 L21 45 L16 43 L24 35 L20 33 L27 26 L23 24 L29 18 L26 16 Z" fill="oklch(0.58 0.13 55)" stroke="oklch(0.44 0.10 50)" stroke-width="1.4" />
+        </g>
+        <rect x="25" y="78" width="14" height="14" fill="oklch(0.28 0.045 160)" />
+      </symbol>
+<symbol id="m-pin-mort" viewBox="0 0 64 96">
+        <path d="M32 92 V30" stroke="oklch(0.34 0.035 45)" stroke-width="4.6" stroke-linecap="butt" fill="none" />
+        <path d="M32 60 L18 48 M32 52 L45 42 M32 42 L22 33" stroke="oklch(0.34 0.035 45)" stroke-width="2.2" stroke-linecap="round" fill="none" />
+        <rect x="25" y="78" width="14" height="14" fill="oklch(0.34 0.035 45)" opacity="0.4" />
+      </symbol>
+<symbol id="m-sylv" viewBox="0 0 64 96">
+        <path d="M30.6 74 L31.4 60 L30.8 48" stroke="oklch(0.45 0.025 50)" stroke-width="4.2" stroke-linecap="butt" fill="none" />
+        <path d="M30.8 48 L31.4 30 L31 14" stroke="oklch(0.66 0.085 58)" stroke-width="2.6" stroke-linecap="butt" fill="none" />
+        <path d="M31 41 L15 32 M31 36 L47 33 M31 51 L48 48" stroke="oklch(0.44 0.045 55)" stroke-width="2.3" stroke-linecap="round" fill="none" />
+        <path d="M7 34 L9 27 L15 24 L22 25 L27 29 L31 34 L25 37 L19 36 L13 39 L9 37 Z" fill="currentColor" stroke="oklch(0.47 0.07 152)" stroke-width="1.1" />
+        <path d="M33 37 L37 30 L43 26 L50 27 L56 31 L57 37 L51 40 L45 38 L39 41 Z" fill="currentColor" stroke="oklch(0.47 0.07 152)" stroke-width="1.1" />
+        <path d="M40 51 L44 45 L50 44 L56 47 L54 52 L46 53 Z" fill="currentColor" stroke="oklch(0.47 0.07 152)" stroke-width="1.1" />
+        <path d="M18 20 L16 13 L22 8 L28 5 L33 8 L38 4 L44 8 L48 14 L50 20 L44 23 L39 21 L34 25 L28 22 L23 25 Z" fill="currentColor" stroke="oklch(0.47 0.07 152)" stroke-width="1.1" />
+        <circle cx="32" cy="85" r="6.4" fill="none" stroke="oklch(0.28 0.045 160)" stroke-width="3.4" />
+      </symbol>
+<symbol id="m-garrigue" viewBox="0 0 64 96">
+        <path d="M14 90 C14 74 22 70 22 62 C22 72 30 74 30 90 M34 90 C34 78 44 72 44 64 C44 76 52 78 52 90" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+      </symbol>
+<symbol id="m-pelouse" viewBox="0 0 64 96">
+        <path d="M10 90 L13 78 M18 90 L20 80 M26 90 L28 76 M34 90 L36 80 M42 90 L45 78 M50 90 L52 81" fill="none" stroke="oklch(0.68 0.075 100)" stroke-width="2" stroke-linecap="round" />
+      </symbol>
+<symbol id="m-friche" viewBox="0 0 64 96">
+        <path d="M9 90 C11 74 14 62 20 54 M16 90 C17 72 19 60 24 50 M23 90 C24 70 25 54 29 42 M31 90 C31 68 30 52 33 38 M39 90 C38 70 37 56 41 46 M47 90 C45 74 43 62 46 52 M54 90 C53 78 51 70 53 62" fill="none" stroke="oklch(0.72 0.085 96)" stroke-width="1.9" stroke-linecap="round" />
+        <path d="M20 54 C25 50 29 49 33 50 M24 50 C29 45 33 43 38 44 M29 42 C34 37 38 35 43 36 M33 38 C38 33 43 31 48 32 M41 46 C45 42 49 41 53 42 M46 52 C50 49 54 48 57 49 M53 62 C56 59 59 58 61 59" fill="none" stroke="oklch(0.64 0.105 92)" stroke-width="2.6" stroke-linecap="round" />
+        <path d="M4 84 C14 80 24 82 34 78 M6 88 C18 84 30 86 42 82" fill="none" stroke="oklch(0.70 0.075 94)" stroke-width="1.6" stroke-linecap="round" />
+      </symbol>
+<symbol id="m-ripi" viewBox="0 0 64 96">
+        <path d="M22 90 V54" stroke="oklch(0.50 0.02 90)" stroke-width="3" fill="none" />
+        <ellipse cx="22" cy="44" rx="15" ry="18" fill="currentColor" stroke="oklch(0.42 0.08 150)" stroke-width="1.3" />
+        <path d="M38 90 V62" stroke="oklch(0.50 0.02 90)" stroke-width="2.4" fill="none" />
+        <ellipse cx="38" cy="54" rx="11" ry="13" fill="currentColor" stroke="oklch(0.42 0.08 150)" stroke-width="1.3" />
+      </symbol>
+<symbol id="m-rocher" viewBox="0 0 64 96">
+        <path d="M8 90 L20 62 L34 74 L44 56 L58 90 Z" fill="oklch(0.80 0.012 90)" stroke="oklch(0.55 0.015 90)" stroke-width="1.4" />
+        <path d="M20 62 L26 90 M44 56 L42 90" stroke="oklch(0.62 0.015 90)" stroke-width="1.1" fill="none" />
+      </symbol>
+<symbol id="m-bati" viewBox="0 0 64 96">
+        <path d="M14 90 V60 L32 46 L50 60 V90 Z" fill="oklch(0.88 0.02 60)" stroke="oklch(0.42 0.025 45)" stroke-width="2.2" />
+        <path d="M14 60 L32 46 L50 60" fill="none" stroke="oklch(0.42 0.025 45)" stroke-width="2.2" />
+      </symbol>
+<symbol id="m-mouton" viewBox="0 0 64 40">
+        <path d="M20 22 V36 M28 22 V36 M38 22 V36 M45 22 V36" stroke="oklch(0.42 0.02 90)" stroke-width="3.4" stroke-linecap="round" fill="none" />
+        <ellipse cx="32" cy="16" rx="19" ry="13" fill="oklch(0.42 0.02 90)" />
+        <ellipse cx="11" cy="7" rx="8" ry="6.5" fill="oklch(0.42 0.02 90)" transform="rotate(-18 11 7)" />
+        <ellipse cx="6" cy="1" rx="4" ry="2.6" fill="oklch(0.42 0.02 90)" transform="rotate(-35 6 1)" />
+      </symbol>
+<pattern id="m-sb1" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="3" cy="9" r="0.85" fill="oklch(0.66 0.075 118)" /></pattern>
+<pattern id="m-sb2" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="5" cy="16" r="1.3" fill="oklch(0.60 0.075 122)" /><circle cx="16" cy="6" r="1.3" fill="oklch(0.60 0.075 122)" /></pattern>
+<pattern id="m-sb3" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="4" cy="12" r="1.8" fill="oklch(0.52 0.08 126)" /></pattern>
+<pattern id="m-sb4" width="11" height="11" patternUnits="userSpaceOnUse"><circle cx="3" cy="8" r="2" fill="oklch(0.44 0.075 130)" /></pattern>
+  </defs>
+</svg>

@@ -158,18 +158,21 @@ Publier cet ensemble avant d'élargir à d'autres thèmes forestiers.
 
 ## État des lieux
 
-Projet Astro initialisé (squelette qui build proprement). En place :
+Le socle éditorial est en place et le site build proprement :
 
-- ce fichier ;
-- `src/content.config.ts`, schémas des collections ;
-- `src/data/sources.yaml`, bibliographie initiale d'environ soixante entrées typées,
-  validée au build par le schéma Zod ;
-- `src/plugins/remark-french-typography.mjs`, typographie française appliquée au build,
-  branché dans `astro.config.mjs` via le processeur unifié ;
-- `src/content/{questions,dossiers,outils}/`, répertoires des collections (encore vides).
+- `src/content.config.ts`, schémas des collections, et `src/data/sources.yaml`,
+  bibliographie de 74 entrées typées, validée au build par le schéma Zod ;
+- les plugins de build : typographie française, citations `[[cite:id]]`
+  numérotées d'après le frontmatter, et enveloppe de défilement des tableaux
+  larges, tous branchés dans `astro.config.mjs` via le processeur unifié ;
+- le composant de citation à badge de type et la page « toutes les sources » ;
+- les trois collections et leurs routes, `dossiers` compris (index, page,
+  sommaire tiré des titres de niveau deux, avertissement, liens inverses depuis
+  les questions qui déclarent `approfondit`) ;
+- le dossier « Vivre avec le feu », converti et sourcé.
 
-Prochaine étape suggérée : le composant de citation (badge de type visible) et la page
-« toutes les sources » filtrable, puis convertir le dossier « Vivre avec le feu ».
+Prochaine étape : la couche décision du simulateur, qui n'a pas encore de
+langage visuel, puis l'îlot Astro qui portera la carte.
 
 ## Identité visuelle : « encre & braise »
 
@@ -246,10 +249,28 @@ taux de conformité plafonne sous 100 % et lui échappe. L'assertion 1 ne porte
 que sur les constructions conformes.
 
 **Calibration : les douze critères du §12 sont tenus** (50 parties × 40 tours,
-`src/harness/calibrer.ts`). Joueur compétent : 85 % du bâti, 60 % de la fraction
-stratégique sous le seuil, 61 % de surface parcourue (observation), 4,5
-renoncements par partie. Les quatre mauvaises stratégies finissent différemment
+`src/harness/calibrer.ts`). Joueur compétent : 85 % du bâti, 53 % de la fraction
+stratégique sous le seuil, 73 % de surface parcourue (observation), 1,3
+renoncement par partie. Les quatre mauvaises stratégies finissent différemment
 et la compétente est battue sur quatre axes.
+
+**Pente normalisée (`RELIEF` dans `params.ts`).** `Cellule.pente` se disait
+« 0–1 normalisé » mais recevait un gradient d'altitude brut, dont 97 % des
+valeurs tombaient sous 0,2 : `penteMoyenne` (0,35) et `penteImpossible` (0,72)
+n'étaient jamais franchis, la pénalité de pente sur la défendabilité était
+lettre morte et « le feu monte » n'avait presque aucune assise mécanique. La
+normalisation ancre les 5 % les plus raides d'une carte sur 0,50, valeur choisie
+au harnais et non au jugé : `economie.ts` multiplie le coût des travaux par la
+pente, si bien qu'ancrer plus haut rend l'éclaircie déficitaire partout et fait
+tomber la fraction stratégique à 34 %, sous la cible du §12. Reste un manque
+assumé, `penteImpossible` n'étant franchi que par une cellule sur mille.
+
+**Trois champs d'observation** ajoutés pour le rendu, qu'aucune règle ne lit :
+`saisonsDepuisFeu` (le vieillissement se fait en tête de tour, **avant**
+l'allumage, sans quoi une parcelle parcourue ne vaut jamais zéro et la trace du
+feu de l'année est indistinguable d'une cicatrice), `altitude` (le champ continu
+dont dérivent les courbes de niveau, que `positionTopo` ne peut pas remplacer),
+et `dejaBrulee` qui existait déjà.
 
 **Stratégie de diagnostic à conserver** : `durcissementSeul` dans
 `src/harness/strategies.ts`. Elle n'est pas l'une des cinq du §12, elle teste la
@@ -275,6 +296,76 @@ mosaïque), donc le dilemme n'est pas résolu par lui.
 **Ce qu'on ne fait pas** : relever le plafond de conformité (0,78) pour faire
 passer un test. Ce paramètre porte un fait de terrain documenté — le
 non-respect des OLD est massif — et ne se règle pas pour convenir à une cible.
+
+## Rendu de la carte
+
+Le code vit dans `src/rendu/` : `palette.ts` (couleurs et bornes de paliers),
+`cellule.ts` (composition d'une parcelle), `carte.ts` (assemblage des sept
+couches), et `glyphes.svg`, **engendré, jamais modifié à la main**.
+
+Quatre scripts, tous relançables :
+
+| Script | Rôle |
+|---|---|
+| `extraire-glyphes.mjs` | recopie symboles et motifs depuis le handoff |
+| `planche-verification.mjs` | essences × paliers, états de feu, motifs |
+| `planche-carte.mjs` | une vraie partie rendue, plus les assertions |
+| `banc-essai.mjs` | banc interactif autonome : graine, tour, fenêtre, couches |
+
+**Deux lots de design, deux rôles.** `design_handoff_langage_de_paysage/` est la
+charte (vocabulaire, rampes, calques, jauges). `design_handoff_carte_de_reference_v3/`
+est la **cible d'implémentation et le test d'acceptation visuel** ; c'est elle
+qui fait foi pour les assets. De la v1 à la v3, les seize symboles n'ont pas
+bougé : la v2 a refait les motifs de sous-bois (du trait au semis de points) et
+supprimé les hachures de versant, la v3 a refait le semis des arbres (bande
+stratifiée, effectifs 3 · 5 · 8 · 12).
+
+**Ce que le handoff suppose et que nous n'avons pas.** Sa carte fabrique son
+relief par une formule et en déduit humidité, pente, essences et zone brûlée.
+Ici tout cela vient de la simulation : ses sections 2 et 3 ne se transposent
+pas, ses sections 4 à 11 décrivent le rendu et sont suivies à la valeur près.
+Quatre adaptations, toutes mesurées plutôt que choisies :
+
+- **bornes de paliers** relevées sur des parties réelles
+  (`src/harness/distributions.ts`) ; des quartiles théoriques sur 0–1 laissaient
+  57 % des cellules au palier sec et **aucune** au palier frais ;
+- **amplitude de relief de 240 m**, le serrage des courbes portant seul la
+  raideur depuis le retrait des hachures ;
+- **talweg** suivant le point le plus bas de chaque colonne, **crête** le plus
+  haut avec coupures, faute d'axe analytique ;
+- **front** orienté vers l'amont réel (le gradient) et non vers le nord de la
+  planche, nos versants n'ayant pas d'orientation privilégiée.
+
+**Deux écarts assumés, actifs par défaut**, et désactivables pour comparaison :
+
+1. les couvertures basses sont **semées** comme les peuplements, garrigue,
+   friche et pelouse passant à six instances ;
+2. sur les **tapis** (garrigue, pelouse, friche), la charge de sous-bois est
+   portée par le **nombre de touffes** et le motif de sol correspondant est
+   retiré. Raison : sur ces types la densité de tiges est un canal mort, le
+   modèle ne la faisant pas croître, tandis que le sous-bois *est* la
+   végétation ; le motif et les touffes disaient la même chose deux fois. Le
+   sward de SB 1 reste dessiné, sa régularité signant l'entretien, et le rocher
+   est exclu, son sous-bois étant gelé à un tirage de génération.
+
+**Pièges à ne pas rouvrir :**
+
+- le sprite se masque **par la taille**, jamais par `display:none` : un `<use>`
+  y trouve ses symboles, un `fill="url(#motif)"` n'y trouve rien, et le
+  sous-bois disparaît sans erreur ;
+- juger à l'**échelle native**, cellule de 180 px : réduite, la carte perd
+  d'abord le semis (disques de 1 à 2 px de rayon), puis les paliers de densité ;
+- **ne pas écrêter les glyphes** à leur cellule, le débord des houppiers faisant
+  le continu du couvert ;
+- **ne pas appliquer la règle de dégagement des courbes cellule par cellule** :
+  le sous-bois saturant, elle hachait les isolignes en segments isolés. Elle se
+  décide une fois par vue.
+
+**Ce qui manque avant une interface :** la couche décision (secteurs,
+politiques, doctrine, budget, jauges) n'a aucun langage visuel, le durcissement
+n'épaissit pas le contour du bâti comme le demande la charte, une construction
+détruite se rend debout, et la coupure de combustible n'a pas d'état persistant
+dans le modèle.
 
 DISTILLED_AESTHETICS_PROMPT = """
 <frontend_aesthetics>
