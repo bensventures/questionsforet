@@ -807,3 +807,55 @@
   type: pair
   langue: en
   themes: [essences, brulage-dirige]
+
+- id: guide-equipements-dfci-med
+  auteurs: Entente pour la forêt méditerranéenne / Valabre
+  annee: 2018
+  titre: Guide des équipements de DFCI de l'aire méditerranéenne
+  support: Entente Valabre (version du 10 avril 2018)
+  url: https://www.valabre.com/wp-content/uploads/20180424_Guide_Equipements_DFCI_2014_vf2018.pdf
+  type: institutionnel
+  langue: fr
+  themes: [ debroussaillement, combustible ]
+
+- id: syphard-2011-fuelbreaks
+  auteurs: Syphard A. D., Keeley J. E., Brennan T. J.
+  annee: 2011
+  titre: Comparing the role of fuel breaks across southern California national forests
+  support: Forest Ecology and Management, 261(11):2038–2048
+  url: https://www.sciencedirect.com/science/article/abs/pii/S0378112711001125
+  type: pair
+  langue: en
+  themes: [ debroussaillement, regime-feu ]
+
+- id: rcc-2005-var
+  auteurs: Réseau Coupures de Combustible
+  annee: 2005
+  titre: >-
+    Quelles coupures de combustible pour les feux extrêmes ? Analyse de
+    27 ouvrages traversés par les grands feux du Var de 2003
+  support: Éditions de la Cardère, collection Réseau Coupures de Combustible n°9
+  url: https://www.ofme.org/documents/textesdfci/rcc9.pdf
+  type: rapport
+  langue: fr
+  themes: [ debroussaillement, combustible, regime-feu ]
+  reserve: >-
+    Retour d'expérience conduit en contexte méditerranéen (maquis et pinèdes du
+    Var) lors d'une saison exceptionnelle ; les ordres de grandeur ne se
+    transposent pas directement aux massifs préalpins.
+
+- id: code-forestier-servitude-dfci
+  auteurs: Code forestier
+  annee: null
+  titre: >-
+    Servitude de passage et d'aménagement pour la défense des forêts contre
+    l'incendie (art. L. 134-2, ex-L. 321-5-1)
+  support: Légifrance
+  url: https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000025247299
+  type: institutionnel
+  langue: fr
+  themes: [ debroussaillement ]
+  reserve: >-
+    Source juridique : l'article fixe l'assiette maximale de la servitude
+    (bande de roulement de six mètres) sans préjuger des normes techniques
+    départementales, qui relèvent des guides DFCI et des arrêtés préfectoraux.
