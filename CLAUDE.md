@@ -202,8 +202,9 @@ re-skiner, on touche aux variables, pas aux styles scoped des pages.
 
 ## Simulateur « Vivre avec le feu »
 
-Outil `outils` de `format: simulation`. **La v2 est gelée** (`src/sim/FROZEN.md`)
-et la page reste en `brouillon: true`. Le modèle v3 est spécifié avant
+Outil `outils` de `format: simulation`. **La v2 est supprimée** depuis que
+l'îlot v3 joue (elle vit dans l'historique git, avec son `FROZEN.md`), et la
+page reste en `brouillon: true`. Le modèle v3 est spécifié avant
 implémentation dans `research/simulation/v3/BRIEF_SIMULATEUR_V3.md`, patch
 compris, et ce document remplace le brief initial et son amendement, devenus
 historiques.
@@ -302,6 +303,40 @@ mosaïque), donc le dilemme n'est pas résolu par lui.
    densité : on exigeait une cible sans donner de levier.
 3. L'arbitrage d'abandon budgétaire ne pouvait couper que le contrôle des OLD,
    jamais l'éclaircie déficitaire, si bien que la conformité s'effondrait à 6 %.
+
+**Doctrine : posture héritée, réforme fenêtrée** (patch au brief v3,
+`research/simulation/patch_doctrine_posture_heritee.md`). La doctrine était un
+interrupteur gratuit et instantané, ce qui est l'inverse du terrain et vidait le
+paradoxe de la suppression : on lisait la météo de l'année et on basculait. Le
+territoire **hérite** désormais du cran 1, que le premier été confirme ou
+réforme gratuitement — le choix fondateur, sans lequel le piège serait une
+fatalité. Ensuite l'**effet** de la posture reste immédiat, mais son
+**changement** coûte 8 et prend trois étés, sauf dans la fenêtre ouverte par un
+incendie où il coûte 2 et prend un été. Une réforme engagée court seule.
+
+Valeurs **mesurées, pas choisies** : 8 vaut les deux tiers d'une recette
+annuelle sur un budget qui tourne entre 0 et 30, donc payable et jamais
+indolore ; 2 dans une fenêtre qui apporte +9 par tour rend le moment évident ;
+trois étés dépassent l'horizon où l'on peut anticiper la sécheresse, un seul
+fait atterrir la réforme pour la saison suivante. Jamais de verrou sans issue :
+les décisions passent avant le bouclage, mais la fenêtre dure trois étés et le
++9 tombe entre-temps.
+
+**Deux conséquences trouvées à la mesure.** « Ne rien faire » devenait la copie
+exacte de « extinction maintenue » et le §12 perdait une de ses quatre défaites
+distinguables : elle garde donc son cran d'ouverture au 2, « ne rien faire »
+portant sur le terrain et non sur la posture. Et la compétente, qui réforme vers
+le feu géré dans la première fenêtre, **perd 0,8 point de bâti** (83,6 contre
+84,4 si elle restait au cran 2) : c'est la thèse, pas un défaut de réglage. Le
+critère « meilleure sur le bâti » ne se compare donc plus qu'aux **cinq
+stratégies du §12** et non à la sonde « durcissement seul » (84,0), qui n'en
+fait pas partie : mêler une sonde de diagnostic à un critère de calibration le
+faisait basculer sur quatre dixièmes de point.
+
+Le §12 est repassé au vert, avec trois assertions de plus : la posture héritée
+tient les quarante étés chez qui ne la réforme jamais, le joueur informé
+l'esquive à l'ouverture, et réformer hors fenêtre coûte nettement plus que
+dedans (10 de dépense cumulée mesurée entre deux sondes identiques par ailleurs).
 
 **Ce qu'on ne fait pas** : relever le plafond de conformité (0,78) pour faire
 passer un test. Ce paramètre porte un fait de terrain documenté — le
@@ -417,10 +452,45 @@ perpendiculaires, et le sommet rentré est exactement le sommet décalé de la
 somme des deux normales. Aucun rognage à faire. Aux pincements en diagonale, le
 parcours **tourne à droite d'abord**, ce qui longe l'intérieur au plus près.
 
-Contrainte dominante, vérifiée par la planche : **aucun aplat**, même à 8 %.
-Seuls les textes et les crans d'adoption portent un remplissage. Les équerres
-de sélection se posent sur l'encombrement du secteur, « les quatre angles »
-n'ayant pas de sens sur un polygone rectilinéaire quelconque.
+**Une seule ligne par secteur, et son encre porte l'état.** La planche 4 posait
+deux traits, la limite plus un liseré tireté en retrait de 12 px reprenant le
+filet de la fiche : sur un fond de paysage déjà dense, cela donnait un trait
+plein pris en sandwich entre deux tiretés, bruyant et illisible. Au repos la
+ligne est **claire**, ce qui se lit comme une coupure sans ajouter d'encre ;
+elle passe en vert clair (montée en charge), vert pin (en vigueur) ou braise
+(péril). « Activable » ne s'affiche plus sur la carte : le panneau le dit, et le
+signaler partout revenait à souligner tout le versant. **La sélection ne change
+pas l'encre** : le voile la dit déjà, une limite braise faisait doublon, et le
+trait ne fait que s'épaissir comme au survol.
+
+**Un seul aplat, et il est daté.** La planche interdit tout aplat, même à 8 %,
+au motif que le grain de sous-bois justifie la décision. Pendant une sélection,
+un voile sombre (25 %) couvre pourtant les autres secteurs, **jamais le secteur
+choisi**, dont le contour perce le voile en `fill-rule="evenodd"`. La règle
+protégeait la lecture de ce qu'on regarde ; elle est tenue, et les autres
+retrouvent leur paysage dès qu'on referme le tiroir. La planche vérifie que le
+voile épargne bien le choisi.
+
+**Le nom d'un secteur ne s'affiche qu'au survol ou sur le choisi.** Quatorze
+étiquettes posées en permanence recouvraient le semis et les courbes, et
+disaient partout ce dont on n'a besoin qu'à un endroit : le nom confirme ce
+qu'on désigne, il ne cartographie pas le versant. Recliquer le secteur choisi le
+referme, comme la croix du tiroir.
+
+Équerres, filet de garde et liseré en retrait ont disparu avec ces
+simplifications : le calque est passé de 4,4 à 2,4 Ko.
+
+**Le calque est du chrome, pas du paysage**, et cela a une conséquence que la
+planche 4 ne pouvait pas voir, puisqu'elle est écrite à l'échelle native. Tout
+y était en unités de carte : à 1:3, la limite de 2 px en mesurait 0,67 et une
+équerre de 20, sept. La sélection était invisible. Les **épaisseurs** sont donc
+tenues par `vector-effect="non-scaling-stroke"`, et la **géométrie** (équerres,
+retrait du liseré, corps des étiquettes) est multipliée par le diviseur
+d'échelle, que l'îlot lit sur le bouton radio coché.
+
+**La sélection passe en braise**, limite et nom du secteur. Épaissir un trait
+d'encre de 2 à 3,5 px ne se voyait pas sur un fond de paysage ; la couleur
+porte, et la braise dit précisément « interaction » dans la charte.
 
 ## Page de visualisation
 
@@ -434,9 +504,19 @@ rapport, et c'est là que l'échelle « massif entier » tient enfin d'un coup
 d'œil. Ouverture et fermeture par ancre (`:target`), donc sans script, et
 l'adresse dit dans quel état on est.
 
-Une vraie partie, rendue au build, sans un octet de JavaScript. La page pèse
-1 Mo, ce qu'autorise `brouillon: true` (les brouillons sont exclus des builds
-de production). Le composant v2 reste sur disque, gelé et sans importateur.
+**La page d'entrée porte trois choses** : l'appel à l'action, la **légende des
+glyphes** engendrée depuis la palette du rendu (rien n'y est recopié, donc rien
+ne peut mentir sur ce que le joueur verra), et **ce sur quoi le modèle
+s'appuie**, mécanisme par mécanisme.
+
+Ce dernier point réparait une régression de fond : la route excluait la
+bibliographie pour le format simulation (`!isSimulation && biblio.length`), si
+bien que l'objet le plus argumenté du site était le seul sans traçabilité, sur
+un site dont la colonne vertébrale est que les sources sont des données. Les
+rattachements de `src/lib/sources-simulateur.ts` sont **portés de la v2**, pas
+inventés ; les quatre références qui documentaient des politiques que la v3.0
+n'implémente pas (brûlage dirigé, hydrologie) ont quitté le frontmatter, on ne
+source pas une règle absente.
 
 **Piège retrouvé une seconde fois** : un `<style>` scopé d'Astro ne s'applique
 **pas** au HTML injecté par `set:html`. La hauteur du cadre y était, elle n'a
@@ -460,6 +540,18 @@ sur une vraie partie.
 L'ordre du panneau descend du durable vers l'immédiat, et les gestes sont
 contre le bord bas : leur place dans la lecture dit qu'ils soulagent sans
 transformer.
+
+**Le panneau tient en trois zones, et le secteur est un tiroir.** Le bandeau des
+moyens et le pied (étés restants, décisions en attente, bouton) ne bougent
+jamais : ils valent quoi qu'on regarde. Entre eux, le corps porte la pile
+courante — doctrine, compte rendu, gestes — et le **tiroir du secteur choisi
+vient la couvrir**, en glissant depuis la droite, d'où la carte l'appelle. Une
+croix en tête du tiroir le referme et désélectionne.
+
+C'est le remplacement d'un bloc contextuel glissé au milieu de la colonne, qui
+ne marchait pas : mêlé aux blocs permanents, il passait inaperçu et choisir un
+secteur semblait sans effet. Une sélection ne doit pas changer un bloc parmi
+cinq, elle doit occuper la colonne et se refermer.
 
 **Un écart assumé sur la jauge.** Le handoff borne la **surface tenue**, le
 plafond étant le point où la charge d'entretien égale la recette. Cela suppose
@@ -579,9 +671,103 @@ du cadre** par `fenetreVisible()` plutôt qu'écrite, et la barre de position
 l'affiche ; sur page statique elle vaut pour le défilement au chargement,
 l'îlot la mettra à jour au défilement.
 
-**Ce qui manque avant l'îlot :** le câblage. Restent ouvertes, non tranchées par
-les handoffs : la spécification du rejeu d'incendie, le plancher
-d'accessibilité clavier, la reprise de partie, l'entrée et la sortie de partie. La coupure de combustible n'a toujours pas d'état
+## L'îlot
+
+`src/ilot/simulateur.ts`, monté par le composant Astro sur l'écran rendu au
+serveur. **Le premier été est rendu au build** : sans script, la page montre le
+versant de départ et le panneau, ce qui reste honnête ; avec, l'îlot recrée le
+même état à la même graine et la partie commence.
+
+**Une seule porte, `avancer`, et elle ne s'ouvre qu'au bouton « été suivant ».**
+Tout ce que le joueur décide dans le tour attend là (`enAttente`), et la fiche
+le dit : « engagée, elle prendra effet à l'été suivant ». Chaque été est ainsi
+une transaction, pas une suite d'effets immédiats, et la partie se relit.
+
+**Le rendu est refait depuis l'état, jamais rattrapé au coup par coup.** Une
+carte entière plus un panneau coûtent **36 ms** ; l'affichage ne peut donc pas
+survivre à l'état. Seule exception, le calque de secteur, seul redessiné au
+survol et à la sélection, où le paysage n'a pas bougé.
+
+Le même générateur sert à engendrer le terrain **puis** les étés, comme dans le
+harnais : à graine égale, la partie jouée est celle que la calibration mesure.
+
+Un clic n'est un clic que si le curseur n'a pas traîné de plus de 4 px : la
+carte se déplace à la souris, et un déplacement ne doit jamais sélectionner. Les
+écouteurs du panneau sont posés **sur la racine** et non sur les éléments, qui
+sont réengendrés à chaque changement.
+
+Îlot servi : **71 Ko brut, 25 Ko gzip**, sans une dépendance. Il embarque le
+noyau et le moteur de rendu, ce qui est le prix d'un simulateur qui joue dans
+le navigateur ; le reste du site n'en charge rien.
+
+**Rejeu de propagation** (`src/rendu/rejeu.ts`), seule animation admise et seul
+lien du compte rendu, posé sur la **première** ligne de feu. Il rejoue la
+chronologie que le noyau livre, `arrivee` et les braises horodatées : une
+propagation plausible mais inventée dirait le contraire de ce que la partie a
+produit, et le joueur y chercherait des causes qui n'existent pas.
+
+Trois décisions qui n'étaient dans aucun handoff :
+
+- **il rejoue sur le paysage d'avant l'incendie**, repris du SVG encore à
+  l'écran avant le tour. Sur la carte d'après, le feu courait sur une cicatrice
+  déjà noire ;
+- **tout est en CSS** : les parcelles sont groupées par pas d'arrivée, le groupe
+  porte le délai, les brandons héritent du sien. Aucun script ne pilote d'image
+  par image. Groupé ainsi, la couche d'un grand feu tombe de 184 à 71 Ko, à
+  rendu identique ;
+- **rien ne bouge sous `prefers-reduced-motion`** : la trace s'affiche d'un coup
+  et s'efface. La règle du site vaut aussi pour la seule animation qu'on
+  s'autorise.
+
+La couche se retire d'elle-même et la carte revient à son état réel : le rejeu
+montre ce qui s'est passé, il ne laisse rien derrière lui.
+
+**Doctrine dans l'interface** (phase 5 du patch). Le sélecteur rend une
+**posture debout** et non une action de tour : la ligne en vigueur est marquée
+comme telle, une réforme engagée affiche sa cible et les étés qui restent, et
+l'économie de la réforme est dite **une fois sous les trois lignes** plutôt que
+répétée sur chacune, deux nombres par ligne rendant la gamme illisible. Trois
+notes possibles : l'héritage à confirmer au premier été, la fenêtre ouverte (en
+braise, c'est une interaction possible), ou le prix courant. L'îlot n'affiche
+plus la doctrine cliquée comme en vigueur, ce qui était devenu faux : elle est
+« demandée », puis engagée à l'été suivant, et un clic est refusé tant qu'une
+réforme court.
+
+**Écran d'ouverture** (`ouverture.ts`, §1 du patch). Il se pose **par-dessus le
+versant**, qui reste visible derrière : « le territoire pratique déjà une
+doctrine » se montre autant qu'il se dit. Il présente un héritage à confirmer ou
+à réformer, avec le statu quo par défaut — voulu, il recrute le joueur naïf dans
+le piège — et **ne dit rien de la dette de combustible** : le cadrage est
+immédiat seulement, sinon le paradoxe de la suppression n'est plus qu'une
+consigne. La planche le vérifie.
+
+Il porte aussi le **choix du versant** par son numéro, qui est la graine. Le
+modèle étant déterministe, un numéro désigne un versant et un seul : on y
+revient, on le compare, on le transmet. Le numéro se lit et s'écrit dans
+l'adresse (`?versant=1007`), donc une partie se partage.
+
+**Plancher d'accessibilité clavier.** Le critère est simple : la partie se joue
+sans souris. Quatre choses le tenaient en échec, toutes corrigées.
+
+Les commandes étaient des `div` cliquables — doctrine, gestes, crans de
+l'ouverture : ce sont des `<button>`, avec `aria-current` sur la posture en
+vigueur et `aria-pressed` sur le geste armé. La sélection d'un secteur n'existait
+qu'au curseur : le panneau porte désormais la **liste des secteurs**, qui est le
+chemin clavier et accessoirement le seul sommaire du versant depuis que les
+étiquettes de la carte ne s'affichent qu'au survol. La carte est focalisable
+(`tabindex`, étiquette explicite), donc les flèches la déplacent comme le
+curseur la tire. Et **le focus survit au réengendrement du panneau** : il est
+refait en entier à chaque décision, si bien que le focus retombait sur le corps
+du document dès le premier clic ; l'îlot retient ce que l'élément désignait, pas
+l'élément, et le rend après le rendu.
+
+Le compte rendu porte `aria-live="polite"` : sans score agrégé, c'est là que le
+jeu explique, et il faut l'entendre. Anneau de focus braise partout où l'on
+décide, y compris sur les étiquettes des boutons radio d'échelle, invisibles par
+construction.
+
+**Ce qui manque encore :** un rendu propre aux échelles réduites, et la reprise
+d'une partie en cours (l'adresse ne retient que le versant, pas l'avancement). La coupure de combustible n'a toujours pas d'état
 persistant dans le modèle. Cinq questions ne sont tranchées par aucun handoff :
 petits écrans (réponse retenue : bascule carte / panneau, cellule maintenue à
 180 px), spécification du rejeu d'incendie, accessibilité clavier, reprise de

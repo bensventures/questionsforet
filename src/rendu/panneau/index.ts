@@ -1,5 +1,13 @@
 import type { GesteVue, VuePanneau } from './vue';
-import { bandeauRessources, blocSecteur, compteRendu, piedTour, registreGestes, selecteurDoctrine } from './blocs';
+import {
+  bandeauRessources,
+  blocSecteur,
+  compteRendu,
+  listeSecteurs,
+  piedTour,
+  registreGestes,
+  selecteurDoctrine,
+} from './blocs';
 
 export { STYLES_PANNEAU } from './styles';
 
@@ -13,6 +21,7 @@ export { JETONS, LARGEUR_PANNEAU, POLICES } from './jetons';
 export * from './vue';
 export * from './fin';
 export * from './ecran';
+export * from './ouverture';
 export { fichePolitique } from './blocs';
 
 /**
@@ -27,12 +36,27 @@ export { fichePolitique } from './blocs';
  * la fiche à l'écran.
  */
 export function rendrePanneau(v: VuePanneau, options: { geste?: GesteVue['type'] | null } = {}): string {
+  // Trois zones. Le bandeau et le pied ne bougent jamais : l'état des moyens et
+  // le passage des étés valent quoi qu'on regarde. Entre les deux, le corps
+  // porte la pile courante — doctrine, compte rendu, gestes — et le **tiroir**
+  // du secteur choisi vient la couvrir. C'est ce qui rend la sélection
+  // évidente : elle ne change pas un bloc au milieu d'une colonne, elle occupe
+  // la colonne, et on la referme pour revenir.
+  const enAttente =
+    (v.secteur?.fiches.filter((f) => f.enAttente).length ?? 0) +
+    (v.gestesEnAttente ?? 0) +
+    (v.doctrine.demande ? 1 : 0);
   return `<aside class="pan">
 ${bandeauRessources(v)}
+<div class="pan__corps">
+  <div class="pan__pile">
 ${selecteurDoctrine(v)}
-${blocSecteur(v)}
+${listeSecteurs(v)}
 ${compteRendu(v)}
 ${registreGestes(v, options.geste ?? null)}
-${piedTour(v)}
+  </div>
+${blocSecteur(v)}
+</div>
+${piedTour(v, enAttente)}
 </aside>`;
 }

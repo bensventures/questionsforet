@@ -221,7 +221,18 @@ export interface Etat {
   meteo: Meteo;
   /** Météo du tour précédent, pour la corrélation interannuelle. */
   secheressePrecedente: number;
+  /**
+   * Doctrine **en vigueur**. Le territoire en pratique déjà une au premier été
+   * (l'extinction systématique, héritée) : l'ouverture ne propose pas un choix
+   * neutre mais un héritage à confirmer ou à réformer.
+   */
   doctrine: Doctrine;
+  /**
+   * Réforme engagée et pas encore en vigueur. Tant qu'elle court, la posture
+   * actuelle continue de s'appliquer et aucune autre réforme ne peut être
+   * engagée : c'est ce qui interdit le flip-flop d'une année sur l'autre.
+   */
+  reforme: { vers: Doctrine; dans: number } | null;
   moyens: Moyens;
   /** Politiques en vigueur, chacune sur son secteur. */
   politiques: PolitiqueActive[];

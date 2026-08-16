@@ -173,7 +173,11 @@ export function creerEtat(graine: number, rng: Rng, toursMax = HORIZON.long): Et
     tour: 1, toursMax,
     meteo: { secheresse: CLIMAT.base, ventAngle: 0, ventForce: 0.5 },
     secheressePrecedente: CLIMAT.base,
-    doctrine: 2,
+    // Posture héritée : le territoire pratique déjà l'extinction systématique.
+    // C'est le réflexe que le dossier veut défaire, et le statu quo par défaut
+    // recrute le joueur naïf dans le piège.
+    doctrine: 1,
+    reforme: null,
     moyens: { budget: 10, eleveurs: creerEleveurs(), equipes: LUTTE.equipesParTour, fenetrePostFeu: 0 },
     politiques: [],
     toursSansContrat: 0,

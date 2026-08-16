@@ -439,6 +439,14 @@ export interface OptionsSecteurs {
   selectionne?: number | null;
   /** Noms et sous-lignes. Vrai par défaut. */
   etiquettes?: boolean;
+  /**
+   * Diviseur d'échelle d'affichage (1 = natif, 3 = un tiers). Le calque est du
+   * **chrome, pas du paysage** : ses traits gardent leur épaisseur à l'écran
+   * par `vector-effect`, mais sa géométrie — équerres, retrait du liseré, cerne
+   * du bâti — est en unités de carte et fondait avec la réduction. À 1:3, une
+   * équerre de 20 unités mesurait 7 px : la sélection était invisible.
+   */
+  echelle?: number;
 }
 
 /**
@@ -447,21 +455,18 @@ export interface OptionsSecteurs {
  * séparer les trois familles, sans troisième couleur.
  */
 const SECTEUR = {
-  limite: 'oklch(0.32 0.025 130)',
-  trait: 2,
-  traitSurvol: 3.5,
-  /** Retrait du liseré d'état à l'intérieur de la limite. */
-  retrait: 12,
+  /** Limite au repos : un trait clair, qui se lit comme une coupure du
+   *  paysage sans y ajouter d'encre. */
+  limite: 'oklch(0.97 0.01 90)',
+  trait: 2.5,
+  traitSurvol: 4,
+  /** Voile posé sur les secteurs **qu'on ne regarde pas** pendant une
+   *  sélection. Voir `rendreCalqueSecteurs` pour l'écart assumé à la règle. */
+  voile: 'oklch(0.26 0.03 62)',
+  opaciteVoile: 0.25,
   braise: 'oklch(0.55 0.16 44)',
   vertPin: 'oklch(0.44 0.07 150)',
   vertClair: 'oklch(0.62 0.06 148)',
-  encreActivable: 'oklch(0.50 0.03 74)',
-  /** Tireté long pour l'activable, tireté serré pour la montée en charge
-   *  (valeurs de la planche 4). */
-  tiretLong: '9 7',
-  tiretSerre: '3 9',
-  equerre: 20,
-  garde: 5,
 } as const;
 
 /**
@@ -561,49 +566,6 @@ function fusionnerAlignes(pts: Pt[]): Pt[] {
 const chemin = (pts: Pt[], echelle = S) =>
   `M${pts.map((p) => `${(p.x * echelle).toFixed(0)} ${(p.y * echelle).toFixed(0)}`).join('L')}Z`;
 
-/**
- * Boucle rentrée de `d` unités de carte. Les côtés étant tous axiaux et les
- * sommets alignés fusionnés, deux arêtes consécutives sont perpendiculaires :
- * l'intersection des deux droites décalées est exactement le sommet décalé de
- * la somme des deux normales intérieures. Pas de rognage à faire.
- */
-function rentrer(pts: Pt[], d: number): Pt[] {
-  const n = pts.length;
-  const normale = (a: Pt, b: Pt): Pt => {
-    const dx = Math.sign(b.x - a.x);
-    const dy = Math.sign(b.y - a.y);
-    return { x: -dy, y: dx }; // intérieur à droite
-  };
-  return pts.map((p, i) => {
-    const avant = pts[(i - 1 + n) % n];
-    const apres = pts[(i + 1) % n];
-    const n1 = normale(avant, p);
-    const n2 = normale(p, apres);
-    return { x: p.x * S + (n1.x + n2.x) * d, y: p.y * S + (n1.y + n2.y) * d };
-  });
-}
-
-const cheminBrut = (pts: Pt[]) =>
-  `M${pts.map((p) => `${p.x.toFixed(0)} ${p.y.toFixed(0)}`).join('L')}Z`;
-
-/** Liseré d'état : le code exact du filet gauche de la fiche de politique. */
-function lisere(etat: EtatSecteur, d: string): string {
-  const commun = { d, fill: 'none', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' };
-  switch (etat) {
-    case 'activable':
-      return `<path ${attrs({ ...commun, stroke: SECTEUR.encreActivable, 'stroke-width': 3, 'stroke-dasharray': SECTEUR.tiretLong })}/>`;
-    case 'montee':
-      return `<path ${attrs({ ...commun, stroke: SECTEUR.vertClair, 'stroke-width': 3, 'stroke-dasharray': SECTEUR.tiretSerre })}/>`;
-    case 'vigueur':
-      return `<path ${attrs({ ...commun, stroke: SECTEUR.vertPin, 'stroke-width': 3 })}/>`;
-    case 'peril':
-      // Doublé : c'est le secteur que le modèle coupera, nommé **avant**
-      // l'abandon et non déploré après.
-      return `<path ${attrs({ ...commun, stroke: SECTEUR.braise, 'stroke-width': 2.5 })}/>`;
-    default:
-      return '';
-  }
-}
 
 const etiquette = (x: number, y: number, texte: string, couleur: string, taille = 21) =>
   `<text ${attrs({
@@ -621,14 +583,34 @@ const etiquette = (x: number, y: number, texte: string, couleur: string, taille 
   })}>${texte}</text>`;
 
 /**
+ * Encre de la limite selon l'état du secteur. **Une seule ligne par secteur**,
+ * et c'est son encre qui porte l'état.
+ *
+ * La planche 4 posait deux traits : la limite, plus un liseré tireté en retrait
+ * de 12 px reprenant le filet de la fiche. À l'usage, sur un fond de paysage
+ * déjà dense en traits, cela faisait un trait plein pris en sandwich entre deux
+ * tiretés, bruyant et illisible. L'information tient dans une ligne : elle est
+ * là, et elle a une couleur. Au repos cette ligne est **claire**, ce qui se lit
+ * comme une coupure du paysage sans y ajouter d'encre.
+ */
+function encreDeLimite(etat: EtatSecteur | undefined): string {
+  if (etat === 'peril') return SECTEUR.braise;
+  if (etat === 'vigueur') return SECTEUR.vertPin;
+  if (etat === 'montee') return SECTEUR.vertClair;
+  // « Activable » n'est pas un état à afficher sur la carte : le panneau le dit
+  // déjà, et le signaler partout reviendrait à souligner tout le versant.
+  return SECTEUR.limite;
+}
+
+/**
  * Étiquette de secteur : nom du modèle en Fraunces, **jamais tronqué**, et une
  * sous-ligne en capitales. Halo de parchemin par `paint-order`, jamais de
  * cartouche opaque : un fond plein rouvrirait l'interdit d'aplat.
  */
-function etiquetteSecteur(x: number, y: number, nom: string, sous: string): string {
+function etiquetteSecteur(x: number, y: number, nom: string, sous: string, k = 1): string {
   const halo = {
     stroke: ENCRE.halo,
-    'stroke-width': 6,
+    'stroke-width': 6 * k,
     'paint-order': 'stroke',
     'stroke-linejoin': 'round',
     'text-anchor': 'middle',
@@ -640,17 +622,17 @@ function etiquetteSecteur(x: number, y: number, nom: string, sous: string): stri
       y: y.toFixed(0),
       fill: ENCRE.cadre,
       'font-family': 'Fraunces, ui-serif, Georgia, serif',
-      'font-size': 21,
+      'font-size': 21 * k,
     })}>${nom}</text>` +
     `<text ${attrs({
       ...halo,
-      'stroke-width': 5,
+      'stroke-width': 5 * k,
       x: x.toFixed(0),
-      y: (y + 20).toFixed(0),
+      y: (y + 20 * k).toFixed(0),
       fill: ENCRE.gestion,
       'font-family': 'ui-sans-serif, system-ui, sans-serif',
-      'font-size': 12,
-      'letter-spacing': 1,
+      'font-size': 12 * k,
+      'letter-spacing': k,
     })}>${sous.toUpperCase()}</text>`
   );
 }
@@ -665,9 +647,15 @@ export function rendreCalqueSecteurs(
   options: OptionsSecteurs & { fenetre?: Fenetre } = {},
 ): string {
   const f = options.fenetre ?? { x0: 0, y0: 0, largeur: etat.largeur, hauteur: etat.hauteur };
+  // Géométrie du chrome, multipliée par le diviseur : ce qui doit garder sa
+  // taille **à l'écran** doit grandir dans le repère de la carte quand celle-ci
+  // rétrécit. Les épaisseurs, elles, sont tenues par `vector-effect`.
+  const k = options.echelle ?? 1;
   const parId = new Map((options.donnees ?? []).map((d) => [d.id, d]));
   const morceaux: string[] = [];
   const etiquettes: string[] = [];
+  /** Contours du secteur choisi, réunis pour percer le voile. */
+  const contoursChoisi: string[] = [];
 
   for (const s of etat.secteurs) {
     const cellules = s.cellules.filter((i) => dansFenetre(
@@ -685,58 +673,19 @@ export function rendreCalqueSecteurs(
     for (const b of boucles) {
       morceaux.push(
         `<path ${attrs({
+          class: 'secteur__limite',
           d: chemin(b),
           fill: 'none',
-          stroke: SECTEUR.limite,
-          'stroke-width': survole ? SECTEUR.traitSurvol : SECTEUR.trait,
+          // La sélection ne change pas l'encre : le voile la dit déjà, et une
+          // limite braise en plus faisait doublon. Le trait s'épaissit
+          // seulement, comme au survol.
+          stroke: encreDeLimite(d?.etat),
+          'stroke-width': selectionne ? 4 : survole ? SECTEUR.traitSurvol : SECTEUR.trait,
           'stroke-linejoin': 'round',
+          'vector-effect': 'non-scaling-stroke',
         })}/>`,
       );
-
-      // 2. Le liseré d'état, en retrait à l'intérieur.
-      if (d && d.etat !== 'aucun') {
-        morceaux.push(lisere(d.etat, cheminBrut(rentrer(b, SECTEUR.retrait))));
-        // Doublé pour le péril : deux traits parallèles, pas un trait épais.
-        if (d.etat === 'peril') morceaux.push(lisere('peril', cheminBrut(rentrer(b, SECTEUR.retrait + 7))));
-      }
-
-      // 3. Sélection : filet de garde à l'extérieur de la limite.
-      if (selectionne) {
-        morceaux.push(
-          `<path ${attrs({
-            d: cheminBrut(rentrer(b, -SECTEUR.garde)),
-            fill: 'none',
-            stroke: SECTEUR.braise,
-            'stroke-width': 1,
-            'stroke-linejoin': 'round',
-          })}/>`,
-        );
-      }
-    }
-
-    // Équerres aux quatre angles de l'encombrement : sur un polygone
-    // rectilinéaire quelconque, « les quatre angles » n'ont de sens que là.
-    if (selectionne) {
-      const xs = s.cellules.map((i) => i % etat.largeur);
-      const ys = s.cellules.map((i) => Math.floor(i / etat.largeur));
-      const x0 = Math.min(...xs) * S - SECTEUR.garde;
-      const x1 = (Math.max(...xs) + 1) * S + SECTEUR.garde;
-      const y0 = Math.min(...ys) * S - SECTEUR.garde;
-      const y1 = (Math.max(...ys) + 1) * S + SECTEUR.garde;
-      const e = SECTEUR.equerre;
-      for (const [px, py, sx, sy] of [
-        [x0, y0, 1, 1], [x1, y0, -1, 1], [x1, y1, -1, -1], [x0, y1, 1, -1],
-      ] as const) {
-        morceaux.push(
-          `<path ${attrs({
-            d: `M${px + sx * e} ${py}H${px}V${py + sy * e}`,
-            fill: 'none',
-            stroke: SECTEUR.braise,
-            'stroke-width': 3,
-            'stroke-linecap': 'round',
-          })}/>`,
-        );
-      }
+      if (selectionne) contoursChoisi.push(chemin(b));
     }
 
     // 4. Les deux seules valeurs chiffrées que le calque pose sur la carte.
@@ -761,12 +710,16 @@ export function rendreCalqueSecteurs(
       }
     }
 
-    if (options.etiquettes !== false) {
+    // **L'étiquette ne s'affiche qu'au survol ou sur le secteur choisi.** Quatorze
+    // noms posés en permanence sur le paysage recouvraient le semis et les
+    // courbes, et disaient partout ce dont on n'a besoin qu'ici : le nom sert à
+    // confirmer ce qu'on désigne, pas à cartographier le versant.
+    if (options.etiquettes !== false && (survole || selectionne)) {
       const ex = (s.ax + 0.5) * S;
       const ey = (s.ay + 0.5) * S;
       const nature = NATURE_SECTEUR[s.nature].toLowerCase();
       const porte = d?.porte ?? 'aucune';
-      etiquettes.push(etiquetteSecteur(ex, ey, s.nom, `${nature} · ${s.cellules.length} cellules · ${porte}`));
+      etiquettes.push(etiquetteSecteur(ex, ey, s.nom, `${nature} · ${s.cellules.length} cellules · ${porte}`, k));
       if (d?.etat === 'peril' && d.ecartPlancher) {
         etiquettes.push(
           `<text ${attrs({
@@ -805,6 +758,7 @@ export function rendreCalqueSecteurs(
         fill: 'none',
         stroke: SECTEUR.braise,
         'stroke-width': 1.5,
+        'vector-effect': 'non-scaling-stroke',
         // Plein si la construction est durcie : le cerne dit à la fois qu'elle
         // est seule et ce qu'elle vaut face aux braises.
         'stroke-dasharray': c.durcissement >= 1 ? undefined : '6 5',
@@ -812,7 +766,28 @@ export function rendreCalqueSecteurs(
     );
   }
 
-  return morceaux.join('') + etiquettes.join('');
+  /**
+   * **Écart assumé à la planche 4**, qui interdit tout aplat, même à 8 %, au
+   * motif que le grain de sous-bois et les paliers de densité justifient la
+   * décision et ne doivent jamais être recouverts.
+   *
+   * Le voile ne se pose que pendant une sélection, et **jamais sur le secteur
+   * choisi**, qui garde son grain intact : c'est précisément celui qu'on est en
+   * train de juger. Les autres sont mis en retrait le temps qu'on décide, et
+   * retrouvent leur paysage dès qu'on referme. La règle protégeait la lecture
+   * de ce qu'on regarde ; elle est tenue.
+   */
+  const voile = contoursChoisi.length
+    ? `<path ${attrs({
+        class: 'secteur__voile',
+        d: `M0 0H${etat.largeur * S}V${etat.hauteur * S}H0Z${contoursChoisi.join('')}`,
+        'fill-rule': 'evenodd',
+        fill: SECTEUR.voile,
+        'fill-opacity': SECTEUR.opaciteVoile,
+      })}/>`
+    : '';
+
+  return voile + morceaux.join('') + etiquettes.join('');
 }
 
 /** Compose la carte. Le `<svg>` appartient à la page, qui décide de sa taille. */

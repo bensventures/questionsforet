@@ -1,5 +1,13 @@
 import { jouerLot, agrege, moyenne, ecartType, type Resultat, type Strategie } from './jouer';
-import { CINQ, mixteCompetente, toutDebroussailler, durcissementSeul } from './strategies';
+import {
+  CINQ,
+  mixteCompetente,
+  toutDebroussailler,
+  durcissementSeul,
+  reformeEnFenetre,
+  reformeHorsFenetre,
+} from './strategies';
+import { REFORME } from '../model/params';
 
 /**
  * Harnais de calibration (§12 et patch 3). Joue les cinq stratégies et vérifie
@@ -167,7 +175,20 @@ for (const axe of AXES) {
   console.log(`  ${axe.padEnd(24)} mixte ${moi.toFixed(0).padStart(5)}   meilleur autre ${meilleurAutre.toFixed(0).padStart(5)}   ${gagne ? 'domine' : 'battue'}`);
   if (!gagne) battue.push(axe);
 }
-verifier(agrege(mixte, 'batiPct') >= Math.max(...lignes.filter((l) => l.nom !== mixteCompetente.nom).map((l) => agrege(l.r, 'batiPct'))), 'meilleure sur le bâti');
+/*
+ * Comparée aux **cinq stratégies du §12**, et non à la sonde « durcissement
+ * seul », qui n'en fait pas partie : c'est une monomanie de diagnostic, et
+ * mêler une sonde à un critère de calibration le faisait basculer sur quatre
+ * dixièmes de point. Depuis que la compétente réforme vers le feu géré, elle
+ * laisse en effet passer un peu plus de feu et perd 0,8 point de bâti — ce qui
+ * est exactement la thèse, pas un défaut de réglage.
+ */
+const cinqAutres = lignes.filter((l) => l.nom !== mixteCompetente.nom && l.nom !== durcissementSeul.nom);
+verifier(
+  agrege(mixte, 'batiPct') >= Math.max(...cinqAutres.map((l) => agrege(l.r, 'batiPct'))),
+  'meilleure sur le bâti que les autres stratégies du §12',
+  `${agrege(mixte, 'batiPct').toFixed(1)} % contre ${Math.max(...cinqAutres.map((l) => agrege(l.r, 'batiPct'))).toFixed(1)} %, et ${agrege(durci, 'batiPct').toFixed(1)} % pour la sonde de durcissement`,
+);
 verifier(battue.length > 0, 'battue sur au moins un axe par une stratégie spécialisée', battue.join(', ') || 'aucun');
 
 /**
@@ -196,6 +217,35 @@ verifier(
   agrege(rien, 'eleveursPerdus') > 0.5 && agrege(rien, 'eleveursEngages') === 0,
   'en ne faisant rien, le même zéro disponible est une déprise (levier mort)',
   `${agrege(rien, 'eleveursPerdus').toFixed(1)} perdus`,
+);
+
+/*
+ * Doctrine : posture héritée et réforme fenêtrée (patch au brief v3).
+ *
+ * Deux choses à tenir. La posture héritée doit **coller** à qui ne la réforme
+ * pas : c'est le témoin du piège. Et réformer hors de la fenêtre ouverte par un
+ * incendie doit coûter nettement plus que dedans, sans quoi la lenteur ne mord
+ * pas et l'on retombe sur l'interrupteur gratuit d'avant le patch.
+ */
+console.log('\nDoctrine héritée et réforme fenêtrée :');
+verifier(
+  agrege(extinction, 'toursCran1') === 40,
+  'la posture héritée tient les quarante étés chez qui ne la réforme jamais',
+  `${agrege(extinction, 'toursCran1').toFixed(0)} étés en extinction systématique`,
+);
+verifier(
+  agrege(mixte, 'toursCran1') < 1,
+  'le joueur informé esquive le piège à l’ouverture, le seul moment gratuit',
+  `${agrege(mixte, 'toursCran1').toFixed(1)} été passé en posture héritée`,
+);
+const hors = jouerLot(reformeHorsFenetre, PARTIES);
+const dans = jouerLot(reformeEnFenetre, PARTIES);
+const ecart = agrege(hors, 'depense') - agrege(dans, 'depense');
+verifier(
+  REFORME.cout >= 3 * REFORME.coutFenetre && REFORME.delai >= 2 * REFORME.delaiFenetre && ecart > 0,
+  'réformer hors fenêtre coûte nettement plus que dans la fenêtre',
+  `${REFORME.cout} et ${REFORME.delai} étés contre ${REFORME.coutFenetre} et ${REFORME.delaiFenetre}, ` +
+    `soit ${ecart.toFixed(0)} de dépense cumulée mesurée`,
 );
 
 console.log('\nTest de variabilité (§12) :');

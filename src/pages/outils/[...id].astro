@@ -119,7 +119,7 @@ const clotureLien = cloture?.lien ? await getEntry(cloture.lien) : null;
     }
 
     {
-      !isSimulation && biblio.length > 0 && (
+      biblio.length > 0 && (
         <section class="sources-outil" aria-labelledby="sources-titre">
           <h2 id="sources-titre">Toutes les sources de cet outil</h2>
           <ol class="sources-outil__liste">

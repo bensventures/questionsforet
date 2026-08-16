@@ -252,11 +252,17 @@ const calque = cartouche.rendreCalqueSecteurs(dernier.etat, {
   fenetre: { x0: FEN.x0, y0: FEN.y0, largeur: FEN.w, hauteur: FEN.h },
 });
 
-// Le calque **ajoute des traits, il ne pose aucun aplat** : c'est la contrainte
-// dominante de la planche 4, et la seule qui se vérifie sans regarder. Seuls
-// les textes et les crans d'adoption ont droit à un remplissage.
+// Le calque **n'ajoute qu'un seul aplat**, et il est daté : le voile posé sur
+// les secteurs qu'on ne regarde pas pendant une sélection. La planche 4
+// l'interdisait ; l'écart est assumé parce que le voile épargne le secteur
+// choisi, dont le grain justifie la décision qu'on est en train de prendre.
 const remplissages = [...calque.matchAll(/<(path|rect)\b[^>]*fill="([^"]+)"/g)].map((m) => m[2]);
-const aplats = remplissages.filter((f) => f !== 'none' && !f.startsWith('oklch(0.62'));
+const aplats = remplissages.filter(
+  (f) => f !== 'none' && !f.startsWith('oklch(0.62') && f !== 'oklch(0.26 0.03 62)',
+);
+// Et il épargne le secteur choisi : son contour perce le voile.
+const voile = calque.match(/<path class="secteur__voile"[^>]*d="([^"]+)"/);
+const perce = !!voile && (voile[1].match(/M/g) ?? []).length > 1 && /fill-rule="evenodd"/.test(calque);
 // Le liseré d'état est en retrait **à l'intérieur** de la limite : son
 // encombrement doit donc être strictement contenu dans celui du secteur.
 const boite = (d) => {
@@ -265,10 +271,13 @@ const boite = (d) => {
   const ys = n.filter((_, i) => i % 2 === 1);
   return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
 };
-const traces = [...calque.matchAll(/<path [^>]*stroke="([^"]+)"[^>]*d="([^"]+)"|<path [^>]*d="([^"]+)"[^>]*stroke="([^"]+)"/g)]
-  .map((m) => ({ stroke: m[1] ?? m[4], d: m[2] ?? m[3] }));
-const limites = traces.filter((t) => t.stroke === 'oklch(0.32 0.025 130)');
-const liseres = traces.filter((t) => ['oklch(0.44 0.07 150)', 'oklch(0.62 0.06 148)', 'oklch(0.50 0.03 74)'].includes(t.stroke));
+// Repérés par leur classe et non par leur encre : la limite d'un secteur
+// sélectionné passe en braise, et la reconnaître à sa couleur revenait à ne
+// plus la compter.
+const parClasse = (nom) =>
+  [...calque.matchAll(new RegExp(`<path class="${nom}"[^>]*d="([^"]+)"`, 'g'))].map((m) => ({ d: m[1] }));
+const limites = parClasse('secteur__limite');
+const liseres = parClasse('secteur__lisere'); // vide depuis la ligne unique
 const dedans = liseres.every((l) => {
   const b = boite(l.d);
   return limites.some((li) => {
@@ -284,14 +293,46 @@ const orphelins = dernier.grille.filter((c) => c.type === 'bati' && natures.get(
 const calqueEntier = cartouche.rendreCalqueSecteurs(dernier.etat, OPT_SECTEURS);
 const cernes = [...calqueEntier.matchAll(/<rect [^>]*stroke="oklch\(0\.55 0\.16 44\)"/g)].length;
 
+// La sélection se lit **au voile seul** : ni limite ni nom en braise, qui
+// faisaient doublon avec lui.
+const calqueChoisi = cartouche.rendreCalqueSecteurs(dernier.etat, { ...OPT_SECTEURS, echelle: 3 });
+const sansBraiseEnTrop = !/<text[^>]*fill="oklch\(0\.55 0\.16 44\)"/.test(calqueChoisi);
+// Et elle doit tenir à toutes les échelles : les traits sont en unités
+// d'écran, la géométrie suit le diviseur.
+const a1 = cartouche.rendreCalqueSecteurs(dernier.etat, { ...OPT_SECTEURS, echelle: 1 });
+const a4 = cartouche.rendreCalqueSecteurs(dernier.etat, { ...OPT_SECTEURS, echelle: 4 });
+// Les équerres ont disparu avec le voile ; le retrait aussi. Reste le corps des
+// étiquettes, qui doit toujours suivre la réduction.
+const corps = (svg) => Number(svg.match(/font-size="(\d+)"/)?.[1] ?? 0);
+
 console.log('\ncalque secteur (planche 4) :');
 for (const [libelle, ok] of [
   [`${secteursVus.length} secteurs visibles, ${limites.length} limite(s) tracée(s)`, limites.length >= secteursVus.length],
   ['toutes les limites sont fermées', limites.every((l) => l.d.endsWith('Z'))],
   [`aucun aplat${aplats.length ? ` — ${[...new Set(aplats)]}` : ''}`, aplats.length === 0],
-  ['les liserés d’état sont en retrait à l’intérieur des limites', dedans],
+
   [`le bâti orphelin est cerné (${cernes} cerne(s) pour ${orphelins} construction(s) hors couronne)`, cernes === orphelins],
   [`le calque pèse ${(calque.length / 1024).toFixed(1)} Ko contre ${(fenetree.contenu.length / 1024).toFixed(0)} Ko de paysage`, calque.length < fenetree.contenu.length / 4],
+  ['la sélection se lit au voile, sans braise en doublon', sansBraiseEnTrop],
+  [
+    // Quatorze noms posés en permanence recouvraient le semis et les courbes.
+    `les noms de secteur n'apparaissent qu'au survol ou sur le choisi (${
+      [...calqueChoisi.matchAll(/Fraunces, ui-serif/g)].length
+    } sur ${dernier.etat.secteurs.length})`,
+    [...calqueChoisi.matchAll(/Fraunces, ui-serif/g)].length <= 2,
+  ],
+  ['le voile épargne le secteur choisi', perce],
+  [
+    `une seule ligne par secteur, son encre porte l'état (${new Set(
+      [...calque.matchAll(/<path class="secteur__limite"[^>]*stroke="([^"]+)"/g)].map((m) => m[1]),
+    ).size} encres)`,
+    !/class="secteur__lisere"/.test(calque),
+  ],
+  [
+    'les traits du calque gardent leur épaisseur à l’écran',
+    (calqueChoisi.match(/vector-effect="non-scaling-stroke"/g) ?? []).length > 3,
+  ],
+  [`le corps des étiquettes suit l’échelle (${corps(a1)} → ${corps(a4)})`, corps(a4) > corps(a1)],
 ]) console.log(`  ${ok ? '✓' : '✗'} ${libelle}`);
 
 const vueSecteurs = `<div class="carte">${carte(dernier, { secteurs: OPT_SECTEURS }, FEN)}</div>`;

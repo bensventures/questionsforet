@@ -3,7 +3,6 @@ import sprite from '../../rendu/glyphes.svg?raw';
 import { creerRng } from '../../model/rng';
 import { creerEtat } from '../../model/terrain';
 import { avancer } from '../../model/avancer';
-import { mixteCompetente } from '../../harness/strategies';
 import { rendreCarte } from '../../rendu/carte';
 import {
   STYLES_ECRAN,
@@ -11,21 +10,25 @@ import {
   etatsDesSecteurs,
   fenetreVisible,
   rendreEcran,
-  rendreFinDePartie,
   rendrePanneau,
   vueDuPanneau,
-  vueFinDePartie,
 } from '../../rendu/panneau';
+import { getEntries } from 'astro:content';
+import Citation from '../Citation.astro';
+import { SOURCES_MECANIQUES, SOURCES_POLITIQUES } from '../../lib/sources-simulateur';
+import { TYPES } from '../../model/params';
+import { glyphe, couleurVegetation } from '../../rendu/palette';
+import { STYLES_REJEU } from '../../rendu/rejeu';
+import { STYLES_OUVERTURE } from '../../rendu/panneau';
 
 /**
- * Visualisation statique du simulateur v3, à la place de la v2 gelée.
+ * Simulateur v3, à la place de la v2 gelée.
  *
- * **Rien n'est interactif ici, et c'est volontaire** : la couche décision a son
- * langage visuel (calque de secteur, panneau, écran de fin, bande de coupe)
- * mais pas encore son îlot. La page rend une vraie partie au tour choisi,
- * engendrée au build. Le seul JavaScript de la page est le déplacement de la
- * carte au curseur : l'ouverture en plein écran, la bascule des petits écrans
- * et le choix d'échelle restent en CSS.
+ * Le **premier été est rendu au serveur** : sans script, la page montre le
+ * versant de départ et le panneau, ce qui reste honnête. Avec, l'îlot recrée le
+ * même état à la même graine et la partie commence. L'ouverture en plein écran,
+ * la bascule des petits écrans et le choix d'échelle restent en CSS ; le script
+ * ne sert qu'à décider et à faire passer les étés.
  *
  * **La page est la porte d'entrée, pas le simulateur.** Une carte est un
  * rectangle paysage ; dans le flux d'un article elle n'a qu'une colonne étroite
@@ -43,32 +46,17 @@ interface Props {
   /** Tour auquel on s'arrête. */
   tour?: number;
 }
-const { graine = 1000, tour = 14 } = Astro.props;
+const { graine = 1000 } = Astro.props;
 
-const rng = creerRng(graine);
-const etat = creerEtat(graine, rng, 40);
-let lignes: ReturnType<typeof avancer>['lignes'] = [];
-let feu = false;
-for (let t = 1; t <= tour; t++) {
-  const r = avancer(etat, mixteCompetente.decider(etat, etat.tour), rng);
-  lignes = r.lignes;
-  feu = r.feu;
-}
-
-// Le secteur ouvert dans le panneau est celui qui porte une politique : c'est
-// là que les fiches ont quelque chose à montrer.
-const secteurOuvert = etat.politiques[0]?.secteur ?? 0;
-const donnees = etatsDesSecteurs(etat);
-const vue = vueDuPanneau(etat, {
-  secteur: secteurOuvert,
-  lignes: lignes.map((l) => ({
-    ...l,
-    rejeu: feu && /parcourue|houppier|braise|feu de surface/i.test(l.texte),
-  })),
-});
-
+// **Le premier été, rendu au serveur.** L'îlot recrée le même état à la même
+// graine et reprend exactement là : sans script, on voit le versant de départ
+// et le panneau, ce qui reste une page honnête ; avec, la partie commence.
+const etat = creerEtat(graine, creerRng(graine), 40);
+const vue = vueDuPanneau(etat, { secteur: null, lignes: [] });
 const carte = rendreCarte(etat, {
-  secteurs: { donnees, selectionne: secteurOuvert, survole: null },
+  // Échelle d'ouverture : le calque est du chrome, sa géométrie suit la
+  // réduction pour garder sa taille à l'écran.
+  secteurs: { donnees: etatsDesSecteurs(etat), selectionne: null, survole: null, echelle: 3 },
 });
 const [, , largeurSvg, hauteurSvg] = carte.viewBox.split(' ');
 
@@ -86,49 +74,110 @@ const ecran = rendreEcran({
   echelle: 'moyenne',
 });
 
-// Une seconde partie, menée jusqu'au bout : l'écran de fin n'a de sens qu'à
-// quarante étés, et on ne peut pas montrer les deux moments d'une même partie.
-const rngFin = creerRng(graine);
-const etatFin = creerEtat(graine, rngFin, 40);
-for (let t = 1; t <= 40; t++) avancer(etatFin, mixteCompetente.decider(etatFin, etatFin.tour), rngFin);
-const fin = rendreFinDePartie(vueFinDePartie(etatFin));
+/**
+ * Légende, engendrée depuis la palette du rendu : les couverts que la carte
+ * dessine, avec le nom que le modèle leur donne. Rien n'est recopié à la main,
+ * donc rien ne peut mentir sur ce que le joueur verra.
+ */
+const LEGENDE = [
+  'chene', 'hetre', 'pinNoir', 'pinSylvestre',
+  'garrigue', 'friche', 'pelouse', 'ripisylve', 'rocher', 'bati',
+] as const;
+const legende = LEGENDE.map((type) => ({
+  nom: TYPES[type].nom,
+  href: glyphe(type, 3, 'sain'),
+  couleur: couleurVegetation(type, 3),
+}));
+/** Deux états qu'on ne lit qu'après un feu, et qui racontent le plus. */
+const legendeFeu = [
+  { nom: 'Houppier roussi', href: glyphe('chene', 3, 'roussi'), couleur: couleurVegetation('chene', 2) },
+  { nom: 'Souche à rejet', href: glyphe('chene', 3, 'consomme'), couleur: null },
+  { nom: 'Pin mort, sans retour', href: glyphe('pinNoir', 3, 'consomme'), couleur: null },
+  { nom: 'Construction détruite', href: glyphe('bati', 3, 'sain', 'ruine'), couleur: null },
+];
+
+// Les sources, mécanisme par mécanisme : l'objet le plus argumenté du site ne
+// peut pas être le seul sans traçabilité.
+const mecanismes = await Promise.all(
+  [...Object.values(SOURCES_POLITIQUES), ...SOURCES_MECANIQUES].map(async (m) => ({
+    ...m,
+    resolues: await getEntries(m.ids.map((id) => ({ collection: 'sources' as const, id }))),
+  })),
+);
 ---
 
 <section class="v3" aria-label="Simulateur, aperçu statique">
   <p class="v3__note">
-    Partie de graine {graine}, jouée par la stratégie compétente jusqu'à l'été {tour} et rendue au
-    build. Aucune interaction pour l'instant : le calque de secteur et le panneau ont leur langage
-    visuel, pas encore leur îlot. Le simulateur s'ouvre sur toute la fenêtre, seul cadre au rapport
-    d'une carte ; on s'y déplace en tirant la carte, et trois échelles y sont disponibles, chacune
-    disant ce qu'elle perd.
+    Quarante étés à tenir sur un versant du Diois. On choisit un secteur sur la carte, on y engage
+    des politiques, on règle la doctrine de lutte, puis vient l'été et avec lui le risque de feu.
+    Le simulateur s'ouvre sur toute la fenêtre : on s'y déplace en tirant la carte, et trois
+    échelles sont disponibles, chacune disant ce qu'elle perd.
   </p>
 
   <p class="v3__cta"><a href="#simulateur">Ouvrir le simulateur</a></p>
 
-  <h2 class="v3__h">Après quarante étés</h2>
+  <h2 class="v3__h">Ce que la carte montre</h2>
   <p class="v3__note">
-    La même partie menée jusqu'au bout. L'écran se relit sans note, sans étoile et sans total : le
-    jeu n'a pas de solution optimale, c'est un résultat mesuré, et un indice unique le masquerait.
-    Le rapprochement des deux ventilations, par cause puis par état de la construction perdue, est la
-    seule forme de leçon qu'il s'autorise.
+    Une parcelle vaut 50 m de côté. Le nombre d'arbres dit la densité du peuplement, le semis de
+    points au sol dit la charge de sous-bois, et l'espacement des courbes dit la pente.
   </p>
-  <div class="v3__fin"><Fragment set:html={fin} /></div>
+  <ul class="v3__legende">
+    {legende.map((g) => (
+      <li>
+        <svg viewBox="0 0 64 96" aria-hidden="true" style={g.couleur ? `color:${g.couleur}` : undefined}>
+          <use href={`#${g.href}`} />
+        </svg>
+        <span>{g.nom}</span>
+      </li>
+    ))}
+  </ul>
+  <p class="v3__note">Après le feu, le paysage garde sa trace, et chacune s'efface à son rythme.</p>
+  <ul class="v3__legende">
+    {legendeFeu.map((g) => (
+      <li>
+        <svg viewBox="0 0 64 96" aria-hidden="true" style={g.couleur ? `color:${g.couleur}` : undefined}>
+          <use href={`#${g.href}`} />
+        </svg>
+        <span>{g.nom}</span>
+      </li>
+    ))}
+  </ul>
+  <Fragment set:html={sprite} />
+
+  <h2 class="v3__h">Ce sur quoi le modèle s'appuie</h2>
+  <p class="v3__note">
+    Chaque levier applique une règle, et chaque règle vient de quelque part. Les mécaniques que
+    personne ne décide sont sourcées au même titre que les leviers.
+  </p>
+  <dl class="v3__mecanismes">
+    {mecanismes.map((m) => (
+      <div>
+        <dt>{m.nom}</dt>
+        <dd>
+          <p>{m.regle}</p>
+          <ol>
+            {m.resolues.map((s) => (
+              <li><Citation source={s.data} /></li>
+            ))}
+          </ol>
+        </dd>
+      </div>
+    ))}
+  </dl>
 </section>
 
-<div id="simulateur" class="plein">
+<div id="simulateur" class="plein" data-graine={graine}>
   <Fragment set:html={ecran} />
   <a class="plein__fermer" href="#simulateur-ferme">Fermer</a>
 </div>
 
 <script>
+  import { monterSimulateur } from '../../ilot/simulateur';
+
   /**
    * Déplacement de la carte **au curseur**, à la manière d'une carte en ligne.
-   *
-   * C'est le premier JavaScript du simulateur, et le garde-fou du projet
-   * demande une nécessité démontrée : deux essais successifs l'ont montrée. Se
-   * déplacer aux deux barres de défilement sur un plan de 40 × 26 parcelles est
-   * pénible, et aucune mise en page ne le rattrape. Une quinzaine de lignes,
-   * aucune dépendance, servies depuis le domaine (la CSP interdit l'inline).
+   * Se déplacer aux deux barres de défilement sur un plan de 40 × 26 parcelles
+   * est pénible, et aucune mise en page ne le rattrape.
    *
    * Le clavier n'est pas oublié : la boîte de défilement reste focalisable et
    * les flèches continuent de la déplacer, ce que ce script ne touche pas.
@@ -160,9 +209,14 @@ const fin = rendreFinDePartie(vueFinDePartie(etatFin));
       boite.addEventListener(fin, () => delete boite.dataset.tire);
     }
   }
+
+  // La partie prend la main sur l'écran rendu au serveur, à la même graine.
+  const plein = document.querySelector<HTMLElement>('#simulateur');
+  const graine = Number(plein?.dataset.graine ?? 1000);
+  if (plein) monterSimulateur(plein, graine);
 </script>
 
-<style is:global set:html={STYLES_PANNEAU + STYLES_ECRAN}></style>
+<style is:global set:html={STYLES_PANNEAU + STYLES_ECRAN + STYLES_REJEU + STYLES_OUVERTURE}></style>
 
 <style>
   .v3 {
@@ -190,7 +244,55 @@ const fin = rendreFinDePartie(vueFinDePartie(etatFin));
     margin: 2.5rem 0 0.5rem;
     font-size: 1.1rem;
   }
-  .v3__fin {
-    border: 1px solid var(--rule, #d8cfc0);
+  /* Légende : les glyphes à leur taille de lecture, pas à celle de la carte. */
+  .v3__legende {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2rem 1.6rem;
+    margin: 0 0 1.6rem;
+    padding: 0;
+    list-style: none;
+  }
+  /* Les glyphes sont dessinés le pied au bas de leur gabarit : les aligner par
+     le bas leur rend leur ligne de sol commune, comme sur la carte. */
+  .v3__legende li {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    line-height: 1.2;
+  }
+  .v3__legende svg {
+    width: 34px;
+    height: 51px;
+    flex: 0 0 34px;
+  }
+  .v3__mecanismes {
+    margin: 0;
+    max-width: 46rem;
+  }
+  .v3__mecanismes > div + div {
+    margin-top: 1.4rem;
+    border-top: 1px solid var(--rule, #d8cfc0);
+    padding-top: 1.4rem;
+  }
+  .v3__mecanismes dt {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  .v3__mecanismes dd {
+    margin: 0.3rem 0 0;
+  }
+  .v3__mecanismes dd p {
+    margin: 0 0 0.6rem;
+    color: var(--ink-2, #5a5148);
+    font-size: 0.95rem;
+  }
+  .v3__mecanismes ol {
+    margin: 0;
+    padding-left: 1.2rem;
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.9rem;
   }
 </style>

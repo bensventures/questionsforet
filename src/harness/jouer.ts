@@ -58,6 +58,9 @@ export interface Resultat {
   pertesFront: number;
   pertesSecoursDebordes: number;
   departsEteints: number;
+  /** Étés passés en extinction systématique : le témoin du piège, désormais
+   *  la posture héritée. */
+  toursCran1: number;
   /** Occasions où les constructions défendables ont dépassé les équipes. */
   toursSecoursDebordes: number;
   /** Conversion irréversible : pin noir devenu lande ou pelouse. */
@@ -135,6 +138,7 @@ export function jouerPartie(graine: number, strat: Strategie, tours = HORIZON.lo
     pertesFront: etat.cumul.pertesFront,
     pertesSecoursDebordes: etat.cumul.pertesSecoursDebordes,
     departsEteints: etat.cumul.departsEteints,
+    toursCran1: etat.cumul.toursCran1,
     toursSecoursDebordes,
     pinNoirPerdu: Math.max(0, pinNoirDepart - ind.pinNoir),
     frichePct: ind.frichePct,

@@ -100,24 +100,60 @@ export function bandeauRessources(v: VuePanneau): string {
  * se lit du pire au meilleur. Les prix sont affichés nus, même corps et même
  * encre, sans mise en avant : le cran le moins cher est le plus risqué, et
  * c'est au joueur de le voir.
+ *
+ * C'est une **posture debout, pas une action de tour** (patch « posture
+ * héritée, réforme fenêtrée »). Le bloc dit donc ce qui est en vigueur, ce que
+ * réformer coûte *maintenant*, et, le cas échéant, la réforme déjà engagée avec
+ * les étés qui restent. L'économie de la réforme est rassemblée sous les trois
+ * lignes plutôt que répétée sur chacune : deux nombres par ligne rendaient la
+ * gamme illisible.
  */
 export function selecteurDoctrine(v: VuePanneau): string {
-  const lignes = CRANS_DOCTRINE.map(
-    (d) => `<div class="doc__c${d.cran === v.doctrine.cran ? ' doc__c--on' : ''}" data-cran="${d.cran}">
-      <div class="doc__p"></div>
-      <div><div class="doc__n">${ech(d.nom)}</div><div class="doc__s">${ech(d.seuils)}</div></div>
-      <div class="doc__x">${d.cout}</div>
-    </div>`,
-  ).join('');
+  const d0 = v.doctrine;
+  const lignes = CRANS_DOCTRINE.map((d) => {
+    const enVigueur = d.cran === d0.cran;
+    const vise = d0.reforme?.vers === d.cran;
+    const demande = d0.demande === d.cran && !enVigueur;
+    const classe = enVigueur ? ' doc__c--on' : vise ? ' doc__c--vise' : demande ? ' doc__c--demande' : '';
+    const mention = enVigueur
+      ? '<span class="doc__etat">en vigueur</span>'
+      : vise
+        ? `<span class="doc__etat">dans ${d0.reforme!.dans} été${d0.reforme!.dans > 1 ? 's' : ''}</span>`
+        : demande
+          ? '<span class="doc__etat">demandée</span>'
+          : '';
+    // Un bouton, pas un `div` cliquable : sans cela la doctrine était hors
+    // d'atteinte au clavier, et le jeu injouable sans souris.
+    return `<button type="button" class="doc__c${classe}" data-cran="${d.cran}"${
+      enVigueur ? ' aria-current="true"' : ''
+    }>
+      <span class="doc__p"></span>
+      <span><span class="doc__n">${ech(d.nom)} ${mention}</span><span class="doc__s">${ech(d.seuils)}</span></span>
+      <span class="doc__x">${d.cout}</span>
+    </button>`;
+  }).join('');
 
   const tranquillite = Array.from(
     { length: v.toursMax },
-    (_, i) => `<i class="${i < v.doctrine.toursCran1 ? 'cran1' : ''}"></i>`,
+    (_, i) => `<i class="${i < d0.toursCran1 ? 'cran1' : ''}"></i>`,
   ).join('');
+
+  // Ce que réformer coûte, dit une fois. À l'ouverture c'est l'héritage qu'on
+  // confirme ou qu'on réforme, et c'est le seul moment gratuit.
+  const economie = d0.reforme
+    ? `<p class="doc__note doc__note--vise">Réforme engagée : ${ech(
+        CRANS_DOCTRINE.find((c) => c.cran === d0.reforme!.vers)!.nom.toLowerCase(),
+      )}, en vigueur dans ${d0.reforme.dans} été${d0.reforme.dans > 1 ? 's' : ''}. Aucune autre ne s'engage d'ici là.</p>`
+    : d0.ouverture
+      ? `<p class="doc__note">Le territoire pratique déjà l'extinction systématique. La conserver, ou la réformer ? Ce choix d'ouverture est sans délai ni coût.</p>`
+      : d0.fenetre > 0
+        ? `<p class="doc__note doc__note--fenetre">L'incendie a ouvert une fenêtre : réformer coûte ${d0.cout} et prend ${d0.delai} été${d0.delai > 1 ? 's' : ''}. Elle se referme dans ${d0.fenetre} été${d0.fenetre > 1 ? 's' : ''}.</p>`
+        : `<p class="doc__note">Réformer coûte ${d0.cout} et prend ${d0.delai} étés. Un incendie ouvre une fenêtre où c'est plus rapide et bien moins cher.</p>`;
 
   return `<section class="pan__bloc">
   <h2>Doctrine de lutte</h2>
   <div class="doc">${lignes}</div>
+  ${economie}
   <p class="doc__note">Près des maisons, les secours attaquent quel que soit le cran : c'est vrai des trois.</p>
   <div class="tranquillite" title="étés passés en extinction systématique">${tranquillite}</div>
 </section>`;
@@ -153,26 +189,71 @@ export function fichePolitique(f: FicheVue): string {
   ${f.etat === 'abandon' ? '<p class="fiche__pied">Vous n’avez pas décidé.</p>' : ''}
   ${f.condition ? `<div class="fiche__cond">${ech(f.condition)}</div>` : ''}
   ${
-    f.etat === 'activable'
-      ? f.refus
-        ? `<p class="fiche__refus">Hors de portée : ${ech(f.refus)}.</p>`
-        : `<button class="fiche__appel" type="button">Engager · ${f.engager}</button>`
-      : ''
+    f.enAttente
+      ? '<p class="fiche__attente">Engagée. Elle prendra effet à l’été suivant.</p>'
+      : f.etat === 'activable'
+        ? f.refus
+          ? `<p class="fiche__refus">Hors de portée : ${ech(f.refus)}.</p>`
+          : `<button class="fiche__appel" type="button">Engager · ${f.engager}</button>`
+        : ''
   }
 </article>`;
 }
 
-export function blocSecteur(v: VuePanneau): string {
-  if (!v.secteur) {
-    return `<section class="pan__bloc">
-  <h2>Secteur</h2>
-  <p class="fiche__pied">Aucun secteur sélectionné. Choisissez-en un sur la carte.</p>
-</section>`;
-  }
+/**
+ * Bloc du secteur sélectionné.
+ *
+ * **C'est le seul bloc contextuel du panneau**, et il doit se distinguer des
+ * autres à l'œil : moyens, doctrine et compte rendu parlent de la partie, lui
+ * seul parle de ce qu'on vient de désigner. Mêlé aux autres, il passait
+ * inaperçu et la sélection semblait sans effet. Il porte donc son propre fond,
+ * un filet braise, et le nom du secteur en titre plutôt qu'en capitales de
+ * rubrique.
+ *
+ * Vide, il occupe la même place et le dit : une zone qui apparaît et disparaît
+ * fait sauter le reste du panneau, et l'absence de sélection est une
+ * information comme une autre.
+ */
+/**
+ * Liste des secteurs, dans la pile courante.
+ *
+ * **C'est le chemin clavier vers la sélection**, sans lequel la partie ne se
+ * joue qu'à la souris : le calque de la carte se désigne au curseur et rien
+ * d'autre. Elle sert aussi de sommaire — quatorze secteurs, leurs natures et ce
+ * qu'ils portent — ce qu'aucune vue ne donnait, les étiquettes de la carte ne
+ * s'affichant plus qu'au survol.
+ */
+export function listeSecteurs(v: VuePanneau): string {
+  if (!v.secteurs?.length) return '';
   return `<section class="pan__bloc">
-  <h2>${ech(v.secteur.nom)}</h2>
-  <p class="fiche__pied">${ech(v.secteur.sous)}</p>
-  ${v.secteur.fiches.map(fichePolitique).join('')}
+  <h2>Secteurs</h2>
+  <ul class="secteurs">
+    ${v.secteurs
+      .map(
+        (s) => `<li><button type="button" class="secteurs__b${s.id === v.secteur?.id ? ' secteurs__b--on' : ''}" data-secteur="${s.id}"${
+          s.id === v.secteur?.id ? ' aria-current="true"' : ''
+        }>
+      <span class="secteurs__n">${ech(s.nom)}</span>
+      <span class="secteurs__e">${ech(s.porte)}</span>
+    </button></li>`,
+      )
+      .join('')}
+  </ul>
+</section>`;
+}
+
+export function blocSecteur(v: VuePanneau): string {
+  if (!v.secteur) return '';
+  return `<section class="pan__tiroir" data-secteur="${v.secteur.id}">
+  <header class="tiroir__tete">
+    <button class="tiroir__fermer" type="button" data-fermer-secteur aria-label="Fermer et désélectionner">✕</button>
+    <div>
+      <h2>Secteur choisi</h2>
+      <h3 class="secteur__nom">${ech(v.secteur.nom)}</h3>
+      <p class="secteur__sous">${ech(v.secteur.sous)}</p>
+    </div>
+  </header>
+  <div class="tiroir__corps">${v.secteur.fiches.map(fichePolitique).join('')}</div>
 </section>`;
 }
 
@@ -225,7 +306,9 @@ export function compteRendu(v: VuePanneau): string {
     : // Seule ligne du bloc qui ne vienne pas du noyau, et signalée comme telle.
       `<li><span class="cr__m cr__m--neutre"></span><div class="cr__muet">Rien à signaler. Les politiques en vigueur ont poursuivi leur effet.</div></li>`;
 
-  return `<section class="pan__bloc pan__bloc--rendu">
+  // `aria-live` : sans score agrégé, c'est ici que le jeu explique, et un
+  // lecteur d'écran doit entendre l'été qui vient de passer.
+  return `<section class="pan__bloc pan__bloc--rendu" aria-live="polite">
   <h2>Été ${v.tour}</h2>
   <ul class="cr">${lignes}</ul>
   <div class="cr__pied">Budget ${nombre(r.budget)} · ${
@@ -242,15 +325,21 @@ export function compteRendu(v: VuePanneau): string {
  *  soulage tout de suite sans rien transformer. Contre le bord bas, là où la
  *  main revient. */
 export function registreGestes(v: VuePanneau, arme?: GesteVue['type'] | null): string {
+  const attente = v.gestesEnAttente
+    ? `<p class="fiche__attente">${v.gestesEnAttente} geste${v.gestesEnAttente > 1 ? 's' : ''} désigné${v.gestesEnAttente > 1 ? 's' : ''}, à exécuter à l’été suivant.</p>`
+    : '';
   return `<section class="pan__bloc pan__bloc--gestes">
   <h2>Gestes · à désigner sur la carte</h2>
+  ${attente}
   ${v.gestes
     .map(
-      (g) => `<div class="geste${arme === g.type ? ' geste--arme' : ''}${g.refus ? ' geste--refus' : ''}" data-geste="${g.type}">
-    <div><div class="geste__n">${ech(g.nom)}</div><div class="geste__e">${ech(g.emprise)}</div></div>
-    <div class="geste__c">${g.cout}</div>
-    ${g.refus ? `<div class="geste__r">${ech(g.refus)}</div>` : ''}
-  </div>`,
+      (g) => `<button type="button" class="geste${arme === g.type ? ' geste--arme' : ''}${
+        g.refus ? ' geste--refus' : ''
+      }" data-geste="${g.type}"${arme === g.type ? ' aria-pressed="true"' : ''}>
+    <span><span class="geste__n">${ech(g.nom)}</span><span class="geste__e">${ech(g.emprise)}</span></span>
+    <span class="geste__c">${g.cout}</span>
+    ${g.refus ? `<span class="geste__r">${ech(g.refus)}</span>` : ''}
+  </button>`,
     )
     .join('')}
 </section>`;
@@ -258,10 +347,13 @@ export function registreGestes(v: VuePanneau, arme?: GesteVue['type'] | null): s
 
 /* --------------------------------------------------------------------- pied */
 
-export function piedTour(v: VuePanneau): string {
+export function piedTour(v: VuePanneau, enAttente = 0): string {
   const restants = Math.max(0, v.toursMax - v.tour + 1);
   return `<div class="pan__tour">
-  <b>${restants} été${restants > 1 ? 's' : ''} restant${restants > 1 ? 's' : ''}</b>
+  <div>
+    <b>${restants} été${restants > 1 ? 's' : ''} restant${restants > 1 ? 's' : ''}</b>
+    ${enAttente ? `<span class="pan__attente">${enAttente} décision${enAttente > 1 ? 's' : ''} en attente</span>` : ''}
+  </div>
   <button class="pan__suivant" type="button">Été suivant</button>
 </div>`;
 }

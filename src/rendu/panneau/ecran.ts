@@ -119,7 +119,7 @@ export function rendreEcran(o: OptionsEcran): string {
     <label for="ecran-panneau">Panneau</label>
   </nav>
   <div class="ecran__vue">
-    <div class="ecran__carte">${o.carte}</div>
+    <div class="ecran__carte" tabindex="0" role="group" aria-label="Carte du versant : flèches pour se déplacer, curseur pour tirer">${o.carte}</div>
     <nav class="ecran__echelles" aria-label="Échelle">${boutons}</nav>
     ${barres}
   </div>
@@ -156,14 +156,23 @@ export const STYLES_ECRAN = `
  */
 .plein { display: none; }
 /* La page derrière ne défile plus : sa barre restait à droite de celle du
-   panneau, et deux ascenseurs côte à côte n'appartiennent à personne. */
-html:has(.plein:target) { overflow: hidden; }
+   panneau, et deux ascenseurs côte à côte n'appartiennent à personne. Et le
+   geste de retour du navigateur est neutralisé : sur pavé tactile, se déplacer
+   sur la carte à deux doigts revenait à quitter la page. */
+html:has(.plein:target) { overflow: hidden; overscroll-behavior-x: none; }
 .plein:target { display: block; position: fixed; inset: 0; z-index: 60; background: oklch(0.86 0.035 82); }
 .plein:target .ecran { height: 100vh; height: 100dvh; }
+/* Fin de partie : elle remplace la composition et défile seule si le relevé
+   dépasse la fenêtre. */
+.fin__cadre { height: 100%; overflow-y: auto; }
+.fin__reprise { margin: 0; padding: 0 32px 28px; }
+/* En haut à gauche : en bas à droite, il tombait sur le bouton « été suivant »
+   du pied de panneau. Les trois autres coins sont pris par le sélecteur
+   d'échelle et la barre de position. */
 .plein__fermer {
   position: absolute;
-  right: 14px;
-  bottom: 14px;
+  left: 14px;
+  top: 14px;
   z-index: 2;
   padding: 7px 13px;
   font: 500 12px/1 "Hanken Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
@@ -181,18 +190,19 @@ html:has(.plein:target) { overflow: hidden; }
   height: 100%;
   background: oklch(0.86 0.035 82);
 }
-/* Une colonne, un défilement. En plein écran c'est le panneau entier qui
-   défile à droite, et le compte rendu cesse d'avoir le sien : deux barres
-   imbriquées dans la même colonne sont ingouvernables. */
-.plein .pan { overflow-y: auto; }
-.plein .pan__bloc--rendu { overflow-y: visible; flex: 0 0 auto; }
+/* Une colonne, un défilement, et le même dans les deux contextes : c'est le
+   corps du panneau qui défile, entre un bandeau et un pied qui ne bougent
+   jamais. Deux barres imbriquées dans la même colonne sont ingouvernables. */
 .ecran__radio { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .ecran__bascule { display: none; }
 .ecran__vue { position: relative; flex: 1 1 auto; min-width: 0; display: flex; }
 /* La carte défile dans son cadre. L'échelle native reste la vue de travail,
    mais elle n'est plus la seule : à 1:1 on ne voit qu'un vingtième du versant,
    et l'écran devenait une chasse au défilement horizontal. */
-.ecran__carte { flex: 1 1 auto; min-width: 0; overflow: auto; cursor: grab; }
+/* « contain » retient le défilement dans la boîte : il ne se propage plus au
+   document, donc plus de navigation arrière quand on atteint le bord gauche.
+   (Pas d'accent grave dans cette feuille : elle est un gabarit de chaîne.) */
+.ecran__carte { flex: 1 1 auto; min-width: 0; overflow: auto; overscroll-behavior: contain; cursor: grab; }
 .ecran__carte[data-tire] { cursor: grabbing; }
 .ecran__carte[data-tire] * { pointer-events: none; }
 .ecran__carte > svg { display: block; height: auto; max-width: none; width: calc(var(--carte-largeur) / 3); }
@@ -219,6 +229,17 @@ html:has(.plein:target) { overflow: hidden; }
 }
 .ecran__echelles label i { font-style: normal; opacity: 0.6; }
 .ecran__echelles label + label { border-left: 1px solid oklch(0.86 0.02 82); }
+/* Les boutons radio sont invisibles : c'est leur étiquette qui doit montrer le
+   focus, sans quoi le sélecteur d'échelle est inatteignable à l'aveugle. */
+#echelle-proche:focus-visible ~ .ecran__vue label[for='echelle-proche'],
+#echelle-moyenne:focus-visible ~ .ecran__vue label[for='echelle-moyenne'],
+#echelle-large:focus-visible ~ .ecran__vue label[for='echelle-large'],
+.ecran__radio:focus-visible ~ .ecran__bascule label[for='ecran-carte'],
+.ecran__radio:focus-visible ~ .ecran__bascule label[for='ecran-panneau'] {
+  outline: 2px solid oklch(0.55 0.16 44);
+  outline-offset: -2px;
+}
+.ecran__carte:focus-visible { outline: 2px solid oklch(0.55 0.16 44); outline-offset: -2px; }
 #echelle-proche:checked ~ .ecran__vue label[for='echelle-proche'],
 #echelle-moyenne:checked ~ .ecran__vue label[for='echelle-moyenne'],
 #echelle-large:checked ~ .ecran__vue label[for='echelle-large'] {
@@ -272,7 +293,7 @@ html:has(.plein:target) { overflow: hidden; }
     color: oklch(0.26 0.03 62);
     box-shadow: inset 0 -2px 0 oklch(0.55 0.16 44);
   }
-  .ecran__radio:focus-visible ~ .ecran__bascule label { outline: 2px solid oklch(0.55 0.16 44); }
+  
   #ecran-carte:checked ~ .pan,
   #ecran-panneau:checked ~ .ecran__vue { display: none; }
   #ecran-panneau:checked ~ .pan { display: flex; }

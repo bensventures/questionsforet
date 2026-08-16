@@ -1,5 +1,5 @@
 import type { Doctrine, Eleveurs, Etat, IdPolitique, Ligne, PolitiqueCoupee, Secteur } from '../../model/types';
-import { CONFORMITE, DENSITE, DOCTRINE, ENTRETIEN } from '../../model/params';
+import { CONFORMITE, DENSITE, DOCTRINE, ENTRETIEN, REFORME } from '../../model/params';
 import { POLITIQUES, applicable, politiqueParId } from '../../model/politiques';
 import { BUDGET, COUT_CONTROLE, comptes, coutEntretien, coutPolitique } from '../../model/economie';
 import type { DonneesSecteur } from '../carte';
@@ -41,6 +41,12 @@ export interface FicheVue {
   engager?: number;
   /** Motif chiffré si l'engagement est hors de portée. */
   refus?: string;
+  /**
+   * Engagée pendant ce tour, pas encore appliquée. Le noyau n'a qu'une porte,
+   * `avancer` : une décision prise se garde donc jusqu'à l'été suivant, et la
+   * fiche doit le dire plutôt que de faire comme si rien n'avait été décidé.
+   */
+  enAttente?: boolean;
 }
 
 export interface GesteVue {
@@ -69,6 +75,8 @@ export interface LigneVue extends Ligne {
 export interface VuePanneau {
   tour: number;
   toursMax: number;
+  /** Gestes désignés et pas encore appliqués : ils partent au prochain été. */
+  gestesEnAttente?: number;
   ressources: {
     surfaceTenue: number;
     plafond: number;
@@ -81,8 +89,32 @@ export interface VuePanneau {
     toursSansContrat: number;
     equipes: number;
   };
-  doctrine: { cran: Doctrine; toursCran1: number };
+  /**
+   * La doctrine est une **posture debout**, pas une action de tour. La vue
+   * porte donc ce qui est en vigueur, ce qui est engagé, et ce que réformer
+   * coûterait *maintenant* : hors fenêtre c'est cher et lent, dans la fenêtre
+   * ouverte par un incendie c'est rapide et bon marché, et au premier été le
+   * territoire confirme ou réforme son héritage sans rien payer.
+   */
+  doctrine: {
+    cran: Doctrine;
+    toursCran1: number;
+    reforme: { vers: Doctrine; dans: number } | null;
+    /** Étés restants de fenêtre post-incendie, 0 si elle est fermée. */
+    fenetre: number;
+    /** Premier été : le choix fondateur, sans délai ni coût. */
+    ouverture: boolean;
+    /** Ce que coûterait et prendrait une réforme décidée maintenant. */
+    cout: number;
+    delai: number;
+    /** Cran demandé ce tour, pas encore engagé. */
+    demande?: Doctrine;
+  };
   secteur: { id: number; nom: string; sous: string; fiches: FicheVue[] } | null;
+  /** Tous les secteurs, pour la liste : c'est le chemin clavier vers la
+   *  sélection, et le seul sommaire du versant depuis que les étiquettes de la
+   *  carte ne s'affichent qu'au survol. */
+  secteurs: { id: number; nom: string; porte: string }[];
   lignes: LigneVue[];
   gestes: GesteVue[];
 }
@@ -322,10 +354,20 @@ function ficheDe(etat: Etat, s: Secteur, id: IdPolitique): FicheVue | null {
 
 export function vueDuPanneau(
   etat: Etat,
-  options: { secteur?: number | null; lignes?: LigneVue[] } = {},
+  options: {
+    secteur?: number | null;
+    lignes?: LigneVue[];
+    /** Politiques engagées ce tour, en attente du prochain `avancer`. */
+    attente?: { id: IdPolitique; secteur: number }[];
+    /** Gestes désignés ce tour, en attente eux aussi. */
+    gestesEnAttente?: number;
+    /** Cran de doctrine demandé ce tour et pas encore engagé. */
+    doctrineDemandee?: Doctrine;
+  } = {},
 ): VuePanneau {
   const c = comptes(etat);
   const s = options.secteur != null ? etat.secteurs[options.secteur] : null;
+  const donnees = etatsDesSecteurs(etat);
 
   const gestes: GesteVue[] = [
     { type: 'durcirHameau', nom: 'Durcir un hameau', cout: COUTS_PONCTUELS.durcirHameau, emprise: 'une construction' },
@@ -342,6 +384,7 @@ export function vueDuPanneau(
   return {
     tour: etat.tour,
     toursMax: etat.toursMax,
+    gestesEnAttente: options.gestesEnAttente ?? 0,
     ressources: {
       surfaceTenue: c.surfaceTenue,
       plafond: surfacePourUneRecette(etat),
@@ -357,13 +400,31 @@ export function vueDuPanneau(
       toursSansContrat: etat.toursSansContrat,
       equipes: etat.moyens.equipes,
     },
-    doctrine: { cran: etat.doctrine, toursCran1: etat.cumul.toursCran1 },
+    secteurs: etat.secteurs.map((sec) => {
+      const d = donnees.find((x) => x.id === sec.id);
+      return { id: sec.id, nom: sec.nom, porte: d?.porte ?? 'aucune' };
+    }),
+    doctrine: {
+      cran: etat.doctrine,
+      toursCran1: etat.cumul.toursCran1,
+      reforme: etat.reforme ? { ...etat.reforme } : null,
+      fenetre: etat.moyens.fenetrePostFeu,
+      ouverture: etat.tour === 1,
+      cout: etat.tour === 1 ? 0 : etat.moyens.fenetrePostFeu > 0 ? REFORME.coutFenetre : REFORME.cout,
+      delai: etat.tour === 1 ? 0 : etat.moyens.fenetrePostFeu > 0 ? REFORME.delaiFenetre : REFORME.delai,
+      demande: options.doctrineDemandee,
+    },
     secteur: s
       ? {
           id: s.id,
           nom: s.nom,
           sous: `${NATURE_SECTEUR[s.nature].toLowerCase()} · ${s.cellules.length} cellules`,
-          fiches: POLITIQUES.map((p) => ficheDe(etat, s, p.id)).filter((x): x is FicheVue => !!x),
+          fiches: POLITIQUES.map((p) => ficheDe(etat, s, p.id))
+            .filter((x): x is FicheVue => !!x)
+            .map((f) => ({
+              ...f,
+              enAttente: (options.attente ?? []).some((a) => a.id === f.id && a.secteur === s.id),
+            })),
         }
       : null,
     lignes: options.lignes ?? [],

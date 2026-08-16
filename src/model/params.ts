@@ -306,6 +306,32 @@ export const DOCTRINE = {
   3: { nom: 'Feu géré', budget: 1, secheresseMax: 0.78, distanceMin: 3 },
 } as const;
 
+/**
+ * Réforme de doctrine (patch « posture héritée, réforme fenêtrée »).
+ *
+ * La doctrine était modifiable à tout moment, sans délai ni coût. C'est
+ * l'inverse du terrain — c'est le levier le moins local et le plus lent à
+ * bouger — et cela vidait le paradoxe de la suppression : on lisait la météo de
+ * l'année et on basculait. Ce qui devient lent, c'est le **changement de
+ * posture** ; l'**effet** de la posture reste immédiat, l'extinction éteint
+ * vraiment les petits départs, et c'est l'appât.
+ *
+ * La réforme est bon marché et rapide dans la **fenêtre post-incendie** (§10,
+ * recette 3), fidèle au fait que la réforme doctrinale suit historiquement la
+ * catastrophe : trop tard pour éviter la dette de combustible, à temps pour
+ * cesser de la reproduire.
+ */
+export const REFORME = {
+  /** Étés avant qu'une réforme décidée hors fenêtre prenne effet. */
+  delai: 3,
+  /** Étés avant effet dans la fenêtre post-incendie. */
+  delaiFenetre: 1,
+  /** Coût ponctuel hors fenêtre. */
+  cout: 8,
+  /** Coût ponctuel dans la fenêtre. */
+  coutFenetre: 2,
+};
+
 /** Allumages (§7.1). Causes humaines dominantes : routes et habitat. */
 export const ALLUMAGE = {
   base: 0.09,

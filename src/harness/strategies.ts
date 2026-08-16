@@ -1,4 +1,4 @@
-import type { ActionPonctuelle, Decisions, Etat, IdPolitique } from '../model/types';
+import type { ActionPonctuelle, Decisions, Doctrine, Etat, IdPolitique } from '../model/types';
 import type { Strategie } from './jouer';
 import { politiqueParId, applicable } from '../model/politiques';
 import { COUTS_PONCTUELS } from '../model/ponctuelles';
@@ -55,10 +55,28 @@ function secteursBatis(etat: Etat): number[] {
     .map((x) => x.id);
 }
 
-/** 1. Extinction systématique maintenue, et rien d'autre. */
+/**
+ * Ouverture de doctrine : le premier été confirme ou réforme la posture
+ * héritée, gratuitement. C'est le seul moment gratuit ; ensuite une réforme
+ * coûte et prend des étés, sauf dans la fenêtre ouverte par un incendie.
+ */
+const ouverture = (etat: Etat, cran: Doctrine) => (etat.tour === 1 ? { doctrine: cran } : {});
+
+/**
+ * Réforme opportuniste : n'engage rien hors de la fenêtre post-incendie, où
+ * c'est rapide et bon marché. C'est l'arc que le patch veut préserver : on
+ * jouit du calme, la catastrophe tombe, **et alors seulement** on réforme.
+ */
+const reformerDansLaFenetre = (etat: Etat, cran: Doctrine) =>
+  etat.moyens.fenetrePostFeu > 0 && etat.doctrine !== cran && !etat.reforme ? { doctrine: cran } : {};
+
+/**
+ * 1. Extinction systématique maintenue, et rien d'autre. Elle garde la posture
+ * héritée sans jamais la réformer : c'est le témoin du piège.
+ */
 export const extinctionSystematique: Strategie = {
   nom: 'extinction systématique',
-  decider: () => ({ doctrine: 1 }),
+  decider: () => ({}),
 };
 
 /**
@@ -74,14 +92,20 @@ export const toutDebroussailler: Strategie = {
     // possible, et on ouvre en plus des coupures forestières pour raser large.
     const activer: { id: IdPolitique; secteur: number }[] = ouvrables(etat, 'old').map((s) => ({ id: 'old', secteur: s }));
     for (const s of ouvrables(etat, 'pastoral').slice(0, 2)) activer.push({ id: 'pastoral', secteur: s });
-    return { doctrine: 2, activer };
+    return { ...ouverture(etat, 2), activer };
   },
 };
 
-/** 3. Ne rien faire. */
+/**
+ * 3. Ne rien faire : aucune politique, aucun geste. Elle garde son cran
+ * d'ouverture au 2, celui qu'elle jouait avant le patch : « ne rien faire »
+ * porte sur le terrain, pas sur la posture. Sans ce pick elle deviendrait la
+ * copie exacte de « extinction systématique maintenue », et le §12 perdrait une
+ * de ses quatre défaites distinguables.
+ */
 export const neRienFaire: Strategie = {
   nom: 'ne rien faire',
-  decider: () => ({ doctrine: 2 }),
+  decider: (etat) => ouverture(etat, 2),
 };
 
 /** 4. Coupures uniquement : on compartimente le paysage, on ne touche pas au bâti. */
@@ -91,7 +115,7 @@ export const coupuresSeules: Strategie = {
     const activer: { id: IdPolitique; secteur: number }[] = [];
     for (const s of ouvrables(etat, 'pastoral').slice(0, 1)) activer.push({ id: 'pastoral', secteur: s });
     for (const s of ouvrables(etat, 'eclaircie').slice(0, 1)) activer.push({ id: 'eclaircie', secteur: s });
-    return { doctrine: 2, activer };
+    return { ...ouverture(etat, 2), activer };
   },
 };
 
@@ -146,7 +170,7 @@ export const mixteCompetente: Strategie = {
       if (e !== undefined && etat.moyens.budget > 14) activer.push({ id: 'eclaircie', secteur: e });
     }
 
-    return { doctrine: 2, activer, ponctuelles };
+    return { ...ouverture(etat, 2), ...reformerDansLaFenetre(etat, 3), activer, ponctuelles };
   },
   nom: 'mixte compétente',
 };
@@ -183,8 +207,31 @@ export const durcissementSeul: Strategie = {
       .sort((a, b) => b.c.habitants - a.c.habitants);
     const possibles = Math.max(0, Math.floor((etat.moyens.budget - 6) / COUTS_PONCTUELS.durcirHameau));
     for (const x of cibles.slice(0, possibles)) ponctuelles.push({ type: 'durcirHameau', cellule: x.i });
-    return { doctrine: 2, activer, ponctuelles };
+    return { ...ouverture(etat, 2), activer, ponctuelles };
   },
+};
+
+/**
+ * Deux sondes de diagnostic, hors des cinq du §12 : la même joueuse compétente,
+ * à ceci près qu'elle réforme **au tour 10 quoi qu'il arrive**, ou seulement
+ * **dans la fenêtre** ouverte par un incendie. Elles mesurent si la lenteur de
+ * la réforme mord : sans écart net entre les deux, on est retombé sur
+ * l'interrupteur gratuit que le patch supprime.
+ */
+export const reformeHorsFenetre: Strategie = {
+  nom: 'réforme hors fenêtre',
+  decider: (etat, tour) => {
+    const d = mixteCompetente.decider(etat, tour) as Decisions;
+    delete d.doctrine;
+    if (etat.tour === 1) d.doctrine = 2;
+    if (etat.tour === 10 && etat.doctrine !== 3 && !etat.reforme) d.doctrine = 3;
+    return d;
+  },
+};
+
+export const reformeEnFenetre: Strategie = {
+  nom: 'réforme en fenêtre',
+  decider: (etat, tour) => mixteCompetente.decider(etat, tour),
 };
 
 export const CINQ: Strategie[] = [

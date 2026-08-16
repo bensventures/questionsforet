@@ -1,4 +1,4 @@
-import type { Decisions, Etat, Ligne, PolitiqueCoupee } from './types';
+import type { Decisions, Doctrine, Etat, Ligne, PolitiqueCoupee } from './types';
 import type { Rng } from './rng';
 import type { Braise } from './feu';
 import { tirerMeteo, processusLents } from './lent';
@@ -9,7 +9,7 @@ import { bouclerBudget, BUDGET } from './economie';
 import { engagerEleveur, suivrePartenaires } from './partenaires';
 import { appliquerPonctuelles } from './ponctuelles';
 import { profondeurTraiteeReelle } from './derive';
-import { DOCTRINE } from './params';
+import { DOCTRINE, REFORME } from './params';
 
 /**
  * `avancer(état, décisions) → état` : la seule porte d'entrée du noyau (§2).
@@ -45,14 +45,74 @@ export interface Tour {
   termine: boolean;
 }
 
+/**
+ * Engage une réforme de doctrine (patch « posture héritée, réforme fenêtrée »).
+ *
+ * Trois cas, et un seul est gratuit : **le premier été**, où le territoire
+ * confirme ou réforme la posture dont il hérite. Ce n'est pas un trou, c'est le
+ * choix fondateur, et il doit rester ouvert au joueur informé sous peine de
+ * transformer le piège en fatalité.
+ *
+ * Ensuite, réformer coûte et prend du temps, sauf dans la **fenêtre
+ * post-incendie**, où c'est rapide et bon marché : la réforme doctrinale suit
+ * historiquement la catastrophe. Et tant qu'une réforme court, aucune autre ne
+ * s'engage : c'est ce qui interdit de lire la météo et de basculer.
+ */
+function engagerReforme(etat: Etat, vers: Doctrine): Ligne[] {
+  if (etat.reforme) {
+    return [{ texte: 'Une réforme de doctrine est déjà engagée : elle suit son cours.', ton: 'chaud' }];
+  }
+  if (etat.tour === 1) {
+    etat.doctrine = vers;
+    return [{ texte: `Doctrine retenue pour le territoire : ${DOCTRINE[vers].nom.toLowerCase()}.` }];
+  }
+
+  const fenetre = etat.moyens.fenetrePostFeu > 0;
+  const cout = fenetre ? REFORME.coutFenetre : REFORME.cout;
+  if (etat.moyens.budget < cout) {
+    return [
+      {
+        texte: `Réformer la doctrine coûte ${cout} : la collectivité ne les a pas.`,
+        ton: 'chaud',
+      },
+    ];
+  }
+  etat.moyens.budget -= cout;
+  etat.cumul.depense += cout;
+  const dans = fenetre ? REFORME.delaiFenetre : REFORME.delai;
+  etat.reforme = { vers, dans };
+  return [
+    {
+      texte: fenetre
+        ? `Réforme engagée dans la fenêtre ouverte par l'incendie : ${DOCTRINE[vers].nom.toLowerCase()} dans ${dans} été${dans > 1 ? 's' : ''}, pour ${cout}.`
+        : `Réforme engagée : ${DOCTRINE[vers].nom.toLowerCase()} dans ${dans} étés, pour ${cout}.`,
+      ton: fenetre ? 'bon' : undefined,
+    },
+  ];
+}
+
 export function avancer(etat: Etat, decisions: Decisions, rng: Rng): Tour {
   const lignes: Ligne[] = [];
 
-  // 1. Décisions. La doctrine est modifiable à tout moment (§7.5) ; les
-  //    politiques arrivent à l'étape 4 de l'ordre de travail du §14.
+  // 1. Réforme arrivée à échéance, **avant** toute décision : la posture qui
+  //    entre en vigueur vaut pour l'été qui commence, feu compris.
+  if (etat.reforme) {
+    etat.reforme.dans--;
+    if (etat.reforme.dans <= 0) {
+      etat.doctrine = etat.reforme.vers;
+      etat.reforme = null;
+      lignes.push({
+        texte: `La réforme est entrée en vigueur : ${DOCTRINE[etat.doctrine].nom.toLowerCase()}.`,
+        ton: 'bon',
+      });
+    }
+  }
+
+  // 2. Décisions. La doctrine n'est plus un interrupteur : **l'effet** de la
+  //    posture reste immédiat, c'est son **changement** qui est lent et coûteux,
+  //    sauf dans la fenêtre ouverte par un incendie.
   if (decisions.doctrine && decisions.doctrine !== etat.doctrine) {
-    etat.doctrine = decisions.doctrine;
-    lignes.push({ texte: `Doctrine de lutte : ${DOCTRINE[etat.doctrine].nom.toLowerCase()}.` });
+    lignes.push(...engagerReforme(etat, decisions.doctrine));
   }
   const coutDoctrine = DOCTRINE[etat.doctrine].budget;
   etat.moyens.budget -= coutDoctrine;

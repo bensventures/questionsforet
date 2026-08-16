@@ -35,13 +35,14 @@ async function charger(entree) {
   return import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
 }
 
-const [modele, terrain, avancerMod, strategies, panneau, politiques] = await Promise.all([
+const [modele, terrain, avancerMod, strategies, panneau, politiques, rejeu] = await Promise.all([
   charger('src/model/rng.ts'),
   charger('src/model/terrain.ts'),
   charger('src/model/avancer.ts'),
   charger('src/harness/strategies.ts'),
   charger('src/rendu/panneau/index.ts'),
   charger('src/model/politiques.ts'),
+  charger('src/rendu/rejeu.ts'),
 ]);
 
 const GRAINE = 1000;
@@ -164,6 +165,102 @@ ajouter(
   /\.pan, \.decision \{/.test(css),
 );
 
+// ---- plancher d'accessibilité clavier ---------------------------------------
+// La partie doit se jouer sans souris. Ce contrôle attrape la faute la plus
+// facile à commettre : une commande écrite en `div` cliquable, invisible au
+// clavier comme au lecteur d'écran.
+const toutLePanneau = panneau.rendrePanneau(moments[1].vue, { geste: 'ouvrirCoupure' }) + ouvertureHtml();
+function ouvertureHtml() {
+  return panneau.rendreOuverture({ graine: GRAINE, cran: 1 });
+}
+const commandes = [...toutLePanneau.matchAll(/<(\w+)[^>]*data-(cran|geste|secteur|commencer|tirer|fermer-secteur)[^>]*>/g)];
+const enDiv = commandes.filter((m) => m[1] !== 'button' && m[1] !== 'section');
+ajouter(
+  `les ${commandes.length} commandes sont des boutons${enDiv.length ? ` — ${enDiv.length} en ${enDiv[0][1]}` : ''}`,
+  enDiv.length === 0,
+);
+ajouter(
+  'le compte rendu s’annonce aux lecteurs d’écran',
+  /pan__bloc--rendu" aria-live="polite"/.test(toutLePanneau),
+);
+ajouter(
+  'la sélection d’un secteur a un chemin clavier',
+  /class="secteurs__b[^"]*" data-secteur=/.test(toutLePanneau),
+);
+// L'écran est composé plus bas ; ici on n'a besoin que de son balisage.
+const ecranPourClavier = panneau.rendreEcran({
+  sprite: '',
+  carte: '<svg></svg>',
+  panneau: '',
+  largeur: 40,
+  hauteur: 26,
+  vue: panneau.fenetreVisible({ largeur: 1800, hauteur: 1080 }),
+});
+ajouter(
+  'la carte est focalisable et se déplace aux flèches',
+  /class="ecran__carte" tabindex="0"/.test(ecranPourClavier) &&
+    /aria-label="Carte du versant/.test(ecranPourClavier),
+);
+ajouter(
+  'un anneau de focus visible partout où l’on décide',
+  /:focus-visible \{[^}]*outline/.test(css) && /ecran__carte:focus-visible/.test(panneau.STYLES_ECRAN),
+);
+
+// ---- écran d'ouverture (patch §1) ------------------------------------------
+// Le territoire présente un héritage à confirmer, pas un choix neutre, et le
+// versant se choisit par son numéro puisque le modèle est déterministe.
+const ouv = panneau.rendreOuverture({ graine: GRAINE, cran: 1 });
+ajouter(
+  'l’ouverture présente la doctrine héritée et son caractère gratuit',
+  /héritée/.test(ouv) && /ne coûte rien/.test(ouv),
+);
+ajouter(
+  // §3 du patch : la conséquence reste silencieuse, elle se lit dans les jauges
+  // lentes et s'explicite après la catastrophe. La dire ici tuerait le paradoxe.
+  'l’ouverture ne dit rien de la dette de combustible',
+  !/combustible|dette|paradoxe|s'accumule/i.test(ouv.replace(/<[^>]+>/g, ' ')),
+);
+ajouter(
+  `le versant se choisit par son numéro (${GRAINE})`,
+  /data-graine/.test(ouv) && /data-tirer/.test(ouv) && /data-commencer/.test(ouv),
+);
+
+// ---- doctrine : posture debout (patch « posture héritée, réforme fenêtrée ») -
+// Le sélecteur doit rendre une posture permanente et non une action de tour :
+// ce qui est en vigueur, ce que réformer coûte maintenant, et la réforme
+// engagée avec les étés qui restent.
+const rngD = modele.creerRng(GRAINE);
+const etatD = terrain.creerEtat(GRAINE, rngD, 40);
+const bloc1 = panneau.rendrePanneau(panneau.vueDuPanneau(etatD, { lignes: [] }));
+ajouter(
+  'à l’ouverture, le bloc présente un héritage à confirmer, pas un choix neutre',
+  /pratique déjà l'extinction systématique/.test(bloc1) && /sans délai ni coût/.test(bloc1),
+);
+// Une partie jouée jusqu'à une réforme engagée dans la fenêtre.
+let blocFenetre = '';
+let blocReforme = '';
+for (let t = 1; t <= 40 && !(blocFenetre && blocReforme); t++) {
+  const avantReforme = etatD.reforme;
+  avancerMod.avancer(etatD, strat.decider(etatD, etatD.tour), rngD);
+  const vue = panneau.vueDuPanneau(etatD, { lignes: [] });
+  if (!blocFenetre && vue.doctrine.fenetre > 0 && !vue.doctrine.reforme) {
+    blocFenetre = panneau.rendrePanneau(vue);
+  }
+  if (!blocReforme && etatD.reforme && !avantReforme) blocReforme = panneau.rendrePanneau(vue);
+}
+ajouter(
+  'la fenêtre post-incendie est signalée comme le moment où réformer est facile',
+  !blocFenetre || /L'incendie a ouvert une fenêtre/.test(blocFenetre),
+);
+ajouter(
+  'une réforme engagée s’affiche avec les étés qui restent, et bloque les autres',
+  !blocReforme || (/Réforme engagée/.test(blocReforme) && /en vigueur dans \d+ été/.test(blocReforme)),
+);
+ajouter(
+  'la posture en vigueur est marquée comme telle, pas comme un choix coché',
+  /doc__etat">en vigueur/.test(bloc1),
+);
+
 // ---- renoncement subi (planche 8) ------------------------------------------
 // 1,5 renoncement par partie est une moyenne : la graine 1000 traverse ses
 // quarante étés sans une seule coupe. On en prend donc une autre, fixée, plutôt
@@ -222,6 +319,44 @@ if (momentCoupe) {
   ajouter('un tour de coupe a été trouvé dans la partie', false);
 }
 
+// ---- rejeu de propagation (planche 6) --------------------------------------
+// La seule animation admise, et le seul lien du compte rendu. Elle rejoue la
+// chronologie que le noyau livre, elle ne fabrique pas une propagation
+// plausible : c'est la différence entre montrer et illustrer.
+const rngR = modele.creerRng(GRAINE);
+const etatR = terrain.creerEtat(GRAINE, rngR, 40);
+let feuR = null;
+for (let t = 1; t <= 40 && !feuR; t++) {
+  const tour = avancerMod.avancer(etatR, strat.decider(etatR, etatR.tour), rngR);
+  if (tour.feu && tour.arrivee && [...tour.arrivee].filter((a) => a > 0).length > 100) feuR = tour;
+}
+if (feuR) {
+  const couche = rejeu.rendreRejeu(feuR.arrivee, feuR.braises, etatR.largeur);
+  const delais = [...couche.matchAll(/animation-delay:(\d+)ms/g)].map((m) => Number(m[1]));
+  const pas = [...feuR.arrivee].filter((a) => a > 0);
+  // Un groupe par pas d'arrivée, d'un côté les parcelles, de l'autre les
+  // brandons : les deux séries ont leur propre horloge et se recouvrent.
+  const pasBraises = new Set(feuR.braises.map((b) => Math.max(1, b.t - 3)));
+  ajouter(
+    `le rejeu suit la chronologie du modèle (${new Set(pas).size} pas de front, ${pasBraises.size} de braises)`,
+    new Set(pas).size > 5 && delais.length === new Set(pas).size + pasBraises.size,
+  );
+  ajouter(
+    `les délais tiennent dans la fenêtre du rejeu (${Math.min(...delais)} → ${Math.max(...delais)} ms)`,
+    Math.max(...delais) <= rejeu.DUREE_REJEU,
+  );
+  ajouter(
+    `groupé par pas de temps, pas par parcelle (${(couche.length / 1024).toFixed(0)} Ko pour ${pas.length} parcelles)`,
+    couche.length / pas.length < 120,
+  );
+  ajouter(
+    'rien ne bouge sous prefers-reduced-motion',
+    /@media \(prefers-reduced-motion: reduce\)[^}]*\{[^}]*opacity/.test(rejeu.STYLES_REJEU),
+  );
+} else {
+  ajouter('un incendie a été trouvé pour le rejeu', false);
+}
+
 // ---- écran de fin de partie (planche 7) ------------------------------------
 // Une partie complète, jouée jusqu'au bout : l'écran n'a de sens qu'à 40 tours.
 const rngFin = modele.creerRng(GRAINE);
@@ -264,13 +399,22 @@ const defilants = [...sansCommentaires.matchAll(/([^{}]+)\{[^}]*overflow(-y)?:\s
 // Une colonne, un défilement. Dans le flux d'une page, c'est le compte rendu
 // qui défile dans le panneau ; en plein écran, c'est le panneau entier, et le
 // compte rendu rend le sien — deux barres imbriquées sont ingouvernables.
+// Une colonne, un défilement : la pile du panneau **ou** le tiroir qui la
+// couvre, la carte dans son cadre, l'écran de fin qui remplace tout.
 ajouter(
-  `trois zones défilantes, jamais imbriquées (${defilants.join(' / ')})`,
-  defilants.length === 3 &&
-    defilants.some((s) => s.includes('pan__bloc--rendu')) &&
+  `quatre zones défilantes, jamais imbriquées (${defilants.join(' / ')})`,
+  defilants.length === 4 &&
+    defilants.some((s) => s.includes('pan__pile')) &&
+    defilants.some((s) => s.includes('pan__tiroir')) &&
     defilants.some((s) => s.includes('ecran__carte')) &&
-    defilants.some((s) => s.includes('.plein .pan')) &&
-    /\.plein \.pan__bloc--rendu \{[^}]*overflow-y: visible/.test(sansCommentaires),
+    defilants.some((s) => s.includes('fin__cadre')),
+);
+// Le tiroir couvre la pile, il ne s'y insère pas : c'est ce qui fait qu'une
+// sélection se voit.
+ajouter(
+  'le tiroir couvre la colonne et se referme par sa croix',
+  /\.pan__tiroir \{[^}]*position: absolute/.test(sansCommentaires) &&
+    /data-fermer-secteur/.test(panneau.rendrePanneau(moments[0].vue)),
 );
 // L'unité de base des barres de position : ce que le cadre montrerait à
 // l'échelle native. Les trois échelles la multiplient par leur diviseur.

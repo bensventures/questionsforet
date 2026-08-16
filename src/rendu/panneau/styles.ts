@@ -53,8 +53,54 @@ export const STYLES_PANNEAU = `
   color: var(--encre3);
 }
 .pan__bloc { padding: 14px 20px; border-bottom: 1px solid var(--filet); }
-.pan__bloc--rendu { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.pan__bloc--rendu { flex: 1 1 auto; min-height: 0; }
 .pan__bloc--gestes { border-bottom: 0; margin-top: auto; background: var(--rang); }
+
+/* ---- les trois zones du panneau -------------------------------------------
+   Le bandeau et le pied ne bougent jamais ; entre eux, le corps porte la pile
+   courante et reçoit le tiroir du secteur. */
+.pan__corps { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.pan__pile { position: absolute; inset: 0; display: flex; flex-direction: column; overflow-y: auto; }
+
+/* ---- tiroir du secteur choisi ---------------------------------------------
+   Il **couvre la colonne** plutôt que de changer un bloc en son milieu : c'est
+   ce qui rend la sélection évidente. Il glisse depuis la droite, d'où la carte
+   l'appelle, et se referme par sa propre croix, qui désélectionne. */
+.pan__tiroir {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--parchemin);
+  border-left: 4px solid var(--braise);
+  overflow-y: auto;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pan__tiroir { animation: pan-glisse 220ms ease-out both; }
+}
+@keyframes pan-glisse { from { transform: translateX(14%); opacity: 0 } to { transform: none; opacity: 1 } }
+.tiroir__tete {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 14px 20px 10px 12px;
+  background: var(--rang);
+  border-bottom: 1px solid var(--filet);
+}
+.tiroir__fermer {
+  width: 28px; height: 28px;
+  font: 15px/1 ${POLICES.interface};
+  color: var(--braise-texte);
+  background: none;
+  border: 1px solid var(--braise);
+  cursor: pointer;
+}
+.tiroir__corps { padding: 14px 20px; }
+.secteur__nom { margin: 4px 0 2px; font-family: ${POLICES.titre}; font-size: 24px; font-weight: 500; line-height: 1.15; }
+.secteur__sous { margin: 0; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--encre3); }
+.pan__attente { display: block; font-size: 11.5px; color: var(--pin); }
+
 
 /* ---- bandeau de ressources (planche 5) ------------------------------------
    L'ordre est décisionnel et non celui des tableaux de bord : ce qui plafonne
@@ -94,7 +140,19 @@ export const STYLES_PANNEAU = `
    Trois lignes empilées, pas un curseur : un curseur suggère un continuum et
    une position médiane raisonnable, quand il s'agit de trois doctrines. */
 .doc { display: flex; flex-direction: column; margin-top: 8px; }
+/* Boutons remis à plat : ce sont des commandes, elles doivent l'être pour le
+   clavier, mais elles gardent le dessin de la planche 2. */
+.doc__c, .geste, .secteurs__b {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
 .doc__c { display: grid; grid-template-columns: 16px 1fr auto; gap: 10px; align-items: baseline; padding: 7px 8px; border-left: 2px solid transparent; }
+.doc__n, .doc__s, .geste__n, .geste__e, .secteurs__n, .secteurs__e { display: block; }
 .doc__c--on { background: ${J.parcheminRang}; border-left-color: var(--braise); }
 .doc__p { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid ${J.braise}; margin-top: 5px; }
 .doc__c--on .doc__p { background: oklch(0.58 0.15 44); }
@@ -102,6 +160,13 @@ export const STYLES_PANNEAU = `
 .doc__s { font-size: 12px; color: var(--encre2); }
 .doc__x { font-size: 15px; color: var(--encre); font-variant-numeric: tabular-nums; }
 .doc__note { font-size: 12px; color: var(--encre2); margin-top: 8px; }
+/* La fenêtre post-incendie est une **interaction possible** : c'est l'un des
+   trois emplois de la braise, et le seul moment où réformer est facile. */
+.doc__note--fenetre { color: var(--braise-texte); }
+.doc__note--vise { color: var(--pin); }
+.doc__etat { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--encre3); }
+.doc__c--vise { border-left-color: var(--pin-clair); }
+.doc__c--demande { border-left-color: var(--encre3); }
 .tranquillite { display: flex; gap: 1px; margin-top: 8px; }
 .tranquillite i { width: 3px; height: 12px; background: var(--filet); }
 .tranquillite i.cran1 { background: oklch(0.58 0.15 44); }
@@ -135,6 +200,9 @@ export const STYLES_PANNEAU = `
 .fiche__cond { margin-top: 10px; padding: 7px 9px; border: 1px solid var(--braise); color: var(--braise-texte); font-size: 12.5px; }
 .fiche__appel { margin-top: 10px; font-size: 13px; color: var(--braise-texte); border: 0; background: none; padding: 0; font-family: inherit; cursor: pointer; }
 .fiche__refus { margin-top: 10px; font-size: 12.5px; color: var(--braise-texte); }
+/* Une décision prise mais pas encore appliquée : le noyau n'a qu'une porte,
+   et l'été suivant est le seul moment où elle s'ouvre. */
+.fiche__attente { margin-top: 10px; font-size: 12.5px; color: var(--pin); }
 
 /* ---- compte rendu (planche 6) ---------------------------------------------
    Aucun tri : les lignes gardent l'ordre du tour, remonter les chaudes en tête
@@ -171,6 +239,24 @@ export const STYLES_PANNEAU = `
 .geste__e { font-size: 12px; color: var(--encre2); }
 .geste__c { font-family: ${POLICES.titre}; font-size: 19px; font-weight: 500; }
 .geste__r { grid-column: 1 / -1; font-size: 12px; color: var(--braise-texte); }
+
+/* ---- liste des secteurs ---------------------------------------------------
+   Le chemin clavier vers la sélection, et le seul sommaire du versant depuis
+   que les étiquettes de la carte ne s'affichent qu'au survol. */
+.secteurs { list-style: none; margin: 8px 0 0; padding: 0; }
+.secteurs li + li { border-top: 1px solid var(--filet); }
+.secteurs__b { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: baseline; padding: 7px 8px; border-left: 2px solid transparent; }
+.secteurs__b--on { background: var(--rang); border-left-color: var(--braise); }
+.secteurs__n { font-size: 14px; }
+.secteurs__e { font-size: 11.5px; color: var(--encre3); }
+
+/* ---- prise du clavier -----------------------------------------------------
+   Un plancher, pas un raffinement : sans anneau de focus visible, on ne sait
+   plus où l'on est dès qu'on lâche la souris. */
+.pan :focus-visible, .ouv :focus-visible, .ecran__carte:focus-visible {
+  outline: 2px solid var(--braise);
+  outline-offset: 2px;
+}
 
 /* ---- pied de panneau ------------------------------------------------------ */
 .pan__tour { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid var(--filet); }
