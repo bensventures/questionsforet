@@ -115,6 +115,25 @@ verifier(
   'a dû renoncer à au moins une politique faute de moyens',
   `${agrege(mixte, 'renoncements').toFixed(1)} par partie`,
 );
+/*
+ * Le harnais déduisait les renoncements en comparant les politiques d'un tour à
+ * l'autre ; le modèle les compte désormais lui-même, et c'est ce compteur que
+ * l'écran de fin affiche. Les deux ne peuvent pas être égaux en toute
+ * circonstance : une politique **établie et coupée dans le même tour** n'est
+ * dans aucun des deux relevés du harnais, alors que le joueur l'a bel et bien
+ * payée puis perdue. Le compteur du modèle est donc le bon, et il majore
+ * l'ancienne déduction.
+ *
+ * Mesuré : identiques sur cinq stratégies, y compris la compétente sur laquelle
+ * porte la cible du §12 ; seule « coupures uniquement », qui ouvre des
+ * politiques sans jamais regarder son budget, écarte les deux comptes (7,0
+ * contre 7,8).
+ */
+verifier(
+  lignes.every(({ r }) => r.every((x) => x.renoncementsModele >= x.renoncements)),
+  'le compteur du modèle majore la déduction du harnais',
+  `compétente : ${agrege(mixte, 'renoncementsModele').toFixed(1)} des deux côtés`,
+);
 // La surface brûlée n'est plus une cible : minimiser le feu est précisément le
 // réflexe que le jeu doit défaire. Elle reste une observation, avec un
 // garde-fou large destiné à détecter un modèle dégénéré (amendement 2, A.1).
@@ -150,6 +169,34 @@ for (const axe of AXES) {
 }
 verifier(agrege(mixte, 'batiPct') >= Math.max(...lignes.filter((l) => l.nom !== mixteCompetente.nom).map((l) => agrege(l.r, 'batiPct'))), 'meilleure sur le bâti');
 verifier(battue.length > 0, 'battue sur au moins un axe par une stratégie spécialisée', battue.join(', ') || 'aucun');
+
+/**
+ * Vivier d'éleveurs. Ces assertions ne viennent pas du §12 : elles gardent la
+ * dépendance du langage de décision, dont le bandeau de ressources demande
+ * **trois grandeurs séparées**. Elles échouent si un futur remaniement les
+ * ré-agrège, ce qui est exactement ce qu'on veut savoir.
+ */
+console.log('\nVivier d’éleveurs, en trois grandeurs (dépendance du langage de décision) :');
+for (const { nom, r } of lignes) {
+  console.log(
+    `  ${nom.padEnd(26)} disponibles ${agrege(r, 'eleveursDisponibles').toFixed(1)} · ` +
+      `engagés ${agrege(r, 'eleveursEngages').toFixed(1)} · perdus ${agrege(r, 'eleveursPerdus').toFixed(1)}`,
+  );
+}
+verifier(
+  lignes.every(({ r }) => r.every((x) => x.eleveursDisponibles + x.eleveursEngages <= 3 && x.eleveursPerdus >= 0)),
+  'invariant · disponibles + engagés ne dépasse jamais le plafond de la profession',
+);
+verifier(
+  agrege(mixte, 'eleveursEngages') > 0.5,
+  'chez le joueur compétent, le vivier finit engagé (zéro disponible = succès)',
+  `${agrege(mixte, 'eleveursEngages').toFixed(1)} engagés`,
+);
+verifier(
+  agrege(rien, 'eleveursPerdus') > 0.5 && agrege(rien, 'eleveursEngages') === 0,
+  'en ne faisant rien, le même zéro disponible est une déprise (levier mort)',
+  `${agrege(rien, 'eleveursPerdus').toFixed(1)} perdus`,
+);
 
 console.log('\nTest de variabilité (§12) :');
 const bati = mixte.map((x) => x.batiPct);

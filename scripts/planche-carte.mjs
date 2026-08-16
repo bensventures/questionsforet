@@ -65,10 +65,15 @@ let tourDuFeu = -1;
     const joue = sonde.tour;
     const t = avancer.avancer(sonde, strat.decider(sonde, sonde.tour), rngSonde);
     const touchees = sonde.grille.filter((c) => c.saisonsDepuisFeu === 0).length;
-    if (touchees > pire) { pire = touchees; tourDuFeu = joue; }
+    // Le pire feu **strictement intermédiaire** : le tour 1 n'a pas d'histoire
+    // et le tour 40 est déjà capturé comme état final. Sans cette borne, une
+    // partie dont le plus gros incendie tombe au dernier tour ne produit que
+    // deux instantanés, et la planche perd son état intermédiaire.
+    if (joue > 1 && joue < 40 && touchees > pire) { pire = touchees; tourDuFeu = joue; }
     if (t.termine) break;
   }
 }
+if (tourDuFeu < 0) tourDuFeu = 20; // partie sans aucun feu intermédiaire
 // Le tour de feu se relève **après** son incendie : capturé avant, on montrerait
 // le paysage intact et la couche du front resterait vide.
 const CIBLES = [...new Set([1, tourDuFeu, 40])].sort((a, b) => a - b);
@@ -83,7 +88,9 @@ function capturer(tour) {
     brulees: grille.filter((c) => c.saisonsDepuisFeu < 3).length,
     front: grille.filter((c) => c.saisonsDepuisFeu === 0).length,
     // Un état figé, suffisant pour la couche carte.
-    etat: { largeur: etat.largeur, hauteur: etat.hauteur, meteo: { ...etat.meteo }, grille },
+    // Les secteurs sont figés pour la partie : on les emporte tels quels, le
+    // calque décision en a besoin et ils ne changent pas d'un tour à l'autre.
+    etat: { largeur: etat.largeur, hauteur: etat.hauteur, meteo: { ...etat.meteo }, grille, secteurs: etat.secteurs },
   });
 }
 
@@ -216,6 +223,87 @@ const echelles = [
 
 const massif = `<div class="carte">${carte(instantanes[2], { etiquettes: false }, null, 0.5)}</div>`;
 
+// ---- calque secteur (langage de décision, planche 4) -----------------------
+// Les quatre états vont aux secteurs **réellement visibles** dans la fenêtre :
+// autrement la planche ne montre que des limites nues et ne prouve rien.
+const dansFen = (i) => {
+  const x = i % largeur;
+  const y = Math.floor(i / largeur);
+  return x >= FEN.x0 && x < FEN.x0 + FEN.w && y >= FEN.y0 && y < FEN.y0 + FEN.h;
+};
+const secteursVus = dernier.etat.secteurs.filter((s) => s.cellules.some(dansFen));
+const ETATS = ['vigueur', 'montee', 'activable', 'peril'];
+const donneesSecteurs = secteursVus.map((s, i) => ({
+  id: s.id,
+  etat: ETATS[i % 4],
+  crans: i % 4 === 1 ? { pleins: 2, total: 3 } : undefined,
+  ecartPlancher: i % 4 === 3 ? 'budget −4 · plancher −6' : undefined,
+  porte: s.nature === 'couronne'
+    ? `${s.cellules.filter((j) => dernier.grille[j].type === 'bati').length} constr.`
+    : `${(i % 3) + 1} politique${i % 3 ? 's' : ''}`,
+}));
+const OPT_SECTEURS = {
+  donnees: donneesSecteurs,
+  survole: secteursVus[1]?.id ?? null,
+  selectionne: secteursVus[0]?.id ?? null,
+};
+const calque = cartouche.rendreCalqueSecteurs(dernier.etat, {
+  ...OPT_SECTEURS,
+  fenetre: { x0: FEN.x0, y0: FEN.y0, largeur: FEN.w, hauteur: FEN.h },
+});
+
+// Le calque **ajoute des traits, il ne pose aucun aplat** : c'est la contrainte
+// dominante de la planche 4, et la seule qui se vérifie sans regarder. Seuls
+// les textes et les crans d'adoption ont droit à un remplissage.
+const remplissages = [...calque.matchAll(/<(path|rect)\b[^>]*fill="([^"]+)"/g)].map((m) => m[2]);
+const aplats = remplissages.filter((f) => f !== 'none' && !f.startsWith('oklch(0.62'));
+// Le liseré d'état est en retrait **à l'intérieur** de la limite : son
+// encombrement doit donc être strictement contenu dans celui du secteur.
+const boite = (d) => {
+  const n = [...d.matchAll(/-?\d+(?:\.\d+)?/g)].map(Number);
+  const xs = n.filter((_, i) => i % 2 === 0);
+  const ys = n.filter((_, i) => i % 2 === 1);
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+};
+const traces = [...calque.matchAll(/<path [^>]*stroke="([^"]+)"[^>]*d="([^"]+)"|<path [^>]*d="([^"]+)"[^>]*stroke="([^"]+)"/g)]
+  .map((m) => ({ stroke: m[1] ?? m[4], d: m[2] ?? m[3] }));
+const limites = traces.filter((t) => t.stroke === 'oklch(0.32 0.025 130)');
+const liseres = traces.filter((t) => ['oklch(0.44 0.07 150)', 'oklch(0.62 0.06 148)', 'oklch(0.50 0.03 74)'].includes(t.stroke));
+const dedans = liseres.every((l) => {
+  const b = boite(l.d);
+  return limites.some((li) => {
+    const a = boite(li.d);
+    return b[0] >= a[0] && b[1] >= a[1] && b[2] <= a[2] && b[3] <= a[3];
+  });
+});
+// Le cerne du bâti orphelin se vérifie sur **toute la carte** : la fenêtre de
+// travail est centrée sur le village, où par construction il n'y a pas de bâti
+// diffus, et le contrôle y serait vide de sens.
+const natures = new Map(dernier.etat.secteurs.map((s) => [s.id, s.nature]));
+const orphelins = dernier.grille.filter((c) => c.type === 'bati' && natures.get(c.secteur) !== 'couronne').length;
+const calqueEntier = cartouche.rendreCalqueSecteurs(dernier.etat, OPT_SECTEURS);
+const cernes = [...calqueEntier.matchAll(/<rect [^>]*stroke="oklch\(0\.55 0\.16 44\)"/g)].length;
+
+console.log('\ncalque secteur (planche 4) :');
+for (const [libelle, ok] of [
+  [`${secteursVus.length} secteurs visibles, ${limites.length} limite(s) tracée(s)`, limites.length >= secteursVus.length],
+  ['toutes les limites sont fermées', limites.every((l) => l.d.endsWith('Z'))],
+  [`aucun aplat${aplats.length ? ` — ${[...new Set(aplats)]}` : ''}`, aplats.length === 0],
+  ['les liserés d’état sont en retrait à l’intérieur des limites', dedans],
+  [`le bâti orphelin est cerné (${cernes} cerne(s) pour ${orphelins} construction(s) hors couronne)`, cernes === orphelins],
+  [`le calque pèse ${(calque.length / 1024).toFixed(1)} Ko contre ${(fenetree.contenu.length / 1024).toFixed(0)} Ko de paysage`, calque.length < fenetree.contenu.length / 4],
+]) console.log(`  ${ok ? '✓' : '✗'} ${libelle}`);
+
+const vueSecteurs = `<div class="carte">${carte(dernier, { secteurs: OPT_SECTEURS }, FEN)}</div>`;
+const vueCalqueSeul = `<div class="carte">${(() => {
+  const r = cartouche.rendreCarte(dernier.etat, {
+    fenetre: { x0: FEN.x0, y0: FEN.y0, largeur: FEN.w, hauteur: FEN.h },
+    relief: false, structure: false, etiquettes: false, secteurs: OPT_SECTEURS,
+  });
+  const [, , w, h] = r.viewBox.split(' ').map(Number);
+  return `<svg viewBox="${r.viewBox}" width="${w}" height="${h}">${r.contenu}</svg>`;
+})()}</div>`;
+
 // Comparaison des deux régimes de semis pour les couvertures basses : le
 // handoff les aligne sur la ligne de pied, l'option les étale comme un
 // peuplement. Seule la position change, effectifs et tailles sont ceux du §8.2.
@@ -273,6 +361,22 @@ const html = `<!doctype html>
   de points, qui décrivait la même strate et la noyait. Le sward du pâturage reste dessiné : il
   dit un entretien, ce qu'aucun effectif ne sait dire. Le bâti reste posé dans tous les cas.</p>
   ${comparaison}
+
+  <h2>Calque secteur</h2>
+  <p>L'unité de décision, qui n'avait aucune existence graphique. Limite d'encre suivant les bords
+  de cellule, plus épaisse que les courbes de niveau et plus fine que le contour du bâti ; liseré
+  d'état en retrait de 12 px, qui reprend le code du filet de la fiche de politique (tireté long
+  pour l'activable, tireté serré vert clair pour la montée en charge, plein vert pin pour ce qui
+  est en vigueur, doublé braise pour le péril budgétaire) ; équerres et filet de garde sur le
+  secteur sélectionné, limite épaissie sur le survolé. Les constructions hors couronne portent
+  leur cerne braise, plein si elles sont durcies. <strong>Aucun aplat</strong> : le grain de
+  sous-bois et les paliers de densité sont ce qui justifie la décision.</p>
+  ${vueSecteurs}
+
+  <h2>Le calque seul</h2>
+  <p>Paysage retiré, relief et structure éteints : ce qui reste est exactement ce que le calque
+  ajoute. C'est la vue qui montre si un trait est de trop.</p>
+  ${vueCalqueSeul}
 
   <h2>Le massif entier, en vue agrégée</h2>
   <p>${largeur} × ${hauteur} parcelles au dernier tour, à demi-échelle : le relief et les teintes

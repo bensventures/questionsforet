@@ -18,6 +18,14 @@ interface Front {
   minuterie: Float32Array;
   /** Intensité subie par la cellule, retenue pour l'issue (§8.1). */
   subie: Float32Array;
+  /**
+   * Pas de temps auquel la cellule a pris feu, 0 si elle n'a jamais brûlé.
+   * Observation pure : **aucune règle ne la lit**, et le feu continue de ne pas
+   * animer. Elle existe pour que la couche de rendu puisse rejouer la
+   * propagation telle qu'elle a eu lieu plutôt qu'en fabriquer une plausible à
+   * partir des seuls états finaux.
+   */
+  arrivee: Uint16Array;
 }
 
 export interface Braise {
@@ -25,6 +33,10 @@ export interface Braise {
   y0: number;
   x1: number;
   y1: number;
+  /** Pas de temps auquel le brandon s'est posé, dans la même horloge que
+   *  `ResultatFeu.arrivee`. Le rendu en a besoin pour que l'averse de braises
+   *  tombe au moment où elle est partie, et non toute à la fois. */
+  t: number;
 }
 
 export function bilanVide(): BilanFeu {
@@ -155,6 +167,12 @@ export interface ResultatFeu {
   subie: Float32Array;
   /** 0 = intacte, >0 = parcourue par le feu. */
   touchee: Uint8Array;
+  /**
+   * Pas de temps d'arrivée du front par cellule, 0 si elle n'a pas brûlé. Seule
+   * donnée qui permette de **rejouer** l'incendie : `touchee` et `subie` sont
+   * des états finaux et ne disent pas dans quel ordre le feu est passé.
+   */
+  arrivee: Uint16Array;
 }
 
 export function simulerFeu(etat: Etat, departs: number[], rng: Rng, bilan = bilanVide()): ResultatFeu {
@@ -166,6 +184,7 @@ export function simulerFeu(etat: Etat, departs: number[], rng: Rng, bilan = bila
     etat: new Uint8Array(n),
     minuterie: new Float32Array(n),
     subie: new Float32Array(n),
+    arrivee: new Uint16Array(n),
   };
   for (const i of departs) if (grille[i].type !== 'rocher') f.etat[i] = 1;
 
@@ -178,7 +197,7 @@ export function simulerFeu(etat: Etat, departs: number[], rng: Rng, bilan = bila
   // Moyens de lutte, finis et non duplicables (patch 1). Ce qui protège un
   // hameau ne protège pas l'autre : c'est cette rivalité qui fait du
   // durcissement, qui agit partout à la fois, le meilleur investissement.
-  let equipesLibres = LUTTE.equipesParTour;
+  let equipesLibres = etat.moyens.equipes;
   bilan.equipes = equipesLibres;
 
   // Une construction n'est confrontée au front qu'**une fois par incendie**.
@@ -193,6 +212,10 @@ export function simulerFeu(etat: Etat, departs: number[], rng: Rng, bilan = bila
   const perdre = (c: Cellule, cause: CausePerte) => {
     if (c.detruite) return;
     c.detruite = true;
+    // État de la construction **au moment de la perte** : l'écran de fin
+    // rapproche ces deux ventilations, et c'est la seule leçon qu'il s'autorise.
+    if (c.durcissement >= 1) etat.cumul.pertesDurcies++;
+    if (c.conforme) etat.cumul.pertesConformes++;
     c.causePerte = cause;
     if (cause === 'braise') {
       bilan.pertesBraise++; etat.cumul.pertesBraise++;
@@ -208,7 +231,7 @@ export function simulerFeu(etat: Etat, departs: number[], rng: Rng, bilan = bila
   /** Une braise atteint une cellule. Le terrain traversé n'y est pour rien. */
   const poser = (cible: number, x0: number, y0: number) => {
     const c = grille[cible];
-    braises.push({ x0, y0, x1: c.x, y1: c.y });
+    braises.push({ x0, y0, x1: c.x, y1: c.y, t: garde });
     if (f.etat[cible] !== 0) return;
     if (c.type === 'bati') {
       if (c.detruite) return;
@@ -243,6 +266,10 @@ export function simulerFeu(etat: Etat, departs: number[], rng: Rng, bilan = bila
       if (f.etat[i] === 1) {
         // La cellule prend feu : on fige l'intensité subie et la durée.
         f.etat[i] = 2;
+        // Horloge du rejeu : le pas où la flamme apparaît, jamais relu par une
+        // règle. `garde` compte les pas de la boucle, c'est la seule horloge
+        // que le feu possède.
+        f.arrivee[i] = garde;
         const inte = intensite(c, meteo);
         f.subie[i] = inte;
         f.minuterie[i] = Math.max(1, 3 / vitesse(c));
@@ -364,5 +391,5 @@ export function simulerFeu(etat: Etat, departs: number[], rng: Rng, bilan = bila
   etat.dernierFeu = bilan;
   // L'intensité subie n'est pas un état de cellule : elle ne survit pas au
   // tour. Elle est rendue au tour appelant, qui la passe à la phase d'après-feu.
-  return { bilan, braises, subie: f.subie, touchee: f.etat };
+  return { bilan, braises, subie: f.subie, touchee: f.etat, arrivee: f.arrivee };
 }

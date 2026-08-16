@@ -179,13 +179,33 @@ export interface BilanFeu {
   laissesCourir: number;
 }
 
+/**
+ * Éleveurs, en **trois grandeurs séparées et jamais additionnées** (§10).
+ *
+ * Un compteur unique ne peut pas distinguer un succès d'une perte : le même
+ * zéro dit « les deux sont sous contrat, le sous-bois est tenu » et « les deux
+ * sont partis, le levier est mort ». Le noyau expose donc les trois, et le
+ * bandeau de ressources leur donne trois formes distinctes.
+ */
+export interface Eleveurs {
+  /** Mobilisables, sans contrat en cours. */
+  disponibles: number;
+  /** Sous contrat pastoral : un contrat, un éleveur. */
+  engages: number;
+  /** Partis faute de débouché. Se comptent, ne se remplacent pas vite. */
+  perdus: number;
+  /** Tour auquel le prochain retour peut avoir lieu, `null` si aucun perdu. */
+  retourAu: number | null;
+}
+
 /** Ressources et partenaires (§10). Une seule monnaie en v3.0. */
 export interface Moyens {
   /** Budget disponible ce tour. */
   budget: number;
-  /** Éleveurs mobilisables pour un contrat pastoral. */
-  eleveurs: number;
-  /** Équipes formées pour les travaux. */
+  /** Vivier d'éleveurs mobilisables pour un contrat pastoral. */
+  eleveurs: Eleveurs;
+  /** Équipes de lutte disponibles à chaque incendie. Finies, non duplicables :
+   *  ce qui protège un hameau ne protège pas l'autre (patch 1). */
   equipes: number;
   /** Tours restants de moyens exceptionnels post-incendie (recette 3). */
   fenetrePostFeu: number;
@@ -220,10 +240,30 @@ export interface Etat {
     braiseNonConforme: number;
     frontNonConforme: number;
     departsEteints: number;
+    /** Départs de feu, toutes causes. Sans lui, « 19 départs éteints » n'a pas
+     *  de dénominateur, et le paradoxe de la suppression ne se lit plus. */
+    departs: number;
+    /**
+     * Constructions perdues qui étaient durcies, et qui étaient conformes.
+     * Comptées **au moment de la perte**, jamais relues sur la grille : une
+     * construction détruite continue de voir sa conformité se relâcher, ce
+     * qu'aucune règle ne lit mais qui fausserait une lecture d'après-coup.
+     */
+    pertesDurcies: number;
+    pertesConformes: number;
+    /** Politiques coupées par le bouclage budgétaire : le joueur n'a pas
+     *  décidé, il a subi. La cible du §12 porte sur ce compteur. */
+    renoncements: number;
     toursCran1: number;
     depense: number;
     recettes: number;
   };
+  /**
+   * Parcelles de pin noir à la génération. La conversion irréversible en lande
+   * se mesure par différence, et l'écran de fin la donne en hectares : sans
+   * cette valeur de départ, il n'y a rien à soustraire.
+   */
+  pinNoirDepart: number;
   /** Dernier incendie, pour le compte rendu. */
   dernierFeu: BilanFeu | null;
 }
@@ -242,6 +282,17 @@ export interface Secteur {
 export type NatureSecteur = 'couronne' | 'vallon' | 'adret' | 'ubac' | 'massif';
 
 export type IdPolitique = 'old' | 'durcissement' | 'pastoral' | 'eclaircie';
+
+/**
+ * Politique coupée par le bouclage budgétaire. Le noyau renvoie l'événement,
+ * pas seulement sa phrase : la bande de coupe doit écrire ses conséquences
+ * datées (quelle emprise, en combien d'étés), et les tirer d'une chaîne de
+ * caractères serait à la fois fragile et contraire à la séparation des couches.
+ */
+export interface PolitiqueCoupee {
+  id: IdPolitique;
+  secteur: number;
+}
 
 export interface PolitiqueActive {
   id: IdPolitique;

@@ -71,6 +71,24 @@ const etats = [
   .map(([nom, type, etat]) => `<figure>${vignette(type, 3, etat)}<figcaption>${nom}</figcaption></figure>`)
   .join('');
 
+/**
+ * États du bâti, les trois derniers étant **dérivés** de `m-bati` par
+ * `extraire-glyphes.mjs` faute d'exister dans une charte : le durcissement
+ * épaissit le contour (langage de paysage, § 1.3) et la ruine croise l'emprise
+ * du bâti avec l'encre des restes d'après-feu.
+ */
+const batis = [
+  ['nu', 'nue'],
+  ['durciPartiel', 'durcie à moitié'],
+  ['durci', 'durcie'],
+  ['ruine', 'détruite'],
+]
+  .map(
+    ([etat, nom]) =>
+      `<figure><svg viewBox="0 0 64 96"><use href="#${glyphe('bati', 2, 'sain', etat)}"/></svg><figcaption>${nom}</figcaption></figure>`,
+  )
+  .join('');
+
 const motifs = ['m-sb1', 'm-sb2', 'm-sb3', 'm-sb4']
   .map(
     (id, i) =>
@@ -122,6 +140,13 @@ const html = `<!doctype html>
   <h2>États à silhouette propre</h2>
   <p>Le houppier a disparu : ce sont des glyphes à part entière, pas des recolorations.</p>
   <div class="galerie">${etats}</div>
+
+  <h2>États du bâti</h2>
+  <p>Trois états dérivés de <code>m-bati</code>, absents des chartes : le durcissement épaissit le
+  contour (2,2 · 3,6 · 5 px) et la ruine reprend l'emprise de la maison, toiture emportée, à l'encre
+  des restes d'après-feu. À juger côte à côte : les quatre doivent se distinguer à l'échelle native,
+  et la ruine ne doit pas se lire comme un rocher.</p>
+  <div class="galerie">${batis}</div>
 
   <h2>Motifs de sous-bois</h2>
   <p>Non paramétrés : la teinte de chaque palier est l'information.</p>

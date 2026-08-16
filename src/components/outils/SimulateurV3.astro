@@ -1,0 +1,196 @@
+---
+import sprite from '../../rendu/glyphes.svg?raw';
+import { creerRng } from '../../model/rng';
+import { creerEtat } from '../../model/terrain';
+import { avancer } from '../../model/avancer';
+import { mixteCompetente } from '../../harness/strategies';
+import { rendreCarte } from '../../rendu/carte';
+import {
+  STYLES_ECRAN,
+  STYLES_PANNEAU,
+  etatsDesSecteurs,
+  fenetreVisible,
+  rendreEcran,
+  rendreFinDePartie,
+  rendrePanneau,
+  vueDuPanneau,
+  vueFinDePartie,
+} from '../../rendu/panneau';
+
+/**
+ * Visualisation statique du simulateur v3, à la place de la v2 gelée.
+ *
+ * **Rien n'est interactif ici, et c'est volontaire** : la couche décision a son
+ * langage visuel (calque de secteur, panneau, écran de fin, bande de coupe)
+ * mais pas encore son îlot. La page rend une vraie partie au tour choisi,
+ * engendrée au build. Le seul JavaScript de la page est le déplacement de la
+ * carte au curseur : l'ouverture en plein écran, la bascule des petits écrans
+ * et le choix d'échelle restent en CSS.
+ *
+ * **La page est la porte d'entrée, pas le simulateur.** Une carte est un
+ * rectangle paysage ; dans le flux d'un article elle n'a qu'une colonne étroite
+ * et déborde de la fenêtre en hauteur. Le simulateur s'ouvre donc par-dessus,
+ * sans marge, sur toute la fenêtre.
+ *
+ * La page est celle d'un outil `brouillon`, donc absente des builds de
+ * production : c'est ce qui autorise à sortir la carte entière à l'échelle
+ * native, 727 Ko de SVG, plutôt qu'une fenêtre.
+ */
+
+interface Props {
+  /** Graine de la partie rendue. Déterministe : même graine, même image. */
+  graine?: number;
+  /** Tour auquel on s'arrête. */
+  tour?: number;
+}
+const { graine = 1000, tour = 14 } = Astro.props;
+
+const rng = creerRng(graine);
+const etat = creerEtat(graine, rng, 40);
+let lignes: ReturnType<typeof avancer>['lignes'] = [];
+let feu = false;
+for (let t = 1; t <= tour; t++) {
+  const r = avancer(etat, mixteCompetente.decider(etat, etat.tour), rng);
+  lignes = r.lignes;
+  feu = r.feu;
+}
+
+// Le secteur ouvert dans le panneau est celui qui porte une politique : c'est
+// là que les fiches ont quelque chose à montrer.
+const secteurOuvert = etat.politiques[0]?.secteur ?? 0;
+const donnees = etatsDesSecteurs(etat);
+const vue = vueDuPanneau(etat, {
+  secteur: secteurOuvert,
+  lignes: lignes.map((l) => ({
+    ...l,
+    rejeu: feu && /parcourue|houppier|braise|feu de surface/i.test(l.texte),
+  })),
+});
+
+const carte = rendreCarte(etat, {
+  secteurs: { donnees, selectionne: secteurOuvert, survole: null },
+});
+const [, , largeurSvg, hauteurSvg] = carte.viewBox.split(' ');
+
+// Cadre de référence de la planche 9, pour la barre de position. L'îlot la
+// mettra à jour au défilement ; ici elle vaut pour l'ouverture.
+const CADRE = { largeur: 1800, hauteur: 1080 };
+const ecran = rendreEcran({
+  sprite,
+  carte: `<svg viewBox="${carte.viewBox}" width="${largeurSvg}" height="${hauteurSvg}">${carte.contenu}</svg>`,
+  panneau: rendrePanneau(vue),
+  largeur: etat.largeur,
+  hauteur: etat.hauteur,
+  vue: fenetreVisible(CADRE),
+  // On entre sur le paysage ; on se rapproche ensuite.
+  echelle: 'moyenne',
+});
+
+// Une seconde partie, menée jusqu'au bout : l'écran de fin n'a de sens qu'à
+// quarante étés, et on ne peut pas montrer les deux moments d'une même partie.
+const rngFin = creerRng(graine);
+const etatFin = creerEtat(graine, rngFin, 40);
+for (let t = 1; t <= 40; t++) avancer(etatFin, mixteCompetente.decider(etatFin, etatFin.tour), rngFin);
+const fin = rendreFinDePartie(vueFinDePartie(etatFin));
+---
+
+<section class="v3" aria-label="Simulateur, aperçu statique">
+  <p class="v3__note">
+    Partie de graine {graine}, jouée par la stratégie compétente jusqu'à l'été {tour} et rendue au
+    build. Aucune interaction pour l'instant : le calque de secteur et le panneau ont leur langage
+    visuel, pas encore leur îlot. Le simulateur s'ouvre sur toute la fenêtre, seul cadre au rapport
+    d'une carte ; on s'y déplace en tirant la carte, et trois échelles y sont disponibles, chacune
+    disant ce qu'elle perd.
+  </p>
+
+  <p class="v3__cta"><a href="#simulateur">Ouvrir le simulateur</a></p>
+
+  <h2 class="v3__h">Après quarante étés</h2>
+  <p class="v3__note">
+    La même partie menée jusqu'au bout. L'écran se relit sans note, sans étoile et sans total : le
+    jeu n'a pas de solution optimale, c'est un résultat mesuré, et un indice unique le masquerait.
+    Le rapprochement des deux ventilations, par cause puis par état de la construction perdue, est la
+    seule forme de leçon qu'il s'autorise.
+  </p>
+  <div class="v3__fin"><Fragment set:html={fin} /></div>
+</section>
+
+<div id="simulateur" class="plein">
+  <Fragment set:html={ecran} />
+  <a class="plein__fermer" href="#simulateur-ferme">Fermer</a>
+</div>
+
+<script>
+  /**
+   * Déplacement de la carte **au curseur**, à la manière d'une carte en ligne.
+   *
+   * C'est le premier JavaScript du simulateur, et le garde-fou du projet
+   * demande une nécessité démontrée : deux essais successifs l'ont montrée. Se
+   * déplacer aux deux barres de défilement sur un plan de 40 × 26 parcelles est
+   * pénible, et aucune mise en page ne le rattrape. Une quinzaine de lignes,
+   * aucune dépendance, servies depuis le domaine (la CSP interdit l'inline).
+   *
+   * Le clavier n'est pas oublié : la boîte de défilement reste focalisable et
+   * les flèches continuent de la déplacer, ce que ce script ne touche pas.
+   */
+  for (const boite of document.querySelectorAll<HTMLElement>('.ecran__carte')) {
+    let x = 0;
+    let y = 0;
+    let gauche = 0;
+    let haut = 0;
+
+    boite.addEventListener('pointerdown', (e) => {
+      // Bouton principal seulement : le secondaire ouvre le menu du navigateur.
+      if (e.button !== 0) return;
+      x = e.clientX;
+      y = e.clientY;
+      gauche = boite.scrollLeft;
+      haut = boite.scrollTop;
+      boite.dataset.tire = '';
+      boite.setPointerCapture(e.pointerId);
+    });
+
+    boite.addEventListener('pointermove', (e) => {
+      if (!('tire' in boite.dataset)) return;
+      boite.scrollLeft = gauche - (e.clientX - x);
+      boite.scrollTop = haut - (e.clientY - y);
+    });
+
+    for (const fin of ['pointerup', 'pointercancel']) {
+      boite.addEventListener(fin, () => delete boite.dataset.tire);
+    }
+  }
+</script>
+
+<style is:global set:html={STYLES_PANNEAU + STYLES_ECRAN}></style>
+
+<style>
+  .v3 {
+    margin: 2rem 0 3rem;
+  }
+  .v3__note {
+    max-width: 42rem;
+    margin: 0 0 1rem;
+    font-size: 0.92rem;
+    color: var(--ink-2, #5a5148);
+  }
+  .v3__cta {
+    margin: 1.5rem 0 0;
+  }
+  .v3__cta a {
+    display: inline-block;
+    padding: 0.7rem 1.4rem;
+    background: var(--ember, oklch(0.48 0.16 44));
+    color: oklch(0.96 0.014 88);
+    text-decoration: none;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+  }
+  .v3__h {
+    margin: 2.5rem 0 0.5rem;
+    font-size: 1.1rem;
+  }
+  .v3__fin {
+    border: 1px solid var(--rule, #d8cfc0);
+  }
+</style>

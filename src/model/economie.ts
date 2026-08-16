@@ -1,6 +1,7 @@
-import type { Cellule, Etat, Ligne } from './types';
+import type { Cellule, Etat, Ligne, PolitiqueCoupee } from './types';
 import { TYPES, DENSITE } from './params';
 import { politiqueParId } from './politiques';
+import { libererEleveur } from './partenaires';
 import { borne } from './util';
 
 /**
@@ -122,8 +123,9 @@ export function comptes(etat: Etat): Comptes {
  * Boucle budgétaire du tour. Renvoie les lignes de compte rendu, et laisse le
  * budget dans `etat.moyens`.
  */
-export function bouclerBudget(etat: Etat): Ligne[] {
+export function bouclerBudget(etat: Etat): { lignes: Ligne[]; coupees: PolitiqueCoupee[] } {
   const lignes: Ligne[] = [];
+  const coupees: PolitiqueCoupee[] = [];
   const c = comptes(etat);
 
   etat.moyens.budget += BUDGET.parTour + c.recettes - c.entretien;
@@ -146,16 +148,23 @@ export function bouclerBudget(etat: Etat): Ligne[] {
     if (!candidates.length) break;
     const perdue = candidates[0];
     etat.politiques = etat.politiques.filter((a) => a !== perdue.a);
+    // Un contrat abandonné rend son éleveur au vivier, comme un contrat levé :
+    // c'est le contrat qui s'arrête, pas l'activité.
+    if (perdue.a.id === 'pastoral') libererEleveur(etat.moyens.eleveurs);
     etat.moyens.budget += perdue.cout;
+    etat.cumul.renoncements++;
+    coupees.push({ id: perdue.a.id, secteur: perdue.a.secteur });
     const s = etat.secteurs[perdue.a.secteur];
     lignes.push({
-      texte: `${politiqueParId(perdue.a.id).nom} interrompue sur ${s?.nom ?? 'ce secteur'} : la collectivité ne peut plus en assurer l'entretien.`,
+      // Sans participe accordé : les quatre noms de politiques n'ont pas le
+      // même genre, et « interrompue » en démentait trois sur quatre.
+      texte: `${politiqueParId(perdue.a.id).nom} : la collectivité ne peut plus assurer l'entretien sur ${s?.nom ?? 'ce secteur'}.`,
       ton: 'chaud',
     });
   }
 
   if (etat.moyens.budget < 0) etat.moyens.budget = 0;
-  return lignes;
+  return { lignes, coupees };
 }
 
 /**
@@ -185,30 +194,5 @@ export function coutPolitique(etat: Etat, id: Etat['politiques'][number]['id'], 
   return p.emprise(etat, s).length * COUT_CONTROLE;
 }
 
-/**
- * Partenaires finis (§10). La ressource rare n'est pas l'argent, c'est le
- * partenaire compétent : ils se perdent faute de sollicitation, et se
- * reconstituent beaucoup plus lentement qu'ils ne disparaissent.
- */
-export const PARTENAIRES = {
-  eleveursMax: 3,
-  /** Tours sans aucun contrat au bout desquels un éleveur s'en va (déprise). */
-  toursAvantDeprise: 6,
-  /** Tours nécessaires pour qu'un éleveur revienne. Bien plus long. */
-  toursAvantRetour: 18,
-};
-
-export function suivrePartenaires(etat: Etat, sansContrat: number): Ligne[] {
-  const lignes: Ligne[] = [];
-  const contrats = etat.politiques.filter((a) => a.id === 'pastoral').length;
-  if (contrats === 0 && sansContrat > 0 && sansContrat % PARTENAIRES.toursAvantDeprise === 0) {
-    if (etat.moyens.eleveurs > 0) {
-      etat.moyens.eleveurs--;
-      lignes.push({
-        texte: "Un éleveur a cessé son activité faute de débouché. Il faudra bien plus longtemps pour en retrouver un que pour le perdre.",
-        ton: 'chaud',
-      });
-    }
-  }
-  return lignes;
-}
+/* Les partenaires vivent dans `partenaires.ts` : ils ne sont pas une monnaie,
+ * et le vivier a sa propre comptabilité en trois grandeurs. */

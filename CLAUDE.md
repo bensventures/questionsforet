@@ -133,6 +133,16 @@ la réglementation locale et doivent renvoyer vers elle.
 doivent porter une mention rappelant qu'elles ne remplacent ni un diagnostic de
 terrain ni l'expertise des services compétents.
 
+**Écriture inclusive : dans l'interface du simulateur.** Mots neutres en
+priorité (« les propriétaires », « quelqu'un », « une installation »), point
+médian quand le neutre force la phrase (« éleveur·euse », « engagé·es »,
+« le·la joueur·euse »). La règle vaut pour tout ce que l'interface affiche,
+donc aussi pour les lignes de compte rendu et les chaînes causales **écrites
+dans le noyau** : le compte rendu affiche le texte du modèle intact, une
+convention qui s'arrêterait à la couche de rendu produirait deux registres dans
+le même bloc. Les pages éditoriales (`questions`, `dossiers`) ne sont pas
+concernées et restent inchangées.
+
 ## Périmètre de la v1
 
 Ne pas viser « toute la forêt ». Le matériel déjà rassemblé sur le feu suffit :
@@ -297,6 +307,27 @@ mosaïque), donc le dilemme n'est pas résolu par lui.
 passer un test. Ce paramètre porte un fait de terrain documenté — le
 non-respect des OLD est massif — et ne se règle pas pour convenir à une cible.
 
+**Comptabilité des partenaires, en trois grandeurs** (`src/model/partenaires.ts`).
+`moyens.eleveurs` était un compteur unique, et un compteur unique ne peut pas
+distinguer un succès d'une perte : le même zéro disait « les deux sont sous
+contrat, le sous-bois est tenu » et « les deux sont partis, le levier est mort ».
+Le noyau expose donc `disponibles`, `engages`, `perdus` et `retourAu`, jamais
+additionnés. Le manque n'était pas que d'affichage, il masquait deux mécaniques
+mortes : l'engagement était **irréversible** (rien ne rendait l'éleveur au vivier
+quand le contrat cessait) et le **retour n'existait pas**, `toursAvantRetour`
+étant déclaré et lu par personne, comme `eleveursMax`. L'asymétrie 6 / 18 qui
+porte l'enseignement vivait dans le commentaire, pas dans le modèle. Conséquence
+mesurée sur le joueur compétent : déprise au tour 6, premier contrat au tour 7,
+retour au tour 24, **second contrat au tour 25** que l'ancien code interdisait à
+jamais. La surface tenue passe de 77 à 125 parcelles, la fraction stratégique de
+53 à 51 % (cible : plus de 50 %, marge désormais mince, à surveiller) et les
+douze critères du §12 restent tenus. Trois assertions de `calibrer.ts` gardent
+la séparation des trois grandeurs.
+
+Au passage, `moyens.equipes` était un état que personne ne lisait, le feu
+utilisant `LUTTE.equipesParTour` : `feu.ts` lit désormais l'état, seule source
+de vérité que l'interface pourra afficher.
+
 ## Rendu de la carte
 
 Le code vit dans `src/rendu/` : `palette.ts` (couleurs et bornes de paliers),
@@ -309,8 +340,9 @@ Quatre scripts, tous relançables :
 |---|---|
 | `extraire-glyphes.mjs` | recopie symboles et motifs depuis le handoff |
 | `planche-verification.mjs` | essences × paliers, états de feu, motifs |
-| `planche-carte.mjs` | une vraie partie rendue, plus les assertions |
+| `planche-carte.mjs` | une vraie partie rendue, plus les assertions (le tour intermédiaire est le pire feu **hors tours 1 et 40**, sans quoi une partie dont le plus gros incendie tombe au dernier tour ne produit que deux instantanés) |
 | `banc-essai.mjs` | banc interactif autonome : graine, tour, fenêtre, couches |
+| `planche-panneau.mjs` | le panneau de décision sur une vraie partie, plus ses contrôles |
 
 **Deux lots de design, deux rôles.** `design_handoff_langage_de_paysage/` est la
 charte (vocabulaire, rampes, calques, jauges). `design_handoff_carte_de_reference_v3/`
@@ -361,11 +393,199 @@ Quatre adaptations, toutes mesurées plutôt que choisies :
   le sous-bois saturant, elle hachait les isolignes en segments isolés. Elle se
   décide une fois par vue.
 
-**Ce qui manque avant une interface :** la couche décision (secteurs,
-politiques, doctrine, budget, jauges) n'a aucun langage visuel, le durcissement
-n'épaissit pas le contour du bâti comme le demande la charte, une construction
-détruite se rend debout, et la coupure de combustible n'a pas d'état persistant
-dans le modèle.
+**Trois états du bâti dérivés** (`extraire-glyphes.mjs`), qu'aucune charte ne
+livrait : deux paliers de durcissement, qui épaississent le contour comme le
+demande le langage de paysage (2,2 · 3,6 · 5), et une **ruine**, sans laquelle
+une construction détruite se rendait debout. La ruine reprend l'emprise du
+bâti, toiture emportée, avec ses deux couleurs et **rien que des angles
+droits** : la famille anguleuse est la seule du langage, et un premier essai en
+dent de scie se lisait comme un buisson sombre. Ils sont engendrés depuis
+`m-bati` et non dessinés à la main, avec garde-fou si le handoff le retouche.
+Le sprite compte donc seize symboles de la carte de référence et trois dérivés.
+
+**Calque secteur** (`rendreCalqueSecteurs`, planche 4 du langage de décision).
+Rendu **séparément** de la carte, et non comme une couche de plus : à l'échelle
+native le paysage pèse 727 Ko de SVG pour 1040 cellules de semis, qu'un simple
+survol de secteur ne doit pas redessiner. Le calque, lui, tient en 4 Ko.
+
+Le contour d'un secteur se trace en arêtes **orientées**, l'intérieur toujours
+à droite : les côtés de cellule dont la voisine est dehors se chaînent en
+boucles, ce qui donne gratuitement le bon sens pour les trous et surtout la
+normale intérieure de chaque arête. Le liseré d'état en retrait de 12 px en
+dépend : sommets alignés fusionnés, deux arêtes consécutives sont
+perpendiculaires, et le sommet rentré est exactement le sommet décalé de la
+somme des deux normales. Aucun rognage à faire. Aux pincements en diagonale, le
+parcours **tourne à droite d'abord**, ce qui longe l'intérieur au plus près.
+
+Contrainte dominante, vérifiée par la planche : **aucun aplat**, même à 8 %.
+Seuls les textes et les crans d'adoption portent un remplissage. Les équerres
+de sélection se posent sur l'encombrement du secteur, « les quatre angles »
+n'ayant pas de sens sur un polygone rectilinéaire quelconque.
+
+## Page de visualisation
+
+`src/components/outils/SimulateurV3.astro` remplace la v2 sur la route des
+outils. **La page est la porte d'entrée, pas le simulateur** : elle porte le
+texte, un appel à l'action, et l'écran de fin de partie ; le simulateur s'ouvre
+**par-dessus, sans marge, sur toute la fenêtre**. Une carte est un rectangle
+paysage ; logée dans le flux d'un article elle n'a qu'une colonne étroite et
+déborde en hauteur de plusieurs milliers de pixels. C'est le seul cadre au bon
+rapport, et c'est là que l'échelle « massif entier » tient enfin d'un coup
+d'œil. Ouverture et fermeture par ancre (`:target`), donc sans script, et
+l'adresse dit dans quel état on est.
+
+Une vraie partie, rendue au build, sans un octet de JavaScript. La page pèse
+1 Mo, ce qu'autorise `brouillon: true` (les brouillons sont exclus des builds
+de production). Le composant v2 reste sur disque, gelé et sans importateur.
+
+**Piège retrouvé une seconde fois** : un `<style>` scopé d'Astro ne s'applique
+**pas** au HTML injecté par `set:html`. La hauteur du cadre y était, elle n'a
+jamais pris, l'écran n'avait donc aucune hauteur et la carte sortait de la
+fenêtre. Même piège que les jetons du panneau, une couche plus haut : tout ce
+qui habille du HTML injecté doit vivre dans la feuille globale.
+
+Pour la voir : `astro dev`, ou passer momentanément le filtre de
+`src/pages/outils/[...id].astro` à `true` pour un build complet.
+
+## Panneau de décision
+
+`src/rendu/panneau/` : `jetons.ts` (couleurs et polices du handoff, source
+unique), `styles.ts` (la feuille, exportée en chaîne pour que la planche Node et
+l'îlot Astro lisent la même), `vue.ts` (ce que le panneau lit dans l'état),
+`blocs.ts` (bandeau, doctrine, fiches, compte rendu, gestes), `index.ts`
+(assemblage). Fonctions pures rendant du HTML, vérifiées sur une planche
+statique **avant** tout câblage : `scripts/planche-panneau.mjs`, onze contrôles,
+sur une vraie partie.
+
+L'ordre du panneau descend du durable vers l'immédiat, et les gestes sont
+contre le bord bas : leur place dans la lecture dit qu'ils soulagent sans
+transformer.
+
+**Un écart assumé sur la jauge.** Le handoff borne la **surface tenue**, le
+plafond étant le point où la charge d'entretien égale la recette. Cela suppose
+une charge proportionnelle à la surface ; dans l'économie implémentée elle ne
+l'est pas (le contrôle des OLD se paie par construction, le contrat pastoral
+s'autofinance une fois établi). La surface tenue dépasse donc régulièrement ce
+seuil sans qu'aucun plafond ne soit franchi, et la jauge aurait hachuré en
+braise pour une fausse alerte. La jauge borne donc **la charge par rapport à la
+recette**, ce que le handoff borne réellement, et la surface tenue s'affiche en
+observation dessous. En v3.0 la surface est de toute façon bornée par les
+partenaires, pas par la charge.
+
+**Deux pièges trouvés au rendu**, invisibles à la lecture du code :
+
+1. `vueDuPanneau` renvoyait une **référence** sur `moyens.eleveurs`. Le noyau
+   mutant son état en place, trois instantanés d'une même partie affichaient
+   tous le vivier du dernier tour. Une vue est une valeur : elle copie.
+2. Les jetons n'étaient posés que sur `.pan`. Toute fiche rendue hors du
+   panneau perdait ses variables et sortait ses aplats en transparent, les
+   crans d'adoption disparaissant **sans erreur** : le piège du sprite masqué
+   par `display:none`, une couche plus haut. Ils sont désormais portés par
+   `.pan, .decision`, et la planche vérifie que toute variable lue est déclarée.
+
+**Écran de fin de partie** (`fin.ts`, planche 7). Quarante étés relus sans note,
+sans étoile et sans total : le jeu n'a pas de solution optimale, c'est un
+résultat mesuré, et un indice unique le masquerait. L'écran ventile donc les
+causes, et le rapprochement des deux ventilations (par cause, puis par état de
+la construction perdue) est la seule leçon qu'il s'autorise.
+
+Quatre compteurs ont dû entrer dans le modèle, tous **additifs et sans effet sur
+le tirage** (calibration identique, vérifiée au diff) : `cumul.departs`, sans
+quoi « 19 départs éteints » n'a pas de dénominateur et le paradoxe de la
+suppression ne se lit plus ; `cumul.pertesDurcies` et `cumul.pertesConformes`,
+relevés **au moment de la perte** parce que la conformité d'une construction
+détruite continue de se relâcher, ce qu'aucune règle ne lit mais qui fausserait
+une lecture d'après-coup ; et `cumul.renoncements`, que le harnais déduisait en
+comparant les tours. Ce dernier **majore** l'ancienne déduction : une politique
+établie et coupée dans le même tour n'apparaissait dans aucun des deux relevés,
+alors que le joueur l'avait payée puis perdue. Identiques sur cinq stratégies,
+la compétente comprise (1,5), ils ne s'écartent que sur « coupures uniquement »
+(7,0 contre 7,8). `Etat.pinNoirDepart` complète le lot, la conversion en lande
+se mesurant par différence et s'affichant en hectares.
+
+**Bande de coupe** (planche 8), le moment le plus fort de la partie. Elle reste
+une **ligne du compte rendu**, à son rang chronologique, après le bouclage qui
+l'explique : aucune fenêtre ne s'ouvre, l'événement appartient au tour et non
+au-dessus de lui. Trois exclusivités font sa force, et aucune n'est une couleur
+de plus : seul fond braise pleine largeur de l'interface, seule ligne composée
+en serif, **seule adresse à la deuxième personne** de tout le jeu. Elle ne
+propose ni bouton, ni accusé de réception, ni remède : arrêter le jeu pour faire
+signer un accusé transformerait une conséquence en sanction.
+
+`Tour.coupees` porte l'événement, symétrique de `braises` et `arrivee` : le
+noyau dit **ce qu'il a coupé**, l'interface écrit les conséquences datées
+(emprise réelle, délais tirés de `ENTRETIEN`, `PARTENAIRES`, `DENSITE`,
+`CONFORMITE`). Les tirer de la phrase du modèle aurait été fragile, et contraire
+à la séparation des couches ; le texte n'est lu que pour retrouver le rang de la
+ligne dans le fil.
+
+Deux fautes de français corrigées au rendu, la première dans le noyau : la ligne
+de coupe écrivait « *Programme d'éclaircie interrompue* », participe accordé au
+féminin alors que trois noms de politiques sur quatre sont masculins ; elle est
+désormais sans participe. Et le titre de la bande pose l'article et l'accord à
+partir du nom du modèle, sinon on lit « faute de moyens, programme d'éclaircie
+est coupé ».
+
+La graine 1000 traverse ses quarante étés **sans une seule coupe** : 1,5 par
+partie est une moyenne. La planche en prend donc une autre (1007, coupe à
+l'été 18) plutôt que de fabriquer l'événement.
+
+**Composition de l'écran** (`ecran.ts`, planche 9). Panneau de 536 px pris sur
+le cadre, la carte occupe le reste. **Deux zones défilent et pas une de plus** :
+le compte rendu dans le panneau, la carte dans son cadre ; les fiches du secteur
+restent en place.
+
+**La règle « la carte se déplace, elle ne se réduit pas » est amendée**, et
+c'est le seul écart de fond au langage de décision. Appliquée seule, elle donne
+7 × 6 parcelles sur 40 × 26, soit un vingtième du versant : à l'usage, l'écran
+devenait une chasse au défilement horizontal, et le cadre haut de 78 vh
+ajoutait un second défilement vertical à celui de la page. Une spécification
+écrite pour un spécimen 1800 × 1080 n'est pas une preuve de jouabilité.
+
+**Trois échelles utiles : 1:2, 1:3 (défaut), 1:4.** Deux bornes ont été
+essayées puis retirées, inutilisables chacune à sa manière : l'échelle native
+1:1, qui ne montre qu'un vingtième du versant et ne sert qu'à juger le dessin,
+et un ajustement au cadre faisant tenir les 40 × 26, où l'on ne distingue plus
+rien. **Chacune dit ce qu'elle perd** : c'était le vrai objet de la règle de la
+charte, réduire en silence reste interdit. La planche vérifie que les trois
+portent leur mention et qu'aucune ne sort de 1:2 – 1:4.
+
+**Le déplacement se fait au curseur**, comme sur une carte en ligne, et c'est
+le **premier JavaScript du simulateur** : une quinzaine de lignes sans
+dépendance, servies depuis le domaine (la CSP interdit l'inline). Le garde-fou
+demande une nécessité démontrée ; elle l'a été par deux essais successifs, les
+deux barres de défilement étant impraticables sur un plan de 40 × 26 et aucune
+mise en page ne rattrapant cela. Échelles, bascule et plein écran restent en
+CSS.
+
+Pendant le plein écran, la page derrière est **verrouillée**
+(`html:has(.plein:target) { overflow: hidden }`) : sa barre de défilement
+restait sinon à droite de celle du panneau, et deux ascenseurs côte à côte
+n'appartiennent à personne.
+
+La règle de la planche 9 est que **tout élément absent des planches antérieures
+est un défaut, pas une trouvaille**. Trois ajouts sont donc assumés, et le
+contrôle échoue au quatrième : la barre de position (imposée par le cadrage), la
+bascule carte / panneau des petits écrans, et le sélecteur d'échelle.
+
+Piège à ne pas rouvrir : le sprite se pose **hors de la boîte de défilement**.
+Il se masque par la taille (0 × 0), donc la règle d'échelle, qui donne une
+largeur à tout SVG qu'elle trouve, le ferait apparaître à pleine page.
+
+**Petits écrans : bascule carte / panneau**, en CSS pur (deux boutons radio et
+leurs étiquettes), sans un octet de JavaScript. La cellule garde ses 180 px :
+c'est la réduction qu'on refuse, pas la place. La fenêtre visible est **déduite
+du cadre** par `fenetreVisible()` plutôt qu'écrite, et la barre de position
+l'affiche ; sur page statique elle vaut pour le défilement au chargement,
+l'îlot la mettra à jour au défilement.
+
+**Ce qui manque avant l'îlot :** le câblage. Restent ouvertes, non tranchées par
+les handoffs : la spécification du rejeu d'incendie, le plancher
+d'accessibilité clavier, la reprise de partie, l'entrée et la sortie de partie. La coupure de combustible n'a toujours pas d'état
+persistant dans le modèle. Cinq questions ne sont tranchées par aucun handoff :
+petits écrans (réponse retenue : bascule carte / panneau, cellule maintenue à
+180 px), spécification du rejeu d'incendie, accessibilité clavier, reprise de
+partie, entrée et sortie de partie.
 
 DISTILLED_AESTHETICS_PROMPT = """
 <frontend_aesthetics>

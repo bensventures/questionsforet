@@ -1,6 +1,7 @@
 import type { Cellule, Etat, IdPolitique, Ligne, NatureSecteur, PolitiqueActive, Secteur } from './types';
 import type { Rng } from './rng';
 import { TYPES, DENSITE, SOUS_BOIS, CONFORMITE } from './params';
+import { libererEleveur } from './partenaires';
 import { borne, dans, idx } from './util';
 
 /**
@@ -37,7 +38,7 @@ export const POLITIQUES: Politique[] = [
     id: 'old',
     nom: 'Contrôle des obligations de débroussaillement',
     portee: ['couronne'],
-    chaine: 'contrôle → conformité du propriétaire → apron traité → les secours peuvent approcher',
+    chaine: 'contrôle → conformité des propriétaires → apron traité → les secours peuvent approcher',
     delai: 2,
     etablissement: 3,
     /**
@@ -224,5 +225,9 @@ export function activer(etat: Etat, id: IdPolitique, secteur: number): Politique
 }
 
 export function lever(etat: Etat, id: IdPolitique, secteur: number): void {
+  const avant = etat.politiques.length;
   etat.politiques = etat.politiques.filter((a) => !(a.id === id && a.secteur === secteur));
+  // Lever un contrat rend son éleveur au vivier : sans cela l'engagement était
+  // irréversible, et le vivier ne pouvait que descendre sur toute une partie.
+  if (id === 'pastoral' && etat.politiques.length < avant) libererEleveur(etat.moyens.eleveurs);
 }

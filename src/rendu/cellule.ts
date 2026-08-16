@@ -6,6 +6,7 @@ import {
   effectifTapis,
   estPeuplement,
   estTapis,
+  etatBatiDe,
   glyphe,
   largeurGlyphe,
   motifSousBois,
@@ -174,7 +175,9 @@ export function composerCellule(
 
   // ---- couche 5 : semis de glyphes (§ 8.2, deux régimes) ------------------
   const glyphes: Glyphe[] = [];
-  const href = glyphe(c.type, age, etatFeu);
+  // Le bâti porte son propre état : durcissement au contour, ruine pour une
+  // construction perdue. Sans cela une maison détruite se rendait debout.
+  const href = glyphe(c.type, age, etatFeu, etatBatiDe(c));
   if (href) {
     const tapis = (options.sousBoisAuGlyphe ?? true) && estTapis(c.type);
     const etalee =

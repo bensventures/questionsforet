@@ -141,7 +141,7 @@ export const mixteCompetente: Strategie = {
     // gagne plus de bâti et coûte du paysage.
     if (tour > 6 && aDurcir.length <= 6) {
       const p = ouvrables(etat, 'pastoral')[0];
-      if (p !== undefined && etat.moyens.eleveurs > 0) activer.push({ id: 'pastoral', secteur: p });
+      if (p !== undefined && etat.moyens.eleveurs.disponibles > 0) activer.push({ id: 'pastoral', secteur: p });
       const e = exploitables(etat)[0];
       if (e !== undefined && etat.moyens.budget > 14) activer.push({ id: 'eclaircie', secteur: e });
     }

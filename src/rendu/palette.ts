@@ -125,7 +125,32 @@ export const motifSousBois = (palier: 0 | 1 | 2 | 3 | 4, type?: TypeVeg): string
  * chaud pour le roussi, souche à rejet ou chicot pour le consommé, et **rien**
  * pour les couvertures basses, dont le glyphe disparaît sans remplaçant.
  */
-export function glyphe(type: TypeVeg, age: Palier | number, etatFeu: EtatFeu): string | null {
+/**
+ * État d'une construction, du point de vue du dessin. Le durcissement n'a que
+ * deux paliers utiles : le modèle ne produit que 0,5 (programme d'aide, par
+ * pas) et 1 (geste immédiat).
+ */
+export type EtatBati = 'nu' | 'durciPartiel' | 'durci' | 'ruine';
+
+export function etatBatiDe(c: { detruite: boolean; durcissement: number }): EtatBati {
+  if (c.detruite) return 'ruine';
+  if (c.durcissement >= 1) return 'durci';
+  return c.durcissement > 0 ? 'durciPartiel' : 'nu';
+}
+
+const GLYPHE_BATI: Record<EtatBati, string> = {
+  nu: 'm-bati',
+  durciPartiel: 'm-bati-durci-partiel',
+  durci: 'm-bati-durci',
+  ruine: 'm-bati-ruine',
+};
+
+export function glyphe(
+  type: TypeVeg,
+  age: Palier | number,
+  etatFeu: EtatFeu,
+  etatBati: EtatBati = 'nu',
+): string | null {
   if (etatFeu === 'roussi') {
     if (type === 'pinNoir' || type === 'pinSylvestre') return 'm-pin-roussi';
     if (type === 'chene' || type === 'hetre') return 'm-chene-roussi';
@@ -145,7 +170,7 @@ export function glyphe(type: TypeVeg, age: Palier | number, etatFeu: EtatFeu): s
     case 'friche': return 'm-friche';
     case 'ripisylve': return 'm-ripi';
     case 'rocher': return 'm-rocher';
-    case 'bati': return 'm-bati';
+    case 'bati': return GLYPHE_BATI[etatBati];
   }
 }
 

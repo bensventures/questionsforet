@@ -2,8 +2,8 @@ import type { Decisions, Doctrine, Etat } from '../model/types';
 import { creerRng } from '../model/rng';
 import { creerEtat } from '../model/terrain';
 import { avancer } from '../model/avancer';
-import { TYPES, DENSITE, HORIZON } from '../model/params';
-import { estFermee, estGeree, estMosaique } from '../model/derive';
+import { HORIZON } from '../model/params';
+import { indicateurs } from '../model/indicateurs';
 import { comptes } from '../model/economie';
 
 /**
@@ -66,8 +66,18 @@ export interface Resultat {
   frichePct: number;
   /** Surface maximale effectivement entretenue en un tour : le plafond du patch 2. */
   surfaceTenueMax: number;
-  /** Politiques abandonnées faute de moyens (cible §12). */
+  /** Politiques abandonnées faute de moyens (cible §12), déduites tour à tour. */
   renoncements: number;
+  /** Le même compte, tenu par le modèle et lu par l'écran de fin de partie. */
+  renoncementsModele: number;
+  /**
+   * Vivier d'éleveurs en fin de partie, en trois grandeurs séparées : c'est ce
+   * qui distingue un zéro de succès (tous engagés) d'un zéro de déprise (tous
+   * perdus). Le compteur agrégé qui les précédait ne le permettait pas.
+   */
+  eleveursEngages: number;
+  eleveursDisponibles: number;
+  eleveursPerdus: number;
   depense: number;
   recettes: number;
 }
@@ -100,83 +110,40 @@ export function jouerPartie(graine: number, strat: Strategie, tours = HORIZON.lo
     if (t.termine) break;
   }
 
-  let batiTotal = 0;
-  let batiDebout = 0;
-  let boisees = 0;
-  let fermees = 0;
-  let sousSeuil = 0;
-  let mosaique = 0;
-  let densite = 0;
-  let bio = 0;
-  let nonBati = 0;
-  let pinNoirFin = 0;
-  let friche = 0;
-  let recup = 0;
-  let conformes = 0;
+  // Les indicateurs de paysage et de bâti viennent du noyau : l'écran de fin de
+  // partie lira exactement la même fonction, sinon les cibles du §12 et ce que
+  // le joueur voit finiraient par diverger.
+  const ind = indicateurs(etat);
 
-  // Fraction stratégique : couronnes bâties et secteurs sous contrat.
-  const strategiques = new Set<number>();
-  for (const sec of etat.secteurs) {
-    const sousContrat = etat.politiques.some(
-      (a) => a.secteur === sec.id && (a.id === 'pastoral' || a.id === 'eclaircie'),
-    );
-    if (sec.nature === 'couronne' || sousContrat) for (const i of sec.cellules) strategiques.add(i);
-  }
-  let stratBoisees = 0;
-  let stratSousSeuil = 0;
-
-  for (let i = 0; i < etat.grille.length; i++) {
-    const c = etat.grille[i];
-    if (c.type === 'bati') {
-      batiTotal++;
-      if (!c.detruite) { batiDebout++; if (c.conforme) conformes++; }
-      continue;
-    }
-    // Capacité de reconstitution : ce qui rejette de souche ou reste forestier.
-    if (c.type === 'chene' || c.type === 'ripisylve' || c.type === 'hetre') recup++;
-    if (strategiques.has(i) && TYPES[c.type].arbore) {
-      stratBoisees++;
-      if (c.densite <= DENSITE.seuil || estGeree(c)) stratSousSeuil++;
-    }
-    nonBati++;
-    bio += TYPES[c.type].bio;
-    if (c.type === 'pinNoir') pinNoirFin++;
-    if (c.type === 'friche') friche++;
-    if (TYPES[c.type].arbore) {
-      boisees++;
-      densite += c.densite;
-      if (estFermee(c)) fermees++;
-      if (c.densite <= DENSITE.seuil || estGeree(c)) sousSeuil++;
-      if (estMosaique(c)) mosaique++;
-    }
-  }
-
-  const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
   return {
     graine,
-    batiDebout, batiTotal, batiPct: pct(batiDebout, batiTotal),
-    bruleePct: pct(etat.cumul.parcouruesDistinctes, etat.grille.length),
-    fermeePct: pct(fermees, boisees),
-    sousSeuilPct: pct(sousSeuil, boisees),
-    sousSeuilStrategiquePct: pct(stratSousSeuil, stratBoisees),
-    recuperationPct: pct(recup, nonBati),
-    conformitePct: pct(conformes, batiDebout),
+    batiDebout: ind.batiDebout, batiTotal: ind.batiTotal, batiPct: ind.batiPct,
+    bruleePct: ind.bruleePct,
+    fermeePct: ind.fermeePct,
+    sousSeuilPct: ind.sousSeuilPct,
+    sousSeuilStrategiquePct: ind.sousSeuilStrategiquePct,
+    recuperationPct: ind.recuperationPct,
+    conformitePct: ind.conformitePct,
     braiseConforme: etat.cumul.braiseConforme,
     frontConforme: etat.cumul.frontConforme,
     braiseNonConforme: etat.cumul.braiseNonConforme,
     frontNonConforme: etat.cumul.frontNonConforme,
-    mosaiquePct: pct(mosaique, boisees),
-    densiteMoyenne: boisees ? Math.round(densite / boisees) : 0,
-    biodiversite: nonBati ? Math.round(bio / nonBati) : 0,
+    mosaiquePct: ind.mosaiquePct,
+    densiteMoyenne: ind.densiteMoyenne,
+    biodiversite: ind.biodiversite,
     pertesBraise: etat.cumul.pertesBraise,
     pertesFront: etat.cumul.pertesFront,
     pertesSecoursDebordes: etat.cumul.pertesSecoursDebordes,
     departsEteints: etat.cumul.departsEteints,
     toursSecoursDebordes,
-    pinNoirPerdu: Math.max(0, pinNoirDepart - pinNoirFin),
-    frichePct: pct(friche, etat.grille.length),
+    pinNoirPerdu: Math.max(0, pinNoirDepart - ind.pinNoir),
+    frichePct: ind.frichePct,
     surfaceTenueMax,
     renoncements,
+    renoncementsModele: etat.cumul.renoncements,
+    eleveursEngages: etat.moyens.eleveurs.engages,
+    eleveursDisponibles: etat.moyens.eleveurs.disponibles,
+    eleveursPerdus: etat.moyens.eleveurs.perdus,
     depense: Math.round(etat.cumul.depense),
     recettes: Math.round(etat.cumul.recettes),
   };

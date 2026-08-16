@@ -1,4 +1,5 @@
 import type { Cellule, Etat } from '../model/types';
+import { NATURE_SECTEUR } from '../model/secteurs';
 import { composerCellule, etatFeuDe, palierAge, S, type CelluleComposee, type Glyphe } from './cellule';
 import { ENCRE, FEU, palierDensite } from './palette';
 
@@ -66,6 +67,8 @@ export interface OptionsCarte {
   structure?: boolean;
   /** Étiquettes des cotes et des deux lignes nommées. */
   etiquettes?: boolean;
+  /** Calque secteur (planche 4). Absent : pas de calque. */
+  secteurs?: OptionsSecteurs;
 }
 
 const attrs = (o: Record<string, string | number | undefined>) =>
@@ -402,6 +405,206 @@ function front(etat: Etat, f: Fenetre, gradient: (x: number, y: number) => [numb
   return langues.join('') + flammeches.join('');
 }
 
+/* ==========================================================================
+ * Calque secteur (langage de décision, planche 4)
+ *
+ * Le secteur est l'unité de décision et n'avait aucune existence graphique.
+ * La contrainte dominante de ce lot : le calque **ajoute des traits, il ne
+ * pose aucun aplat**, même à 8 %. Le grain de sous-bois et les paliers de
+ * densité sont ce qui justifie la décision ; les recouvrir reviendrait à
+ * masquer la raison pour cacher le choix.
+ * ========================================================================== */
+
+export type EtatSecteur = 'aucun' | 'activable' | 'montee' | 'vigueur' | 'peril';
+
+/** Ce que l'interface sait d'un secteur et que le modèle ne dit pas seul. */
+export interface DonneesSecteur {
+  id: number;
+  /** Un secteur portant plusieurs politiques affiche **la moins avancée** :
+   *  le calque sert à repérer ce qui n'est pas encore acquis. */
+  etat: EtatSecteur;
+  /** Crans d'adoption, seule valeur chiffrée du calque avec l'écart au
+   *  plancher. Affichés uniquement en montée en charge. */
+  crans?: { pleins: number; total: number };
+  /** Écart au plancher, écrit en clair pour un secteur en péril budgétaire. */
+  ecartPlancher?: string;
+  /** Ce que le secteur porte, en français : « 2 politiques », « 9 constr. ». */
+  porte?: string;
+}
+
+export interface OptionsSecteurs {
+  /** Par identifiant de secteur. Absent = aucun liseré. */
+  donnees?: DonneesSecteur[];
+  survole?: number | null;
+  selectionne?: number | null;
+  /** Noms et sous-lignes. Vrai par défaut. */
+  etiquettes?: boolean;
+}
+
+/**
+ * Traits du calque. La limite est **plus épaisse que les courbes de niveau et
+ * plus fine que le contour du bâti** : la hiérarchie d'épaisseur suffit à
+ * séparer les trois familles, sans troisième couleur.
+ */
+const SECTEUR = {
+  limite: 'oklch(0.32 0.025 130)',
+  trait: 2,
+  traitSurvol: 3.5,
+  /** Retrait du liseré d'état à l'intérieur de la limite. */
+  retrait: 12,
+  braise: 'oklch(0.55 0.16 44)',
+  vertPin: 'oklch(0.44 0.07 150)',
+  vertClair: 'oklch(0.62 0.06 148)',
+  encreActivable: 'oklch(0.50 0.03 74)',
+  /** Tireté long pour l'activable, tireté serré pour la montée en charge
+   *  (valeurs de la planche 4). */
+  tiretLong: '9 7',
+  tiretSerre: '3 9',
+  equerre: 20,
+  garde: 5,
+} as const;
+
+/**
+ * Emprise dessinée de la maison dans le gabarit 64 × 96 des glyphes de bâti,
+ * en fractions. Les quatre états la partagent, ruine comprise : le cerne du
+ * bâti orphelin se pose donc sur la construction et non sur la boîte du
+ * glyphe, qui est presque aussi haute que la cellule.
+ */
+const EMPRISE_MAISON = { x: 14 / 64, y: 46 / 96, w: 36 / 64, h: 44 / 96 };
+
+interface Pt {
+  x: number;
+  y: number;
+}
+
+/**
+ * Contour rectilinéaire d'un ensemble de cellules, en unités de carte.
+ *
+ * Chaque côté de cellule dont la voisine est dehors devient une arête
+ * **orientée**, l'intérieur toujours à droite. Les arêtes se chaînent ensuite
+ * en boucles ; l'orientation constante donne gratuitement le bon sens pour les
+ * trous, et surtout la normale intérieure de chaque arête, dont le liseré en
+ * retrait a besoin.
+ */
+function contoursSecteur(cellules: number[], largeur: number): Pt[][] {
+  const dedans = new Set(cellules);
+  const clef = (p: Pt) => `${p.x},${p.y}`;
+  const arcs = new Map<string, { a: Pt; b: Pt }[]>();
+  const pousser = (a: Pt, b: Pt) => {
+    const l = arcs.get(clef(a));
+    if (l) l.push({ a, b });
+    else arcs.set(clef(a), [{ a, b }]);
+  };
+
+  for (const i of cellules) {
+    const x = i % largeur;
+    const y = Math.floor(i / largeur);
+    // Sens horaire dans le repère écran : l'intérieur reste à droite.
+    if (!dedans.has(i - largeur) || y === 0) pousser({ x, y }, { x: x + 1, y });
+    if (!dedans.has(i + 1) || x === largeur - 1) pousser({ x: x + 1, y }, { x: x + 1, y: y + 1 });
+    if (!dedans.has(i + largeur)) pousser({ x: x + 1, y: y + 1 }, { x, y: y + 1 });
+    if (!dedans.has(i - 1) || x === 0) pousser({ x, y: y + 1 }, { x, y });
+  }
+
+  const boucles: Pt[][] = [];
+  let restant = [...arcs.values()].reduce((n, l) => n + l.length, 0);
+  const retirer = (arc: { a: Pt; b: Pt }) => {
+    const l = arcs.get(clef(arc.a))!;
+    l.splice(l.indexOf(arc), 1);
+    if (!l.length) arcs.delete(clef(arc.a));
+    restant--;
+  };
+
+  while (restant > 0) {
+    const depart = arcs.values().next().value![0];
+    let arc = depart;
+    const pts: Pt[] = [arc.a];
+    for (;;) {
+      retirer(arc);
+      pts.push(arc.b);
+      const suivants = arcs.get(clef(arc.b));
+      if (!suivants || !suivants.length) break;
+      // Aux pincements en diagonale, plusieurs arêtes partent du même point :
+      // on tourne d'abord à droite, ce qui longe l'intérieur au plus près et
+      // sépare deux blocs qui ne se touchent que par un coin.
+      const d = { x: arc.b.x - arc.a.x, y: arc.b.y - arc.a.y };
+      const score = (s: { a: Pt; b: Pt }) => {
+        const e = { x: s.b.x - s.a.x, y: s.b.y - s.a.y };
+        const croix = d.x * e.y - d.y * e.x; // > 0 : virage à droite (écran)
+        return croix > 0 ? 0 : croix === 0 ? 1 : 2;
+      };
+      arc = [...suivants].sort((p, q) => score(p) - score(q))[0];
+      // La boucle se referme d'elle-même : revenue au point de départ, la
+      // première arête a été retirée, donc plus rien ne part de ce point.
+    }
+    if (pts.length > 2) boucles.push(fusionnerAlignes(pts));
+  }
+  return boucles;
+}
+
+/** Fusionne les sommets alignés : sans cela, le retrait du liseré doublerait
+ *  au milieu d'un côté droit, où les deux normales sont la même. */
+function fusionnerAlignes(pts: Pt[]): Pt[] {
+  const ferme = pts[0].x === pts[pts.length - 1].x && pts[0].y === pts[pts.length - 1].y;
+  const p = ferme ? pts.slice(0, -1) : pts;
+  const out: Pt[] = [];
+  for (let i = 0; i < p.length; i++) {
+    const a = p[(i - 1 + p.length) % p.length];
+    const b = p[i];
+    const c = p[(i + 1) % p.length];
+    const colineaire = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x) === 0;
+    if (!colineaire) out.push(b);
+  }
+  return out.length ? out : p;
+}
+
+const chemin = (pts: Pt[], echelle = S) =>
+  `M${pts.map((p) => `${(p.x * echelle).toFixed(0)} ${(p.y * echelle).toFixed(0)}`).join('L')}Z`;
+
+/**
+ * Boucle rentrée de `d` unités de carte. Les côtés étant tous axiaux et les
+ * sommets alignés fusionnés, deux arêtes consécutives sont perpendiculaires :
+ * l'intersection des deux droites décalées est exactement le sommet décalé de
+ * la somme des deux normales intérieures. Pas de rognage à faire.
+ */
+function rentrer(pts: Pt[], d: number): Pt[] {
+  const n = pts.length;
+  const normale = (a: Pt, b: Pt): Pt => {
+    const dx = Math.sign(b.x - a.x);
+    const dy = Math.sign(b.y - a.y);
+    return { x: -dy, y: dx }; // intérieur à droite
+  };
+  return pts.map((p, i) => {
+    const avant = pts[(i - 1 + n) % n];
+    const apres = pts[(i + 1) % n];
+    const n1 = normale(avant, p);
+    const n2 = normale(p, apres);
+    return { x: p.x * S + (n1.x + n2.x) * d, y: p.y * S + (n1.y + n2.y) * d };
+  });
+}
+
+const cheminBrut = (pts: Pt[]) =>
+  `M${pts.map((p) => `${p.x.toFixed(0)} ${p.y.toFixed(0)}`).join('L')}Z`;
+
+/** Liseré d'état : le code exact du filet gauche de la fiche de politique. */
+function lisere(etat: EtatSecteur, d: string): string {
+  const commun = { d, fill: 'none', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' };
+  switch (etat) {
+    case 'activable':
+      return `<path ${attrs({ ...commun, stroke: SECTEUR.encreActivable, 'stroke-width': 3, 'stroke-dasharray': SECTEUR.tiretLong })}/>`;
+    case 'montee':
+      return `<path ${attrs({ ...commun, stroke: SECTEUR.vertClair, 'stroke-width': 3, 'stroke-dasharray': SECTEUR.tiretSerre })}/>`;
+    case 'vigueur':
+      return `<path ${attrs({ ...commun, stroke: SECTEUR.vertPin, 'stroke-width': 3 })}/>`;
+    case 'peril':
+      // Doublé : c'est le secteur que le modèle coupera, nommé **avant**
+      // l'abandon et non déploré après.
+      return `<path ${attrs({ ...commun, stroke: SECTEUR.braise, 'stroke-width': 2.5 })}/>`;
+    default:
+      return '';
+  }
+}
+
 const etiquette = (x: number, y: number, texte: string, couleur: string, taille = 21) =>
   `<text ${attrs({
     x: x.toFixed(0),
@@ -416,6 +619,201 @@ const etiquette = (x: number, y: number, texte: string, couleur: string, taille 
     'paint-order': 'stroke',
     'stroke-linejoin': 'round',
   })}>${texte}</text>`;
+
+/**
+ * Étiquette de secteur : nom du modèle en Fraunces, **jamais tronqué**, et une
+ * sous-ligne en capitales. Halo de parchemin par `paint-order`, jamais de
+ * cartouche opaque : un fond plein rouvrirait l'interdit d'aplat.
+ */
+function etiquetteSecteur(x: number, y: number, nom: string, sous: string): string {
+  const halo = {
+    stroke: ENCRE.halo,
+    'stroke-width': 6,
+    'paint-order': 'stroke',
+    'stroke-linejoin': 'round',
+    'text-anchor': 'middle',
+  };
+  return (
+    `<text ${attrs({
+      ...halo,
+      x: x.toFixed(0),
+      y: y.toFixed(0),
+      fill: ENCRE.cadre,
+      'font-family': 'Fraunces, ui-serif, Georgia, serif',
+      'font-size': 21,
+    })}>${nom}</text>` +
+    `<text ${attrs({
+      ...halo,
+      'stroke-width': 5,
+      x: x.toFixed(0),
+      y: (y + 20).toFixed(0),
+      fill: ENCRE.gestion,
+      'font-family': 'ui-sans-serif, system-ui, sans-serif',
+      'font-size': 12,
+      'letter-spacing': 1,
+    })}>${sous.toUpperCase()}</text>`
+  );
+}
+
+/**
+ * Calque secteur, rendu séparément de la carte pour que le survol et la
+ * sélection ne redessinent pas le paysage : à l'échelle native, la carte
+ * entière pèse 727 Ko de SVG et 1040 cellules de semis.
+ */
+export function rendreCalqueSecteurs(
+  etat: Etat,
+  options: OptionsSecteurs & { fenetre?: Fenetre } = {},
+): string {
+  const f = options.fenetre ?? { x0: 0, y0: 0, largeur: etat.largeur, hauteur: etat.hauteur };
+  const parId = new Map((options.donnees ?? []).map((d) => [d.id, d]));
+  const morceaux: string[] = [];
+  const etiquettes: string[] = [];
+
+  for (const s of etat.secteurs) {
+    const cellules = s.cellules.filter((i) => dansFenetre(
+      { x: i % etat.largeur, y: Math.floor(i / etat.largeur) },
+      f,
+    ));
+    if (!cellules.length) continue;
+
+    const d = parId.get(s.id);
+    const survole = options.survole === s.id;
+    const selectionne = options.selectionne === s.id;
+    const boucles = contoursSecteur(s.cellules, etat.largeur);
+
+    // 1. La limite. Angles arrondis, aucun remplissage.
+    for (const b of boucles) {
+      morceaux.push(
+        `<path ${attrs({
+          d: chemin(b),
+          fill: 'none',
+          stroke: SECTEUR.limite,
+          'stroke-width': survole ? SECTEUR.traitSurvol : SECTEUR.trait,
+          'stroke-linejoin': 'round',
+        })}/>`,
+      );
+
+      // 2. Le liseré d'état, en retrait à l'intérieur.
+      if (d && d.etat !== 'aucun') {
+        morceaux.push(lisere(d.etat, cheminBrut(rentrer(b, SECTEUR.retrait))));
+        // Doublé pour le péril : deux traits parallèles, pas un trait épais.
+        if (d.etat === 'peril') morceaux.push(lisere('peril', cheminBrut(rentrer(b, SECTEUR.retrait + 7))));
+      }
+
+      // 3. Sélection : filet de garde à l'extérieur de la limite.
+      if (selectionne) {
+        morceaux.push(
+          `<path ${attrs({
+            d: cheminBrut(rentrer(b, -SECTEUR.garde)),
+            fill: 'none',
+            stroke: SECTEUR.braise,
+            'stroke-width': 1,
+            'stroke-linejoin': 'round',
+          })}/>`,
+        );
+      }
+    }
+
+    // Équerres aux quatre angles de l'encombrement : sur un polygone
+    // rectilinéaire quelconque, « les quatre angles » n'ont de sens que là.
+    if (selectionne) {
+      const xs = s.cellules.map((i) => i % etat.largeur);
+      const ys = s.cellules.map((i) => Math.floor(i / etat.largeur));
+      const x0 = Math.min(...xs) * S - SECTEUR.garde;
+      const x1 = (Math.max(...xs) + 1) * S + SECTEUR.garde;
+      const y0 = Math.min(...ys) * S - SECTEUR.garde;
+      const y1 = (Math.max(...ys) + 1) * S + SECTEUR.garde;
+      const e = SECTEUR.equerre;
+      for (const [px, py, sx, sy] of [
+        [x0, y0, 1, 1], [x1, y0, -1, 1], [x1, y1, -1, -1], [x0, y1, 1, -1],
+      ] as const) {
+        morceaux.push(
+          `<path ${attrs({
+            d: `M${px + sx * e} ${py}H${px}V${py + sy * e}`,
+            fill: 'none',
+            stroke: SECTEUR.braise,
+            'stroke-width': 3,
+            'stroke-linecap': 'round',
+          })}/>`,
+        );
+      }
+    }
+
+    // 4. Les deux seules valeurs chiffrées que le calque pose sur la carte.
+    if (d?.etat === 'montee' && d.crans) {
+      // Dans l'angle bas du polygone : l'adoption est la variable la plus
+      // difficile à sentir, et la seule qui mérite un compte sur la carte.
+      const bas = cellules.reduce((m, i) => (Math.floor(i / etat.largeur) > Math.floor(m / etat.largeur) ? i : m), cellules[0]);
+      const bx = (bas % etat.largeur) * S + 16;
+      const by = Math.floor(bas / etat.largeur) * S + S - 22;
+      for (let k = 0; k < d.crans.total; k++) {
+        morceaux.push(
+          `<rect ${attrs({
+            x: bx + k * 11,
+            y: by,
+            width: 6,
+            height: 14,
+            fill: k < d.crans.pleins ? SECTEUR.vertClair : 'none',
+            stroke: SECTEUR.vertClair,
+            'stroke-width': 1.5,
+          })}/>`,
+        );
+      }
+    }
+
+    if (options.etiquettes !== false) {
+      const ex = (s.ax + 0.5) * S;
+      const ey = (s.ay + 0.5) * S;
+      const nature = NATURE_SECTEUR[s.nature].toLowerCase();
+      const porte = d?.porte ?? 'aucune';
+      etiquettes.push(etiquetteSecteur(ex, ey, s.nom, `${nature} · ${s.cellules.length} cellules · ${porte}`));
+      if (d?.etat === 'peril' && d.ecartPlancher) {
+        etiquettes.push(
+          `<text ${attrs({
+            x: ex.toFixed(0),
+            y: (ey + 40).toFixed(0),
+            fill: SECTEUR.braise,
+            'font-family': 'ui-sans-serif, system-ui, sans-serif',
+            'font-size': 13,
+            'text-anchor': 'middle',
+            stroke: ENCRE.halo,
+            'stroke-width': 5,
+            'paint-order': 'stroke',
+          })}>${d.ecartPlancher}</text>`,
+        );
+      }
+    }
+  }
+
+  // 5. Bâti orphelin : toute construction hors couronne. Sans ce signe, on
+  // croit avoir tout couvert en équipant ses trois couronnes, alors que le
+  // mitage est volontaire et qu'aucune politique de hameau ne l'atteint.
+  const natureDeSecteur = new Map(etat.secteurs.map((s) => [s.id, s.nature]));
+  for (const c of etat.grille) {
+    if (c.type !== 'bati' || !dansFenetre(c, f)) continue;
+    if (natureDeSecteur.get(c.secteur) === 'couronne') continue;
+    const g = composerCellule(c, etat.meteo).glyphes[0];
+    if (!g) continue;
+    const x = g.x + g.w * EMPRISE_MAISON.x;
+    const y = g.y + g.h * EMPRISE_MAISON.y;
+    morceaux.push(
+      `<rect ${attrs({
+        x: (x - 6).toFixed(0),
+        y: (y - 6).toFixed(0),
+        width: (g.w * EMPRISE_MAISON.w + 12).toFixed(0),
+        height: (g.h * EMPRISE_MAISON.h + 12).toFixed(0),
+        fill: 'none',
+        stroke: SECTEUR.braise,
+        'stroke-width': 1.5,
+        // Plein si la construction est durcie : le cerne dit à la fois qu'elle
+        // est seule et ce qu'elle vaut face aux braises.
+        'stroke-dasharray': c.durcissement >= 1 ? undefined : '6 5',
+      })}/>`,
+    );
+  }
+
+  return morceaux.join('') + etiquettes.join('');
+}
 
 /** Compose la carte. Le `<svg>` appartient à la page, qui décide de sa taille. */
 export function rendreCarte(
@@ -484,6 +882,9 @@ export function rendreCarte(
       `<g class="couche-gestion" pointer-events="none">${gestion}</g>` +
       `<g class="couche-glyphes">${dessinGlyphes}</g>` +
       `<g class="couche-feu" pointer-events="none">${front(etat, f, gradient)}</g>` +
+      (options.secteurs
+        ? `<g class="couche-secteurs">${rendreCalqueSecteurs(etat, { ...options.secteurs, fenetre: f })}</g>`
+        : '') +
       `<g class="couche-etiquettes" pointer-events="none">${cotes.join('')}</g>`,
     viewBox: `${f.x0 * S} ${f.y0 * S} ${f.largeur * S} ${f.hauteur * S}`,
   };

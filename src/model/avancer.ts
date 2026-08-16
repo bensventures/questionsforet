@@ -1,11 +1,12 @@
-import type { Decisions, Etat, Ligne } from './types';
+import type { Decisions, Etat, Ligne, PolitiqueCoupee } from './types';
 import type { Rng } from './rng';
 import type { Braise } from './feu';
 import { tirerMeteo, processusLents } from './lent';
 import { tirerDeparts, appliquerDoctrine, simulerFeu, bilanVide } from './feu';
 import { appliquerIssues, regenerer } from './apresFeu';
 import { appliquerPolitiques, activer, lever, politiqueParId, applicable } from './politiques';
-import { bouclerBudget, suivrePartenaires, BUDGET } from './economie';
+import { bouclerBudget, BUDGET } from './economie';
+import { engagerEleveur, suivrePartenaires } from './partenaires';
 import { appliquerPonctuelles } from './ponctuelles';
 import { profondeurTraiteeReelle } from './derive';
 import { DOCTRINE } from './params';
@@ -27,6 +28,19 @@ export interface Tour {
   lignes: Ligne[];
   /** Braises du feu de ce tour, pour rejouer l'incendie à l'écran. */
   braises: Braise[];
+  /**
+   * Politiques coupées par le bouclage budgétaire ce tour-ci. Le noyau renvoie
+   * l'événement, pas seulement sa phrase : la bande de coupe écrit des
+   * conséquences datées, et les tirer du texte serait fragile.
+   */
+  coupees: PolitiqueCoupee[];
+  /**
+   * Pas de temps d'arrivée du front par cellule, `null` s'il n'y a pas eu de
+   * feu. Avec `braises`, c'est tout ce dont la couche de rendu a besoin pour
+   * rejouer l'incendie **tel qu'il a eu lieu**. Le noyau ne l'anime pas : il
+   * livre la chronologie, le rendu en fait ce qu'il veut.
+   */
+  arrivee: Uint16Array | null;
   feu: boolean;
   termine: boolean;
 }
@@ -55,14 +69,16 @@ export function avancer(etat: Etat, decisions: Decisions, rng: Rng): Tour {
     if (etat.politiques.some((x) => x.id === a.id && x.secteur === a.secteur)) continue;
     // Le contrat pastoral demande un éleveur disponible : la ressource rare
     // n'est pas l'argent (§10).
-    if (a.id === 'pastoral' && etat.moyens.eleveurs <= 0) {
-      lignes.push({ texte: `Aucun éleveur disponible pour un contrat sur ${s.nom}.`, ton: 'chaud' });
+    if (a.id === 'pastoral' && etat.moyens.eleveurs.disponibles <= 0) {
+      lignes.push({ texte: `Pas d'éleveur·euse disponible pour un contrat sur ${s.nom}.`, ton: 'chaud' });
       continue;
     }
     if (etat.moyens.budget < p.etablissement) continue;
     etat.moyens.budget -= p.etablissement;
     etat.cumul.depense += p.etablissement;
-    if (a.id === 'pastoral') etat.moyens.eleveurs--;
+    // L'éleveur passe de disponible à engagé : il n'est pas consommé, et le
+    // contrat le rendra au vivier quand il cessera.
+    if (a.id === 'pastoral') engagerEleveur(etat.moyens.eleveurs);
     activer(etat, a.id, a.secteur);
   }
 
@@ -71,7 +87,8 @@ export function avancer(etat: Etat, decisions: Decisions, rng: Rng): Tour {
 
   // Effets des politiques en vigueur, puis bouclage budgétaire.
   lignes.push(...appliquerPolitiques(etat, rng));
-  lignes.push(...bouclerBudget(etat));
+  const bouclage = bouclerBudget(etat);
+  lignes.push(...bouclage.lignes);
   etat.toursSansContrat = etat.politiques.some((a) => a.id === 'pastoral') ? 0 : etat.toursSansContrat + 1;
   lignes.push(...suivrePartenaires(etat, etat.toursSansContrat));
 
@@ -97,14 +114,17 @@ export function avancer(etat: Etat, decisions: Decisions, rng: Rng): Tour {
   const bilan = bilanVide();
   etat.dernierFeu = bilan;
   let braises: Braise[] = [];
+  let arrivee: Uint16Array | null = null;
   let feu = false;
 
   const departs = tirerDeparts(etat, rng);
+  etat.cumul.departs += departs.length;
   if (departs.length) {
     const restants = appliquerDoctrine(etat, departs, rng, bilan);
     if (restants.length) {
       const res = simulerFeu(etat, restants, rng, bilan);
       braises = res.braises;
+      arrivee = res.arrivee;
       feu = true;
       lignes.push(...appliquerIssues(etat, res, rng));
       // Recette 3 : après un feu, des moyens exceptionnels apparaissent pour
@@ -121,5 +141,5 @@ export function avancer(etat: Etat, decisions: Decisions, rng: Rng): Tour {
   lignes.push(...regenerer(etat, rng));
 
   etat.tour++;
-  return { etat, lignes, braises, feu, termine: etat.tour > etat.toursMax };
+  return { etat, lignes, braises, arrivee, coupees: bouclage.coupees, feu, termine: etat.tour > etat.toursMax };
 }

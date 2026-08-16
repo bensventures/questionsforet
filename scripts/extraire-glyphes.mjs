@@ -72,6 +72,74 @@ for (const id of SYMBOLES) {
 }
 for (const id of MOTIFS) morceaux.push(bloc('pattern', id));
 
+/**
+ * Trois états du bâti que la carte de référence ne livre pas, **dérivés** de
+ * `m-bati` plutôt que dessinés à la main : ils restent donc engendrés, et une
+ * retouche du bâti dans le handoff les emporte avec elle.
+ *
+ * - deux paliers de durcissement, la charte de paysage demandant que « le
+ *   durcissement épaisse le contour » sans jamais l'avoir été ;
+ * - une **ruine**, qui manquait à toutes les chartes : une construction
+ *   détruite se rendait debout, indistinguable d'une maison sauvée.
+ *
+ * La ruine croise les deux familles existantes plutôt que d'en inventer une :
+ * la géométrie angulaire du bâti, l'encre sombre des restes d'après-feu
+ * (`m-souche`, `m-pin-mort`). Aucune couleur nouvelle n'entre dans la palette.
+ */
+const batiSrc = bloc('symbol', 'm-bati');
+const TRAIT_BATI = 'stroke-width="2.2"';
+const traits = batiSrc.split(TRAIT_BATI).length - 1;
+if (traits !== 2) {
+  throw new Error(
+    `m-bati : ${traits} trait(s) à ${TRAIT_BATI}, deux attendus. Le dessin du handoff a changé, ` +
+      'les états dérivés (durcissement, ruine) sont à revoir avant de les réengendrer.',
+  );
+}
+const EMPRISE_BATI = 'M14 90 V60 L32 46 L50 60 V90 Z';
+if (!batiSrc.includes(EMPRISE_BATI)) {
+  throw new Error('m-bati : emprise inattendue, la ruine en dérive et doit être revue.');
+}
+const ENCRE_RESTES = bloc('symbol', 'm-souche').match(/fill="(oklch\([^)]+\))"/)?.[1];
+if (!ENCRE_RESTES) throw new Error('m-souche : encre des restes introuvable, la ruine en dépend.');
+const MUR = batiSrc.match(/fill="(oklch\([^)]+\))"/)?.[1];
+const TRAIT = batiSrc.match(/stroke="(oklch\([^)]+\))"/)?.[1];
+if (!MUR || !TRAIT) throw new Error('m-bati : remplissage ou trait introuvable, la ruine en dérive.');
+
+const derive = (id, corps) => `<symbol id="${id}" viewBox="0 0 64 96">\n${corps}\n      </symbol>`;
+
+// Durcissement : même dessin, contour épaissi. Deux paliers, parce que le
+// modèle n'en produit que deux (0,5 par le programme d'aide, 1 par le geste).
+morceaux.push(
+  batiSrc.replace('id="m-bati"', 'id="m-bati-durci-partiel"').replaceAll(TRAIT_BATI, 'stroke-width="3.6"'),
+);
+morceaux.push(
+  batiSrc.replace('id="m-bati"', 'id="m-bati-durci"').replaceAll(TRAIT_BATI, 'stroke-width="5"'),
+);
+
+// Ruine : la même emprise, toiture emportée, deux pans de mur restés debout.
+//
+// Elle garde le remplissage et le trait du bâti, et **rien que des angles
+// droits** : la famille anguleuse est la seule du langage de paysage, et une
+// dent de scie l'aurait quittée pour se lire comme un buisson sombre. Ce qui
+// dit la perte, c'est le vide là où était le toit, plus les gravats à l'encre
+// des restes d'après-feu.
+morceaux.push(
+  derive(
+    'm-bati-ruine',
+    [
+      `        <path d="M14 90 V62 H26 V72 H32 V90 Z" fill="${MUR}" stroke="${TRAIT}" stroke-width="2.2" stroke-linejoin="miter" />`,
+      `        <path d="M40 90 V70 H50 V90 Z" fill="${MUR}" stroke="${TRAIT}" stroke-width="2.2" stroke-linejoin="miter" />`,
+      `        <rect x="31" y="83" width="10" height="7" fill="${ENCRE_RESTES}" opacity="0.55" />`,
+      `        <path d="M11 90 H53" stroke="${ENCRE_RESTES}" stroke-width="2.6" stroke-linecap="butt" fill="none" />`,
+    ].join('\n'),
+  ),
+);
+journal.push(
+  { id: 'm-bati-durci-partiel', teintable: false, vb: '0 0 64 96' },
+  { id: 'm-bati-durci', teintable: false, vb: '0 0 64 96' },
+  { id: 'm-bati-ruine', teintable: false, vb: '0 0 64 96' },
+);
+
 const entete = `<!--
   Sprite de glyphes du simulateur « Vivre avec le feu ».
 
@@ -100,7 +168,10 @@ const entete = `<!--
 mkdirSync(dirname(sortie), { recursive: true });
 writeFileSync(sortie, `${entete}${morceaux.join('\n')}\n  </defs>\n</svg>\n`);
 
-console.log(`${SYMBOLES.length} symboles et ${MOTIFS.length} motifs écrits dans src/rendu/glyphes.svg`);
+console.log(
+  `${SYMBOLES.length} symboles du handoff, 3 états du bâti dérivés et ${MOTIFS.length} motifs ` +
+    'écrits dans src/rendu/glyphes.svg',
+);
 console.log(`${journal.filter((j) => j.teintable).length} glyphes teintables par la rampe d'humidité`);
 if (audit) {
   console.log('\nsymbole            viewBox        teinte');

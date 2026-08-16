@@ -1,6 +1,7 @@
 import type { Cellule, Etat, PositionTopo, TypeVeg } from './types';
 import type { Rng } from './rng';
-import { W, H, TYPES, DENSITE, CLIMAT, HORIZON, RELIEF } from './params';
+import { W, H, TYPES, DENSITE, CLIMAT, HORIZON, LUTTE, RELIEF } from './params';
+import { creerEleveurs } from './partenaires';
 import { idx, dans, borne } from './util';
 import { decouperSecteurs } from './secteurs';
 
@@ -173,15 +174,17 @@ export function creerEtat(graine: number, rng: Rng, toursMax = HORIZON.long): Et
     meteo: { secheresse: CLIMAT.base, ventAngle: 0, ventForce: 0.5 },
     secheressePrecedente: CLIMAT.base,
     doctrine: 2,
-    moyens: { budget: 10, eleveurs: 2, equipes: 2, fenetrePostFeu: 0 },
+    moyens: { budget: 10, eleveurs: creerEleveurs(), equipes: LUTTE.equipesParTour, fenetrePostFeu: 0 },
     politiques: [],
     toursSansContrat: 0,
     cumul: {
       parcourues: 0, parcouruesDistinctes: 0,
       pertesBraise: 0, pertesFront: 0, pertesSecoursDebordes: 0,
       braiseConforme: 0, frontConforme: 0, braiseNonConforme: 0, frontNonConforme: 0,
-      departsEteints: 0, toursCran1: 0, depense: 0, recettes: 0,
+      departsEteints: 0, departs: 0, pertesDurcies: 0, pertesConformes: 0, renoncements: 0,
+      toursCran1: 0, depense: 0, recettes: 0,
     },
+    pinNoirDepart: grille.filter((c) => c.type === 'pinNoir').length,
     dernierFeu: null,
   };
   etat.secteurs = decouperSecteurs(grille);
