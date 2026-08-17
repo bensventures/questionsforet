@@ -29,7 +29,7 @@ approfondit:
   - vivre-avec-le-feu
 ---
 
-Les pistes DFCI — pour « défense des forêts contre l'incendie » — quadrillent les
+Les pistes DFCI (pour « défense des forêts contre l'incendie ») quadrillent les
 massifs du sud de la France, et chaque projet d'en ouvrir une nouvelle ravive la
 même image : celle d'une ligne que le feu ne pourrait pas franchir. C'est
 l'argument le plus fréquemment avancé pour les créer, ou pour les élargir. Or
@@ -49,7 +49,7 @@ trouverait piégé, avec de l'eau accessible à proximité. [[cite:guide-equipem
 Cette fonction n'est pas un détail logistique : c'est la seule que les données
 soutiennent solidement. Dans l'analyse de référence menée sur près de trois
 décennies de grands feux du sud de la Californie, les ouvrages de coupure situés
-près des routes se sont révélés nettement plus efficaces que les autres — non
+près des routes se sont révélés nettement plus efficaces que les autres : non
 parce qu'ils étaient mieux conçus, mais parce que les équipes pouvaient les
 atteindre à temps. [[cite:syphard-2011-fuelbreaks]] L'accessibilité est l'un des
 rares paramètres sur lesquels un aménageur agit avec un effet mesurable.
@@ -87,8 +87,8 @@ feu. [[cite:syphard-2011-fuelbreaks]][[cite:rossi-fuelbreaks]]
 D'où l'importance de nommer ce dont on parle, car les trois n'ont ni la même
 taille ni la même fonction.
 
-La **piste** est une route. Sa bande roulante — la partie où circulent les
-véhicules — mesure trois à six mètres selon sa catégorie, à quoi s'ajoutent
+La **piste** est une route. Sa bande roulante (la partie où circulent les
+véhicules) mesure trois à six mètres selon sa catégorie, à quoi s'ajoutent
 accotements et fossés. [[cite:guide-equipements-dfci-med]] Elle sert à circuler,
 pas à bloquer.
 
@@ -100,13 +100,13 @@ véhicules. [[cite:guide-equipements-dfci-med]]
 La **coupure de combustible** est l'ouvrage large, celui qui vise réellement à
 peser sur la propagation, et pour lequel on retient un ordre de grandeur d'au
 moins cent mètres. [[cite:rcc-2005-var]] C'est le seul des trois auquel une
-ambition de barrière puisse être prêtée — et encore, sous conditions.
+ambition de barrière puisse être prêtée (et encore, sous conditions).
 
 Un repère utile pour lire un projet : le droit français plafonne à six mètres de
 bande roulante ce qu'une servitude DFCI permet d'établir sans enquête publique
 particulière. [[cite:code-forestier-servitude-dfci]] Au-delà de cet ordre de
 grandeur, la largeur ne répond généralement plus à un besoin de lutte, mais à
-d'autres usages — sortie des bois, accès pastoral ou cynégétique — qui peuvent
+d'autres usages (sortie des bois, accès pastoral ou cynégétique) qui peuvent
 être légitimes, mais qu'il vaut mieux nommer.
 
 ## Un maillon utile, qui a aussi ses coûts
@@ -118,7 +118,7 @@ régulier. [[cite:ruiz-mirazo-2011]][[cite:sardaigne-grazing-2024]]
 
 À l'inverse, une piste neuve a un coût qu'on met rarement en regard du bénéfice :
 fragmentation des milieux, érosion, et surtout fréquentation humaine accrue dans
-des secteurs peu pénétrés — donc davantage de départs de feu, qui sont très
+des secteurs peu pénétrés, donc davantage de départs de feu, qui sont très
 majoritairement d'origine humaine. Une infrastructure d'accès n'est jamais neutre
 du point de vue du risque qu'elle est censée réduire.
 
@@ -129,7 +129,7 @@ arriver vite, à travailler en sécurité et à s'appuyer quelque part : c'est
 beaucoup, et c'est la fonction la mieux étayée par la recherche. La capacité à
 infléchir un front appartient aux coupures larges, avec une efficacité réelle
 mais partielle, très dépendante des secours et de la météo, et qui s'effondre les
-jours de vent fort — ceux-là mêmes qui produisent les grands feux. Juger un
+jours de vent fort, ceux-là mêmes qui produisent les grands feux. Juger un
 projet de piste revient donc à poser trois questions dans l'ordre : quel déficit
 d'accès comble-t-elle, quelle largeur de chaussée les engins exigent-ils
 réellement, et qui l'entretiendra ? Le bon aménagement n'est pas le plus large,
