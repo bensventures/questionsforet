@@ -8,7 +8,7 @@ import { tempsDeLecture } from '../../lib/lecture';
 const dossiers = (
   await getCollection('dossiers', ({ data }) =>
     // Une page privée est construite et servie, mais ne figure dans aucune
-    // liste : c'est ce qui distingue « donné à relire » de « publié ».
+    // liste : c’est ce qui distingue « donné à relire » de « publié ».
     import.meta.env.PROD ? !data.brouillon && !data.prive : !data.prive,
   )
 ).sort((a, b) => b.data.publie.valueOf() - a.data.publie.valueOf());
@@ -72,7 +72,7 @@ const dossiers = (
     background: var(--surface);
     border: 1px solid var(--rule);
     /* Les dossiers portent le filet pin : la forêt plutôt que la braise,
-       pour les distinguer des questions au premier coup d'œil. */
+       pour les distinguer des questions au premier coup d’œil. */
     border-left: 4px solid var(--pine);
     border-radius: 10px;
     box-shadow: var(--shadow);

@@ -14,7 +14,7 @@ const FORMAT_LABELS: Record<string, string> = {
 const outils = (
   await getCollection('outils', ({ data }) =>
     // Une page privée est construite et servie, mais ne figure dans aucune
-    // liste : c'est ce qui distingue « donné à relire » de « publié ».
+    // liste : c’est ce qui distingue « donné à relire » de « publié ».
     import.meta.env.PROD ? !data.brouillon && !data.prive : !data.prive,
   )
 ).sort((a, b) => b.data.publie.valueOf() - a.data.publie.valueOf());

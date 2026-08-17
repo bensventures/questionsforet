@@ -94,7 +94,7 @@ ces forêts se densifient en pins plus qu'elles ne se diversifient. [[cite:gillo
   <figcaption>
     Sur cinq ans, les pins se réinstallent environ deux fois plus vite que les
     feuillus dans les pinèdes échantillonnées du Pays Diois. Dénombrements
-    d'échantillon IFN, sans valeur d'inventaire à l'échelle du territoire.
+    d’échantillon IFN, sans valeur d’inventaire à l’échelle du territoire.
   </figcaption>
 </figure>
 

@@ -9,8 +9,8 @@ import { tempsDeLecture } from '../../lib/lecture';
 export async function getStaticPaths() {
   // Drafts are visible while developing, hidden from the production build.
   const dossiers = await getCollection('dossiers', ({ data }) =>
-    // Une page privée **est** construite : c'est tout l'intérêt, on en donne
-    // l'adresse. C'est la liste des dossiers qui ne la montre pas.
+    // Une page privée **est** construite : c’est tout l’intérêt, on en donne
+    // l’adresse. C’est la liste des dossiers qui ne la montre pas.
     import.meta.env.PROD ? !data.brouillon : true,
   );
   return dossiers.map((dossier) => ({
@@ -32,11 +32,11 @@ const parties = headings.filter((h) => h.depth === 2);
 
 // Reverse link: the questions that declare this dossier in `approfondit`.
 // Building it here keeps the relation declared in one place only (the
-// question's frontmatter), so the two can never contradict each other.
+// question’s frontmatter), so the two can never contradict each other.
 const questionsLiees = (
   await getCollection('questions', ({ data }) =>
     // Une page privée est construite et servie, mais ne figure dans aucune
-    // liste : c'est ce qui distingue « donné à relire » de « publié ».
+    // liste : c’est ce qui distingue « donné à relire » de « publié ».
     import.meta.env.PROD ? !data.brouillon && !data.prive : !data.prive,
   )
 ).filter((q) => q.data.approfondit.some((ref) => ref.id === dossier.id));
@@ -54,7 +54,7 @@ const dateFmt = new Intl.DateTimeFormat('fr-FR', {
     {prive && (
       <p class="brouillon">
         Page de test, non listée sur le site et ignorée des moteurs de recherche. Elle se partage
-        par son adresse, et ce qu'elle contient peut encore changer.
+        par son adresse, et ce qu’elle contient peut encore changer.
       </p>
     )}
 
@@ -116,7 +116,7 @@ const dateFmt = new Intl.DateTimeFormat('fr-FR', {
         <section class="sources-dossier" aria-labelledby="sources-titre">
           <h2 id="sources-titre">Sources</h2>
           <p class="sources-dossier__note">
-            Numérotées dans l'ordre des appels de citation du texte. Chaque
+            Numérotées dans l’ordre des appels de citation du texte. Chaque
             entrée porte la nature de la source.
           </p>
           <ol class="sources-dossier__liste">
@@ -181,7 +181,7 @@ const dateFmt = new Intl.DateTimeFormat('fr-FR', {
     content: none;
   }
 
-  /* Mention rappelant qu'un dossier ne remplace pas un diagnostic de terrain. */
+  /* Mention rappelant qu’un dossier ne remplace pas un diagnostic de terrain. */
   .avertissement {
     margin: 1.75rem 0;
     padding: 0.9rem 1.1rem;
@@ -261,7 +261,7 @@ const dateFmt = new Intl.DateTimeFormat('fr-FR', {
     margin-top: 2.8rem;
     padding-top: 0.8rem;
     border-top: 1px solid var(--rule);
-    /* `scroll-behavior: smooth` étant global, on dégage l'ancre du bord haut. */
+    /* `scroll-behavior: smooth` étant global, on dégage l’ancre du bord haut. */
     scroll-margin-top: 1.5rem;
   }
   .prose :global(h3) {

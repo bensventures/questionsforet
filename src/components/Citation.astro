@@ -1,4 +1,5 @@
 ---
+import { frenchTypography as fr } from '../lib/typography.mjs';
 import { getEntry } from 'astro:content';
 import SourceTypeBadge from './SourceTypeBadge.astro';
 import type { Source } from '../lib/sources';
@@ -31,7 +32,11 @@ if (!data) {
   data = entry.data;
 }
 
-const { auteurs, annee, titre, support, url, archive, type, langue, reserve } = data;
+// Typographie française sur la prose de la référence, comme partout ailleurs :
+// sans cela la bibliographie était le dernier endroit du site à afficher des
+// apostrophes droites, à côté de pages qui n'en ont plus.
+const { annee, url, archive, type, langue } = data;
+const [auteurs, titre, support, reserve] = [data.auteurs, data.titre, data.support, data.reserve].map(fr);
 const elementId = anchor ? `source-${data.id}` : undefined;
 ---
 

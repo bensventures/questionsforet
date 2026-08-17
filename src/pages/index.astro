@@ -1,91 +1,269 @@
 ---
+import { getCollection, getEntry } from 'astro:content';
 import Base from '../layouts/Base.astro';
+import { THEME_LABELS, THEME_ORDER, type Theme } from '../lib/sources';
+import { frenchTypography as fr } from '../lib/typography.mjs';
+
+/**
+ * Page d’accueil. Mise en page reprise de `research/Homepage.dc.html`, aux
+ * couleurs, polices et idiomes du site : les libellés courts sont en capitales
+ * espacées comme partout ailleurs, et non en monospace, le site n’ayant pas de
+ * troisième famille.
+ *
+ * **Rien n’est recopié de ce que les pages disent d’elles-mêmes.** Titres,
+ * énoncé du vrai/faux, nombre d’affirmations, liste des questions et liste des
+ * thèmes viennent des collections : la maquette portait trois questions
+ * inventées et un « [+ vos autres thèmes] », qui deviennent ici ce que le site
+ * publie vraiment.
+ */
+
+/** Les petits nombres s’écrivent en lettres dans la prose du site. */
+const MOTS: Record<number, string> = {
+    2: 'Deux',
+    3: 'Trois',
+    4: 'Quatre',
+    5: 'Cinq',
+    6: 'Six',
+    7: 'Sept',
+    8: 'Huit',
+    9: 'Neuf'
+};
+
+const publiee = ({ data }: { data: { brouillon?: boolean; prive?: boolean } }) =>
+    !data.brouillon && !data.prive;
+
+const VEDETTE = 'pin-noir-vrai-probleme';
+const vedette = await getEntry('questions', VEDETTE);
+const quiz = await getEntry('outils', 'pin-noir-vrai-faux');
+
+const questions = (await getCollection('questions', publiee))
+.filter((q) => q.id !== VEDETTE)
+.sort((a, b) => b.data.publie.valueOf() - a.data.publie.valueOf());
+
+// Les thèmes réellement portés par ce qui est publié, dans l’ordre du
+// vocabulaire. Le lien suit la convention de `ThemeTags`.
+const [dossiers, outils] = await Promise.all([
+    getCollection('dossiers', publiee),
+    getCollection('outils', publiee),
+]);
+const portes = new Set<Theme>(
+    [...questions, ...dossiers, ...outils, vedette!].flatMap((e) => e.data.themes as Theme[]),
+);
+const themes = THEME_ORDER.filter((t) => portes.has(t));
 ---
 
 <Base
-  titre="Forêt & feu, vulgarisation sourcée"
-  description="Un site de vulgarisation rigoureuse sur la forêt, le feu de végétation et la prévention, en français, avec ses sources en clair."
+        titre="Forêt & feu, vulgarisation sourcée"
+        description="Un site de vulgarisation rigoureuse sur la forêt, le feu de végétation et la prévention, en français, avec ses sources en clair."
 >
-  <section class="hero">
-    <p class="hero__kicker">Vulgarisation sourcée · forêt &amp; feu</p>
-    <h1 class="hero__titre">
-      Ce qu'on croit savoir sur la forêt qui brûle, et ce que dit la recherche.
-    </h1>
-    <p class="lede">
-      Une idée par page, des chiffres toujours accompagnés de leur contexte, et
-      des sources dont la solidité est indiquée en clair. Ni discours de filière,
-      ni discours militant : la traçabilité, et l'honnêteté sur les controverses.
-    </p>
-  </section>
+    <section class="intro">
+        <h1>Ce qu’on croit savoir sur la forêt qui brûle, et ce que dit la recherche.</h1>
+        <p class="lede">
+            Ce site centralise des synthèses d’articles scientifiques sur la forêt et le feu. Une idée par
+            page. Les chiffres arrivent toujours avec leur contexte. Quand la littérature hésite, je le
+            dis plutôt que de trancher à sa place.
+        </p>
+        <p class="intro__note">
+            Ce n’est ni un site de filière ni un site militant. C’est un site de lecture.
+        </p>
+    </section>
 
-  <nav class="portes" aria-label="Entrées du site">
-    <a class="porte" href="/questions">
-      <span class="porte__titre">Les questions</span>
-      <span class="porte__desc">Des réponses courtes et sourcées, une par question.</span>
-    </a>
-    <a class="porte" href="/dossiers">
-      <span class="porte__titre">Les dossiers</span>
-      <span class="porte__desc">Des synthèses longues, structurées en parties, pour le fond.</span>
-    </a>
-    <a class="porte" href="/outils">
-      <span class="porte__titre">Les outils</span>
-      <span class="porte__desc">Vrai/faux et objets interactifs pour tester ses idées reçues.</span>
-    </a>
-    <a class="porte" href="/sources">
-      <span class="porte__titre">Toutes les sources</span>
-      <span class="porte__desc">La bibliographie complète, filtrable par type et par thème.</span>
-    </a>
-  </nav>
+    <hr/>
+
+    <section class="bloc">
+        <p class="kicker">Pour commencer, un vrai ou faux</p>
+        <h2><a href="/outils/pin-noir-vrai-faux/">{fr(quiz!.data.titre)}</a></h2>
+        <p>
+            Dix affirmations qui circulent vraiment, à trancher une par une. Certaines corrigent une
+            méfiance excessive envers l’essence, d’autres l’excès inverse. Plusieurs réponses sont
+            vraies et fausses à la fois, parce que c’est l’état réel de la littérature.
+        </p>
+
+        <p class="cta">
+            <a href="/outils/pin-noir-vrai-faux/">
+                Répondre aux {quiz!.data.affirmations.length} affirmations
+            </a>
+        </p>
+    </section>
+
+    <hr/>
+
+    <section class="bloc">
+        <p class="kicker">Et si vous voulez juste lire</p>
+        <h2><a href={`/questions/${vedette!.id}`}>{fr(vedette!.data.titre)}</a></h2>
+        <p>
+            Celle-là ne se tranche pas d’un clic, et c’est ce qui la rend intéressante. Il faut d’abord
+            savoir à quoi l’on compare : dans le Diois, le pin noir n’a pas remplacé une chênaie, mais
+            des versants mis à nu par des siècles de surpâturage. Les données locales disent quelque
+            chose de plus précis que le procès qu’on entend d’habitude. Le problème n’est pas qu’il
+            brûle, c’est qu’il ne se régénère pas.
+        </p>
+        <p><a href={`/questions/${vedette!.id}`}>Lire la réponse en entier</a></p>
+        
+        {
+            questions.length > 0 && (
+                        <>
+                            <p class="kicker kicker--suite">
+                                {questions.length > 1
+                                    ? `${MOTS[questions.length] ?? questions.length} autres réponses courtes`
+                                    : 'Une autre réponse courte'}
+                            </p>
+                            <ul class="suite">
+                                {questions.map((q) => (
+                                        <li>
+                                            <a href={`/questions/${q.id}`}>{fr(q.data.titre)}</a>
+                                        </li>
+                                ))}
+                            </ul>
+                        </>
+            )
+        }
+    </section>
+
+    <hr/>
+
+    <section class="bloc">
+        <h2 class="bloc__h">Comment c’est rangé</h2>
+        <dl class="rangement">
+            <dt><a href="/outils">Outils</a></dt>
+            <dd>Des vrai ou faux. On répond, on voit où l’intuition s’écarte des données.</dd>
+            <dt><a href="/questions">Questions</a></dt>
+            <dd>
+                Une page, une idée, une réponse courte. De quoi citer un chiffre sans le sortir de son
+                contexte.
+            </dd>
+            <dt><a href="/dossiers">Dossiers</a></dt>
+            <dd>Les synthèses longues, en parties, pour quand la réponse courte ne suffit plus.</dd>
+            <dt><a href="/sources">Sources</a></dt>
+            <dd>Toute la bibliographie, filtrable par type et par thème.</dd>
+        </dl>
+    </section>
+
+    <hr/>
+
+    <section class="bloc">
+        <h2 class="bloc__h">Sur les sources</h2>
+        <p>
+            Chaque affirmation renvoie à une référence, et je précise ce qu’elle vaut : article évalué
+            par les pairs, rapport, document institutionnel, plaidoyer. Les textes en anglais sont
+            signalés. Si vous trouvez une erreur, écrivez-moi, je corrige et je note la correction.
+        </p>
+        <p class="kicker">
+            Évalué par les pairs · rapport · institutionnel · plaidoyer · en anglais
+        </p>
+    </section>
 </Base>
 
 <style>
-  .hero {
-    margin-bottom: 2.5rem;
-  }
-  .hero__kicker {
-    margin: 0 0 1rem;
-    font-size: 0.78rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--ember);
-  }
-  .hero__titre {
-    font-size: clamp(2.2rem, 1.5rem + 3.2vw, 3.4rem);
-    max-width: 16ch;
-  }
+    .intro h1 {
+        max-width: 24ch;
+    }
 
-  .portes {
-    display: grid;
-    gap: 0.9rem;
-  }
-  .porte {
-    display: grid;
-    gap: 0.2rem;
-    padding: 1.1rem 1.3rem;
-    background: var(--surface);
-    border: 1px solid var(--rule);
-    border-left: 4px solid var(--ember);
-    border-radius: 8px;
-    box-shadow: var(--shadow);
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.18s ease;
-  }
-  .porte:hover {
-    transform: translateX(4px);
-  }
-  .porte__titre {
-    font-family: var(--serif);
-    font-size: 1.25rem;
-    font-weight: 560;
-    color: var(--ink);
-  }
-  .porte:hover .porte__titre {
-    color: var(--ember);
-  }
-  .porte__desc {
-    color: var(--ink-soft);
-    font-size: 0.95rem;
-  }
+    .intro__note {
+        color: var(--ink-soft);
+    }
+
+    /* Un filet, pas une carte : les blocs se séparent comme les sections d’un
+       manuel, sans encadrement ni ombre. */
+    hr {
+        border: 0;
+        border-top: 1px solid var(--rule);
+        margin: 2.75rem 0 0;
+    }
+
+    .bloc {
+        padding-top: 2.25rem;
+    }
+
+    .bloc p {
+        color: var(--ink-soft);
+    }
+
+    .bloc h2 {
+        margin-top: 0;
+    }
+
+    .bloc__h {
+        font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+    }
+
+    /* Libellé court : capitales espacées, l’idiome du site pour ce registre. */
+    .kicker {
+        margin: 0 0 0.55rem;
+        font-family: var(--sans);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+    }
+
+    .kicker--suite {
+        margin-top: 1.9rem;
+    }
+
+    /* Un appel cerné plutôt que plein : la page n’a qu’une action, elle n’a pas
+       besoin de crier pour qu’on la trouve. */
+    .cta {
+        margin: 1.4rem 0 0;
+    }
+
+    .cta a {
+        display: inline-block;
+        padding: 0.55rem 1.3rem;
+        border: 1px solid var(--ember);
+        color: var(--ember);
+        text-decoration: none;
+        font-family: var(--sans);
+        font-size: 0.98rem;
+    }
+
+    .cta a:hover {
+        background: var(--ember);
+        color: var(--accent-fg);
+    }
+
+    .suite {
+        margin: 0;
+        padding-left: 1.1rem;
+    }
+
+    .suite li + li {
+        margin-top: 0.4rem;
+    }
+
+    .rangement {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.7rem 1.1rem;
+        align-items: baseline;
+        margin: 1.1rem 0 0;
+    }
+
+    .rangement dt {
+        font-family: var(--sans);
+        font-size: 0.88rem;
+        font-weight: 600;
+    }
+
+    .rangement dd {
+        margin: 0;
+        color: var(--ink-soft);
+    }
+
+    .themes {
+        margin-top: 1.4rem;
+        font-size: 0.95rem;
+    }
+
+    @media (max-width: 32rem) {
+        .rangement {
+            grid-template-columns: 1fr;
+            gap: 0.2rem;
+        }
+
+        .rangement dd {
+            margin-bottom: 0.7rem;
+        }
+    }
 </style>
