@@ -27,7 +27,6 @@ sources:
   - sardaigne-grazing-2024
 approfondit:
   - vivre-avec-le-feu
-brouillon: true
 ---
 
 Les pistes DFCI — pour « défense des forêts contre l'incendie » — quadrillent les
