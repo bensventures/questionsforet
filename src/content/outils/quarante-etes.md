@@ -1,8 +1,8 @@
 ---
-titre: Vivre avec le feu
+titre: Quarante étés
 chapo: >-
-  Un simulateur de gestion : quarante étés à tenir sur un versant du Diois. On
-  ne peut pas empêcher le grand feu, seulement décider de ce qu'il emporte.
+  Un simulateur de gestion sur un versant du Diois : on ne peut pas empêcher le
+  grand feu, seulement décider de ce qu'il emporte.
 publie: 2026-07-27
 format: simulation
 themes:
