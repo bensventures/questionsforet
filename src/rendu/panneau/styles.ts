@@ -8,6 +8,11 @@ import { HACHURE_BRAISE, JETONS as J, LARGEUR_PANNEAU, POLICES } from './jetons'
  *
  * Rien de tricolore, aucune ombre portée, aucun dégradé décoratif : le seul
  * dégradé de la feuille est la hachure braise, à ses deux emplois autorisés.
+ *
+ * **Aucun accent grave dans cette feuille, commentaires compris** : elle est un
+ * gabarit de chaîne, et un accent grave la referme au milieu. Le build le dit,
+ * mais mal, et on s'y est fait prendre trois fois. Écrire « details », pas
+ * l'inverse.
  */
 export const STYLES_PANNEAU = `
 /*
@@ -53,8 +58,51 @@ export const STYLES_PANNEAU = `
   color: var(--encre3);
 }
 .pan__bloc { padding: 14px 20px; border-bottom: 1px solid var(--filet); }
-.pan__bloc--rendu { flex: 1 1 auto; min-height: 0; }
-.pan__bloc--gestes { border-bottom: 0; margin-top: auto; background: var(--rang); }
+/* **Le compte rendu est un bas de colonne fixe, borné et défilant.** Dans la
+   pile, il était en « flex: 1 1 auto ; min-height: 0 » : autorisé à descendre
+   sous la hauteur de son contenu alors qu'il ne défilait pas lui-même, il
+   débordait **par-dessus** le registre des gestes dès qu'un été avait trois
+   lignes à raconter. Le sortir de la pile règle les deux causes à la fois : il
+   ne dépend plus du défilement d'une pile que la liste des quatorze secteurs
+   allonge à elle seule, et le tiroir du secteur ne le couvre plus, lui qui vient
+   d'en raconter l'effet. Borné à 38 % de la colonne pour ne pas manger la
+   décision, il défile chez lui. */
+.pan__bloc--rendu {
+  flex: 0 0 auto;
+  max-height: 38%;
+  overflow-y: auto;
+  border-top: 1px solid var(--filet);
+  border-bottom: 0;
+}
+.pan__pile > * { flex-shrink: 0; }
+/* L'été dont on lit le compte rendu reste lisible pendant qu'on le parcourt. */
+.pan__bloc--rendu > h2 { position: sticky; top: 0; z-index: 1; margin: 0 -20px; padding: 2px 20px 6px; background: var(--parchemin); }
+.pan__bloc--gestes { border-bottom: 0; }
+
+/* ---- les deux registres de dépense -----------------------------------------
+   Deux boutons radio et leurs étiquettes : la commutation est en CSS, les
+   flèches du clavier marchent seules, et la page rendue au build sait déjà
+   changer d'onglet sans un octet de script. La règle « on cache l'inactif »
+   plutôt que « on montre l'actif » est délibérée : là où « :has() » manquerait,
+   les deux registres restent visibles, c'est-à-dire la mise en page d'avant les
+   onglets, et non une colonne vide. */
+.onglets__barre { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--filet); }
+.onglets__e {
+  padding: 9px 12px 8px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--encre3);
+}
+.onglets__e:has(:checked) { color: var(--encre); border-bottom-color: var(--braise); background: var(--rang); }
+.onglets__e:has(:focus-visible) { outline: 2px solid var(--braise); outline-offset: -2px; }
+.onglets__r { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.onglets__n { display: block; font-size: 14.5px; }
+/* Les deux règles restent lisibles en même temps : l'onglet range les leviers,
+   il ne doit pas cacher ce qui les distingue. */
+.onglets__d { display: block; font-size: 11.5px; color: var(--encre3); }
+.onglets:has(.onglets__r--politiques:checked) .onglets__vue--gestes,
+.onglets:has(.onglets__r--gestes:checked) .onglets__vue--politiques { display: none; }
+.onglets__regle { margin: 0 0 10px; font-size: 12.5px; color: var(--encre2); }
 
 /* ---- les trois zones du panneau -------------------------------------------
    Le bandeau et le pied ne bougent jamais ; entre eux, le corps porte la pile
@@ -76,7 +124,7 @@ export const STYLES_PANNEAU = `
   overflow-y: auto;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .pan__tiroir { animation: pan-glisse 220ms ease-out both; }
+  .pan__tiroir--neuf { animation: pan-glisse 220ms ease-out both; }
 }
 @keyframes pan-glisse { from { transform: translateX(14%); opacity: 0 } to { transform: none; opacity: 1 } }
 .tiroir__tete {
@@ -136,6 +184,50 @@ export const STYLES_PANNEAU = `
 .equipes i { width: 5px; height: 26px; background: var(--encre2); }
 .reserve { border-left: 1px dashed var(--encre3); padding-left: 10px; min-height: 44px; color: var(--encre3); font-size: 11px; }
 
+/* ---- doctrine repliée ------------------------------------------------------
+   Une ligne quand rien ne s'y joue, le bloc entier quand quelque chose s'y
+   joue. Un élément « details » plutôt qu'un composant : le clavier et les
+   lecteurs d'écran le connaissent déjà. */
+.doc__pli > summary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 10px;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+.doc__pli > summary::-webkit-details-marker { display: none; }
+.doc__pli-t { font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--encre3); }
+
+/* L'affordance du menu est un **bouton lisible**, pas un chevron seul : le pli
+   se manœuvre rarement, donc rien ne l'apprend à l'usage, et il faut que la
+   première visite sache qu'on peut changer de posture. */
+.doc__ouvrir {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  font-size: 12px;
+  color: var(--braise-texte);
+  border: 1px solid var(--braise);
+}
+.doc__chevron { font-style: normal; font-size: 9px; }
+.doc__pli[open] .doc__chevron { transform: rotate(180deg); }
+.doc__pli:not([open]) .doc__lbl--fermer, .doc__pli[open] .doc__lbl--ouvrir { display: none; }
+
+/* L'item choisi, montré replié seulement : déplié, la gamme le porte deux
+   lignes plus bas et le redire ici serait le dire deux fois. */
+.doc__vigueur {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  gap: 10px;
+  align-items: baseline;
+}
+.doc__vigueur .doc__p { background: oklch(0.58 0.15 44); }
+.doc__pli[open] .doc__vigueur { display: none; }
+
 /* ---- doctrine (planche 2) --------------------------------------------------
    Trois lignes empilées, pas un curseur : un curseur suggère un continuum et
    une position médiane raisonnable, quand il s'agit de trois doctrines. */
@@ -158,7 +250,12 @@ export const STYLES_PANNEAU = `
 .doc__c--on .doc__p { background: oklch(0.58 0.15 44); }
 .doc__n { font-size: 15px; }
 .doc__s { font-size: 12px; color: var(--encre2); }
-.doc__x { font-size: 15px; color: var(--encre); font-variant-numeric: tabular-nums; }
+/* Le coût de la posture porte son unité. Nu, il se lisait comme un numéro de
+   cran, d'autant que 3 · 2 · 1 est exactement l'inverse des crans 1 · 2 · 3 ;
+   et c'est une charge récurrente, la seule du bloc, quand la réforme dite en
+   dessous est un paiement unique. */
+.doc__x { font-size: 15px; color: var(--encre); font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
+.doc__u { font-size: 11px; color: var(--encre3); }
 .doc__note { font-size: 12px; color: var(--encre2); margin-top: 8px; }
 /* La fenêtre post-incendie est une **interaction possible** : c'est l'un des
    trois emplois de la braise, et le seul moment où réformer est facile. */
@@ -174,15 +271,18 @@ export const STYLES_PANNEAU = `
 /* ---- fiche de politique (planche 1) ---------------------------------------
    Le filet gauche est le **seul** porteur des cinq états : la couleur du nom,
    le fond et la graisse ne les redisent pas. */
-.fiche { position: relative; padding: 12px 14px 12px 18px; margin-bottom: 10px; background: var(--parchemin); border: 1px solid var(--filet); }
-.fiche::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
-.fiche--activable::before { background: repeating-linear-gradient(to bottom, ${J.activable} 0 7px, transparent 7px 13px); }
-.fiche--montee::before { background: ${J.pinClair}; }
-.fiche--vigueur::before { background: ${J.pin}; }
-.fiche--levee::before { background: ${J.levee}; }
-.fiche--levee { color: var(--encre3); }
-.fiche--abandon::before { width: 6px; background: var(--braise); }
-.fiche--abandon { background: var(--braise-leger); }
+/* **L'état de la fiche est dans son encadrement, sur les quatre côtés.** Il
+   tenait dans un filet vertical posé le long du bord gauche, tireté tant que la
+   politique n'était qu'activable : deux bordures de nature différente sur le
+   même rectangle, dont une seule portait du sens, et le tireté se lisait comme
+   un défaut d'alignement plutôt que comme un état. La couleur passe donc dans
+   la bordure elle-même, uniforme, et les crans d'adoption disent le reste. */
+.fiche { padding: 12px 14px; margin-bottom: 10px; background: var(--parchemin); border: 1px solid var(--filet); }
+.fiche--activable { border-color: ${J.activable}; }
+.fiche--montee { border-color: ${J.pinClair}; }
+.fiche--vigueur { border-color: ${J.pin}; }
+.fiche--levee { border-color: ${J.levee}; color: var(--encre3); }
+.fiche--abandon { border-color: var(--braise); background: var(--braise-leger); }
 .fiche--abandon .fiche__n { text-decoration: line-through; }
 .fiche__h { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .fiche__p { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--encre3); }
@@ -198,11 +298,64 @@ export const STYLES_PANNEAU = `
 .crans i.vide { background: transparent; border-top: 2px dashed var(--encre3); height: 4px; }
 .fiche__pied { font-size: 12px; color: var(--encre2); margin-top: 8px; }
 .fiche__cond { margin-top: 10px; padding: 7px 9px; border: 1px solid var(--braise); color: var(--braise-texte); font-size: 12.5px; }
-.fiche__appel { margin-top: 10px; font-size: 13px; color: var(--braise-texte); border: 0; background: none; padding: 0; font-family: inherit; cursor: pointer; }
+/* **Engager une politique est le geste le plus lourd du jeu** : il ne pouvait
+   pas se présenter comme une ligne de texte soulignée. Bouton cerné plutôt que
+   plein, pour ne pas disputer le pas à « passer l'été », qui est le seul à
+   engager le temps. */
+.fiche__appel {
+  margin-top: 12px;
+  padding: 7px 14px;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: var(--braise-texte);
+  background: none;
+  border: 1px solid var(--braise);
+  cursor: pointer;
+}
+.fiche__appel:hover { color: ${J.encreInverse}; background: var(--braise-plein); }
 .fiche__refus { margin-top: 10px; font-size: 12.5px; color: var(--braise-texte); }
 /* Une décision prise mais pas encore appliquée : le noyau n'a qu'une porte,
    et l'été suivant est le seul moment où elle s'ouvre. */
 .fiche__attente { margin-top: 10px; font-size: 12.5px; color: var(--pin); }
+.fiche__retirer {
+  font: inherit;
+  color: var(--braise-texte);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+/* Récapitulatif des engagements, juste au-dessus du bouton : c'est le seul
+   endroit du panneau que le tiroir ne couvre jamais, donc le seul d'où l'on
+   voit tout ce qui partira à l'été suivant, secteurs confondus. */
+.pan__liste { list-style: none; margin: 0; padding: 10px 20px 0; }
+.pan__liste li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 4px 0;
+  font-size: 12.5px;
+}
+.pan__liste li + li { border-top: 1px solid var(--filet); }
+/* Ce qu'on vient d'engager se pose : c'est le seul mouvement de la colonne, et
+   il porte sur la ligne qui a changé, jamais sur ce qui l'entoure. */
+@media (prefers-reduced-motion: no-preference) {
+  .pan__liste--pose { animation: pan-pose 1100ms ease-out both; }
+}
+@keyframes pan-pose {
+  0% { background: var(--braise-leger); transform: translateX(12px); opacity: 0; }
+  18% { background: var(--braise-leger); transform: none; opacity: 1; }
+  55% { background: var(--braise-leger); }
+  100% { background: transparent; }
+}
+.pan__liste-n { color: var(--encre); }
+.pan__liste-n span { color: var(--encre3); }
+.pan__liste-c { font-family: ${POLICES.titre}; font-size: 15px; }
+/* On ne passe pas l'été à découvert, et on dit de combien. */
+.pan__decouvert { display: block; font-size: 11.5px; color: var(--braise-texte); }
+.pan__suivant[disabled] { background: var(--filet); color: var(--encre3); cursor: not-allowed; }
 
 /* ---- compte rendu (planche 6) ---------------------------------------------
    Aucun tri : les lignes gardent l'ordre du tour, remonter les chaudes en tête
@@ -226,7 +379,6 @@ export const STYLES_PANNEAU = `
 .cr__coupe p { margin: 6px 0 0; font-size: 13.5px; }
 .cr__vous { font-size: 15px !important; }
 .cr__coupe > div > div { font-size: 13.5px; opacity: 0.92; }
-.cr__pied { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--filet); font-size: 12.5px; color: var(--encre2); }
 
 /* ---- gestes (planche 3) ----------------------------------------------------
    Horizontal et sans filet d'état : une ponctuelle n'a aucun état à porter.
@@ -259,7 +411,8 @@ export const STYLES_PANNEAU = `
 }
 
 /* ---- pied de panneau ------------------------------------------------------ */
-.pan__tour { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid var(--filet); }
+.pan__pied { border-top: 1px solid var(--filet); background: var(--parchemin); }
+.pan__tour { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; }
 .pan__tour b { font-family: ${POLICES.titre}; font-size: 17px; font-weight: 500; }
 .pan__suivant { font-family: inherit; font-size: 14px; padding: 8px 16px; color: ${J.encreInverse}; background: var(--braise-plein); border: 0; cursor: pointer; }
 

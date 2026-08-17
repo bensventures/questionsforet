@@ -212,6 +212,28 @@ export const durcissementSeul: Strategie = {
 };
 
 /**
+ * Sonde : **gérer la forêt sans protéger les maisons**. Un programme
+ * d'éclaircie ouvert dans tous les secteurs qui l'admettent, et rien d'autre.
+ *
+ * Elle n'est pas là pour la calibration mais pour la page de présentation, où
+ * elle dit ce qu'aucune des cinq du §12 ne dit : **on peut dépenser le double
+ * de l'inaction pour son résultat exact** (37,8 % du bâti contre 37,6 %, 168
+ * dépensés contre 80). Deux causes se cumulent, et aucune n'est écrite nulle
+ * part dans le modèle : l'éclaircie est déficitaire en terrain raide et
+ * éloigné, donc le budget part dans un cycle d'établissements coupés puis
+ * rétablis, quatorze fois par partie ; et rien de ce qu'elle achète ne protège
+ * une construction. Le paysage, lui, s'améliore vraiment (56,6 % de peuplements
+ * fermés contre 71,3 %), ce qui rend le surplace crédible.
+ */
+export const eclaircieSansProtection: Strategie = {
+  nom: 'éclaircir partout',
+  decider: (etat) => ({
+    ...ouverture(etat, 2),
+    activer: ouvrables(etat, 'eclaircie').map((s) => ({ id: 'eclaircie' as IdPolitique, secteur: s })),
+  }),
+};
+
+/**
  * Deux sondes de diagnostic, hors des cinq du §12 : la même joueuse compétente,
  * à ceci près qu'elle réforme **au tour 10 quoi qu'il arrive**, ou seulement
  * **dans la fenêtre** ouverte par un incendie. Elles mesurent si la lenteur de

@@ -59,7 +59,17 @@ const champsCommuns = {
     modifie: z.coerce.date().optional(),
     themes: z.array(themes).min(1),
     sources: z.array(reference('sources')).default([]),
+    /**
+     * Trois états de publication, et non deux.
+     *
+     * `brouillon` : la page n'est pas construite en production, elle n'existe
+     * pas en ligne. `prive` : elle est construite et servie, mais elle
+     * n'apparaît dans aucune liste et demande aux moteurs de l'ignorer. C'est
+     * l'état d'une page qu'on donne à relire par son adresse, à quelques
+     * personnes, avant de l'annoncer. Ni l'un ni l'autre : publiée et listée.
+     */
     brouillon: z.boolean().default(false),
+    prive: z.boolean().default(false),
 };
 
 /**

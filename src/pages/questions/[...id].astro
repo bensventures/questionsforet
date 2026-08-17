@@ -17,7 +17,7 @@ export async function getStaticPaths() {
 }
 
 const { question } = Astro.props;
-const { titre, chapo, verdict, themes, publie, modifie, brouillon } = question.data;
+const { titre, chapo, verdict, themes, publie, modifie, brouillon, prive } = question.data;
 
 const { Content } = await render(question);
 const sources = await getEntries(question.data.sources);
@@ -30,9 +30,15 @@ const dateFmt = new Intl.DateTimeFormat('fr-FR', {
 });
 ---
 
-<Base titre={fr(titre)} description={fr(chapo)}>
+<Base titre={fr(titre)} description={fr(chapo)} noindex={prive}>
   <article class="question">
     {brouillon && <p class="brouillon">Brouillon (non publié).</p>}
+    {prive && (
+      <p class="brouillon">
+        Page de test, non listée sur le site et ignorée des moteurs de recherche. Elle se partage
+        par son adresse, et ce qu'elle contient peut encore changer.
+      </p>
+    )}
 
     <header class="question__entete">
       <ThemeTags themes={themes} link />

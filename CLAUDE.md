@@ -68,6 +68,20 @@ Trois points à ne pas défaire :
 **Licence :** CC BY-SA envisagée, pour permettre la réutilisation en réunion publique.
 À confirmer.
 
+## Trois états de publication
+
+`brouillon` retire la page du build de production : elle n'existe pas en ligne.
+**`prive`** la construit et la sert, mais l'exclut de toutes les listes et lui
+pose un `noindex, nofollow` : c'est l'état d'une page qu'on donne à relire par
+son adresse, à quelques personnes, avant de l'annoncer. Sans ce troisième état,
+faire tester une page revenait à la publier.
+
+Le champ vit dans `champsCommuns`, donc les trois collections l'ont. Deux règles
+à ne pas confondre en le lisant : les **routes** (`[...id].astro`) construisent
+les pages privées, c'est tout l'intérêt ; les **listes** les écartent, index de
+collection comme liens croisés. Un bandeau le dit au relecteur, qui doit savoir
+qu'il est sur une adresse non annoncée.
+
 ## Architecture de contenu
 
 Trois collections, plus une collection de données.
@@ -239,7 +253,16 @@ que le noyau tourne sous Node sans navigateur :
   `profondeurTraitee`). Ne pas tenter de les y remettre ;
 - une construction n'est confrontée au front qu'une fois par incendie. Sans
   cela, chaque voisine en feu la testait à chaque pas de temps et le front
-  écrasait mécaniquement les braises.
+  écrasait mécaniquement les braises ;
+- la troisième action ponctuelle du §9.2, « traiter un point noir », s'appelle
+  **débroussailler une parcelle** et ne remet plus le statut « géré ». Son nom
+  promettait ce que le modèle ne modélise pas : rien ne désigne un point noir
+  nulle part, n'importe quelle parcelle non bâtie pouvait être « traitée ». Le
+  statut « géré » tombait sous le même reproche, le geste portant sur le
+  sous-bois et non sur la densité de tiges, qui relève de l'éclaircie. Reste un
+  geste simple, une coupure d'une seule parcelle, et le piège de la surface
+  ouverte laissée sans reprise s'applique à elle comme aux autres. Aucune
+  stratégie du harnais ne l'emploie : la calibration est inchangée.
 
 **Trois bugs trouvés par le harnais**, qui justifient à eux seuls son
 antériorité : la sévérité n'était pas normalisée (toutes les parcelles
@@ -260,9 +283,9 @@ taux de conformité plafonne sous 100 % et lui échappe. L'assertion 1 ne porte
 que sur les constructions conformes.
 
 **Calibration : les douze critères du §12 sont tenus** (50 parties × 40 tours,
-`src/harness/calibrer.ts`). Joueur compétent : 85 % du bâti, 53 % de la fraction
-stratégique sous le seuil, 73 % de surface parcourue (observation), 1,3
-renoncement par partie. Les quatre mauvaises stratégies finissent différemment
+`src/harness/calibrer.ts`). Joueur compétent : 84 % du bâti, 52 % de la fraction
+stratégique sous le seuil, 73 % de surface parcourue (observation), 3,2
+renoncements par partie. Les quatre mauvaises stratégies finissent différemment
 et la compétente est battue sur quatre axes.
 
 **Pente normalisée (`RELIEF` dans `params.ts`).** `Cellule.pente` se disait
@@ -504,10 +527,30 @@ rapport, et c'est là que l'échelle « massif entier » tient enfin d'un coup
 d'œil. Ouverture et fermeture par ancre (`:target`), donc sans script, et
 l'adresse dit dans quel état on est.
 
-**La page d'entrée porte trois choses** : l'appel à l'action, la **légende des
+**La page d'entrée porte quatre choses** : l'appel à l'action, la **légende des
 glyphes** engendrée depuis la palette du rendu (rien n'y est recopié, donc rien
-ne peut mentir sur ce que le joueur verra), et **ce sur quoi le modèle
-s'appuie**, mécanisme par mécanisme.
+ne peut mentir sur ce que le joueur verra), **six façons de jouer et ce qu'elles
+donnent**, et **ce sur quoi le modèle s'appuie**, mécanisme par mécanisme.
+
+**Les six façons de jouer sont jouées au build**, par le harnais de calibration
+lui-même, cinquante parties de quarante étés chacune : aucun chiffre n'est
+recopié, ils sortent du noyau que le lecteur va manipuler et ils bougeront le
+jour où le modèle bougera. C'est la règle de la légende, une couche plus loin,
+et elle coûte 1,9 s de build sur une page qui n'est de toute façon pas dans le
+build de production. La description de chaque ligne de conduite doit pouvoir se
+vérifier dans `src/harness/strategies.ts` ; le commentaire de fin, lui, énonce
+le seul enseignement que le tableau porte, et il a été **réécrit après la
+mesure** plutôt qu'avant.
+
+Une sonde a rejoint le harnais pour l'occasion, `eclaircieSansProtection`, hors
+des cinq du §12 : éclaircir partout **coûte le double de l'inaction pour son
+résultat exact** (37,8 % du bâti contre 37,6 %, 168 dépensés contre 80), alors
+que le peuplement s'ouvre pour de bon (56,6 % de fermé contre 71,3 %). Le budget
+part dans un cycle d'établissements coupés puis rétablis, quatorze fois par
+partie, et rien de ce qu'elle achète ne protège une construction. Écrite avec un
+autre ordre de secteurs, une première version tombait à 32 % et donnait un « pire
+que rien » plus spectaculaire : c'est l'ordre du harnais qui a été gardé, pas le
+chiffre le plus frappant.
 
 Ce dernier point réparait une régression de fond : la route excluait la
 bibliographie pour le format simulation (`!isSimulation && biblio.length`), si
@@ -516,7 +559,24 @@ un site dont la colonne vertébrale est que les sources sont des données. Les
 rattachements de `src/lib/sources-simulateur.ts` sont **portés de la v2**, pas
 inventés ; les quatre références qui documentaient des politiques que la v3.0
 n'implémente pas (brûlage dirigé, hydrologie) ont quitté le frontmatter, on ne
-source pas une règle absente.
+source pas une règle absente. Les **thèmes** `brulage-dirige` et `hydrologie`
+sont partis avec, pour la même raison : ils annonçaient au lecteur, et aux pages
+de thème, un contenu que l'outil ne porte pas.
+
+**La page est passée en `prive`** : construite, servie, mais listée nulle part et
+en `noindex`, le temps d'une relecture par quelques personnes. C'est ce qui
+autorise encore la carte entière à l'échelle native. Le HTML pèse 913 Ko,
+presque tout en SVG, soit **126 Ko une fois compressé** : tenable pour un test,
+à régler avant de la lister.
+
+**Le texte d'introduction a été récrit pour la v3, et raccourci de moitié**
+(`src/content/outils/`). Il datait de la v2 et promettait ce qui n'existe plus :
+vingt étés au lieu de quarante, le brûlage dirigé et l'ouvrage hydraulique parmi
+les leviers, la zone des cinq premiers mètres comme si la grille la
+représentait. Trois paragraphes suffisent : ce qu'est la partie, la **doctrine de
+lutte** (le cœur de la v3, qui n'y figurait pas du tout), et l'avertissement
+réglementaire. Détailler les leviers y était doublement inutile, les six façons
+de jouer et les mécanismes sourcés le faisant plus bas et avec des chiffres.
 
 **Piège retrouvé une seconde fois** : un `<style>` scopé d'Astro ne s'applique
 **pas** au HTML injecté par `set:html`. La hauteur du cadre y était, elle n'a
@@ -537,16 +597,47 @@ l'îlot Astro lisent la même), `vue.ts` (ce que le panneau lit dans l'état),
 statique **avant** tout câblage : `scripts/planche-panneau.mjs`, onze contrôles,
 sur une vraie partie.
 
-L'ordre du panneau descend du durable vers l'immédiat, et les gestes sont
-contre le bord bas : leur place dans la lecture dit qu'ils soulagent sans
-transformer.
+L'ordre du panneau descend du durable vers l'immédiat : moyens, doctrine, puis
+les deux registres de dépense. Les gestes ont longtemps tenu le bord bas, leur
+place dans la lecture disant qu'ils soulagent sans transformer ; ce que
+l'onglet dit maintenant en toutes lettres.
 
-**Le panneau tient en trois zones, et le secteur est un tiroir.** Le bandeau des
-moyens et le pied (étés restants, décisions en attente, bouton) ne bougent
-jamais : ils valent quoi qu'on regarde. Entre eux, le corps porte la pile
-courante — doctrine, compte rendu, gestes — et le **tiroir du secteur choisi
-vient la couvrir**, en glissant depuis la droite, d'où la carte l'appelle. Une
-croix en tête du tiroir le referme et désélectionne.
+**Deux registres de dépense, deux onglets** (`ongletsDesRegistres`). Politiques
+et gestes ne se distinguaient que par leur position dans la colonne, convention
+muette que rien n'énonçait, et la pile portait d'affilée la doctrine, quatorze
+secteurs et trois gestes sans que ces blocs aient le même statut. L'étiquette ne
+nomme donc pas une catégorie, qui laisserait le joueur ignorer ce qui les
+sépare, mais **la règle** : « plusieurs étés » contre « un été, une parcelle »
+dans la barre, et sous l'onglet actif, ce que ça coûte et quand. **Les deux
+sous-titres restent lisibles en même temps** : le contraste entre les registres
+est un enseignement du modèle, pas un rangement, et un onglet qui le cacherait
+coûterait plus qu'il ne range.
+
+**La doctrine reste au-dessus des onglets** : le budget a trois emplois et non
+deux, et celui-là est une posture qu'on tient, pas un achat qu'on fait. Rien
+d'engagé ne vit derrière un onglet, le récapitulatif du pied listant tout,
+secteurs et registres confondus.
+
+Deux boutons radio et leurs étiquettes, comme le sélecteur d'échelle : la
+commutation est en CSS, les flèches du clavier marchent seules, et la page
+rendue au build sait déjà changer d'onglet sans script. Trois pièges tenus par
+la planche : le groupe de radios porte un **nom unique par rendu**, sans quoi
+deux panneaux dans une même page (la planche) formeraient un seul groupe et
+s'éteindraient l'un l'autre ; on **cache l'inactif** plutôt que de montrer
+l'actif, si bien qu'un navigateur sans `:has()` retombe sur la colonne d'avant
+les onglets et non sur une colonne vide ; et l'îlot **retient l'onglet** d'un
+rendu à l'autre, comme il retient le pli de la doctrine, sans quoi armer un
+geste puis cliquer la carte ramenait aux politiques. Passer l'été le remet en
+revanche sur les politiques, avec la désélection du secteur et le repli de la
+doctrine : chaque été s'ouvre au même endroit.
+
+**Le panneau tient en quatre zones, et le secteur est un tiroir.** Le bandeau
+des moyens, le compte rendu et le pied (étés restants, décisions en attente,
+bouton) ne bougent jamais : ils valent quoi qu'on regarde. Entre le bandeau et
+le compte rendu, le corps porte la pile courante (doctrine, puis les deux
+onglets) et le **tiroir du secteur choisi vient la couvrir**, en glissant depuis
+la droite, d'où la carte l'appelle. Une croix en tête du tiroir le referme et
+désélectionne.
 
 C'est le remplacement d'un bloc contextuel glissé au milieu de la colonne, qui
 ne marchait pas : mêlé aux blocs permanents, il passait inaperçu et choisir un
@@ -562,7 +653,9 @@ seuil sans qu'aucun plafond ne soit franchi, et la jauge aurait hachuré en
 braise pour une fausse alerte. La jauge borne donc **la charge par rapport à la
 recette**, ce que le handoff borne réellement, et la surface tenue s'affiche en
 observation dessous. En v3.0 la surface est de toute façon bornée par les
-partenaires, pas par la charge.
+partenaires, pas par la charge. « Charge » s'entend au sens large depuis :
+entretien, doctrine et exploitation déficitaire, faute de quoi la jauge ne
+mesurait qu'un tiers de ce que l'été prélève.
 
 **Deux pièges trouvés au rendu**, invisibles à la lecture du code :
 
@@ -591,8 +684,9 @@ une lecture d'après-coup ; et `cumul.renoncements`, que le harnais déduisait e
 comparant les tours. Ce dernier **majore** l'ancienne déduction : une politique
 établie et coupée dans le même tour n'apparaissait dans aucun des deux relevés,
 alors que le joueur l'avait payée puis perdue. Identiques sur cinq stratégies,
-la compétente comprise (1,5), ils ne s'écartent que sur « coupures uniquement »
-(7,0 contre 7,8). `Etat.pinNoirDepart` complète le lot, la conversion en lande
+la compétente comprise, ils ne s'écartent que sur « coupures uniquement » (les
+valeurs de l'époque, 1,5 et 7,0 contre 7,8, ont changé depuis que le bouclage
+est passé en tête d'été ; c'est l'égalité des deux relevés qui compte). `Etat.pinNoirDepart` complète le lot, la conversion en lande
 se mesurant par différence et s'affichant en hectares.
 
 **Bande de coupe** (planche 8), le moment le plus fort de la partie. Elle reste
@@ -623,9 +717,10 @@ partie est une moyenne. La planche en prend donc une autre (1007, coupe à
 l'été 18) plutôt que de fabriquer l'événement.
 
 **Composition de l'écran** (`ecran.ts`, planche 9). Panneau de 536 px pris sur
-le cadre, la carte occupe le reste. **Deux zones défilent et pas une de plus** :
-le compte rendu dans le panneau, la carte dans son cadre ; les fiches du secteur
-restent en place.
+le cadre, la carte occupe le reste. **Ce qui défile est borné et jamais
+imbriqué** : la pile du panneau (ou le tiroir qui la couvre), le compte rendu
+dans son cadre au bas de la colonne, la carte dans le sien ; les fiches du
+secteur restent en place.
 
 **La règle « la carte se déplace, elle ne se réduit pas » est amendée**, et
 c'est le seul écart de fond au langage de décision. Appliquée seule, elle donne
@@ -683,6 +778,28 @@ Tout ce que le joueur décide dans le tour attend là (`enAttente`), et la fiche
 le dit : « engagée, elle prendra effet à l'été suivant ». Chaque été est ainsi
 une transaction, pas une suite d'effets immédiats, et la partie se relit.
 
+**Le budget est pré-débité à l'affichage, jamais dans le modèle.** Rien n'étant
+prélevé pendant le tour, le budget ne bougeait pas d'un clic et décider semblait
+gratuit. Le chiffre montre donc ce qui restera, la valeur réelle passant
+dessous, et le pied annonce ce que l'été engagera. Trois conséquences tenues
+ensemble : **toute décision en attente se retire**, **on ne passe pas l'été à
+découvert** (bouton désactivé, refus chiffré, jamais un grisé muet), et le
+modèle reste seul maître du prélèvement.
+
+**Le pied récapitule tout ce qui est engagé**, secteurs confondus, juste
+au-dessus du bouton : nom, où, prix, et de quoi le retirer. C'est le seul
+endroit du panneau que le tiroir ne couvre jamais, et une politique engagée
+n'apparaissait sinon que sur sa fiche, donc dans le tiroir de son secteur : en
+ouvrir un autre la faisait disparaître de la vue. L'ordre de ce récapitulatif
+**est** celui des rangs d'annulation, le pied ne renvoyant qu'un rang et jamais
+un type à décoder, et son compte vient de la liste elle-même — calculé à part,
+il ne voyait que les fiches du secteur ouvert.
+
+Deux refus étaient **silencieux** dans le noyau : une activation ou un geste
+trop chers étaient écartés sans un mot, si bien que le joueur croyait avoir
+engagé. Les deux le disent maintenant en ligne chaude, avec le prix et la
+caisse.
+
 **Le rendu est refait depuis l'état, jamais rattrapé au coup par coup.** Une
 carte entière plus un panneau coûtent **36 ms** ; l'affichage ne peut donc pas
 survivre à l'état. Seule exception, le calque de secteur, seul redessiné au
@@ -696,7 +813,7 @@ carte se déplace à la souris, et un déplacement ne doit jamais sélectionner.
 écouteurs du panneau sont posés **sur la racine** et non sur les éléments, qui
 sont réengendrés à chaque changement.
 
-Îlot servi : **71 Ko brut, 25 Ko gzip**, sans une dépendance. Il embarque le
+Îlot servi : **85 Ko brut, 29 Ko gzip**, sans une dépendance. Il embarque le
 noyau et le moteur de rendu, ce qui est le prix d'un simulateur qui joue dans
 le navigateur ; le reste du site n'en charge rien.
 
@@ -732,6 +849,164 @@ braise, c'est une interaction possible), ou le prix courant. L'îlot n'affiche
 plus la doctrine cliquée comme en vigueur, ce qui était devenu faux : elle est
 « demandée », puis engagée à l'été suivant, et un clic est refusé tant qu'une
 réforme court.
+
+Il ne se déplie plus **au premier été** : le joueur vient de choisir sa posture
+sur l'écran d'ouverture, et la lui rouvrir en grand lui fait relire sa propre
+décision. La note qui rappelle que ce choix était gratuit reste, elle, sous les
+lignes.
+
+**Le bloc se replie en menu, pas en accordéon.** Replié, il montre **l'item
+choisi** (pastille, nom, seuils, prix) et un **bouton lisible**, « changer de
+doctrine » : le pli se manœuvre rarement, donc rien ne s'apprend à l'usage et
+une flèche seule ne dit pas qu'on peut changer de posture. Déplié, l'item
+disparaît du sommaire, la gamme entière le portant deux lignes plus bas ; le
+redire sous le titre écrivait deux fois la même chose dans le même écran. Le
+coût de la posture porte son unité (**« par été »**) : nu, il se lisait comme un
+numéro de cran, d'autant que 3 · 2 · 1 est l'inverse exact des crans 1 · 2 · 3,
+et c'est la seule charge récurrente du bloc quand la réforme dite en dessous est
+un paiement unique. Enfin l'îlot **conserve le pli** d'un rendu à l'autre : le
+panneau étant réengendré en entier, ouvrir le menu puis cliquer un secteur le
+refermait. Seul le changement d'été rend la décision du pli au modèle, qui
+déplie de lui-même mais ne replie jamais ce que le joueur a ouvert.
+
+Au passage, le mot « tour » ne s'affiche plus nulle part : l'interface parle en
+étés partout ailleurs, et « par tour », « retour possible au tour 24 » ou
+« éclaircies ce tour » étaient les trois dernières fuites de registre.
+
+**Le compte rendu a quitté la pile pour le bas fixe de la colonne.** Il y était
+en `flex: 1 1 auto; min-height: 0`, donc autorisé à descendre sous la hauteur de
+son contenu alors qu'il ne défilait pas lui-même : un été bavard ne faisait
+apparaître aucune barre, ses lignes débordaient par-dessus le registre des
+gestes, et plus l'été racontait de choses, moins on en voyait. Le sortir de la
+pile règle les deux causes ensemble. Il ne dépend plus du défilement d'une pile
+que la liste des quatorze secteurs allonge à elle seule, et **le tiroir ne le
+couvre plus**, lui qui vient de raconter l'effet de la politique qu'on y ouvre.
+Borné à 38 % de la colonne pour ne pas manger la décision, il défile chez lui,
+comme la carte défile dans son cadre. Le reste de la pile est en
+`flex-shrink: 0` : un bloc qui ne défile pas ne doit jamais pouvoir rétrécir.
+Son titre est collant, l'été qu'on lit restant nommé pendant qu'on le parcourt.
+
+Le panneau a donc **quatre zones** et non plus trois, les trois fixes étant le
+bandeau, le compte rendu et le pied. La planche compte désormais cinq zones
+défilantes, toujours sans imbrication, et vérifie que le compte rendu est rendu
+hors du corps.
+
+**Le budget était un mystère, et c'était un défaut à deux têtes.**
+
+D'abord un vrai bug de pré-débit : le coût annuel de la posture (1 à 3 selon la
+doctrine) est prélevé **avant les établissements et les gestes**, et il ne
+figurait ni dans le budget projeté ni nulle part ailleurs. On engageait donc
+exactement ce qu'on croyait avoir, et le compte rendu refusait ensuite le geste
+faute de moyens, sans qu'aucun écran n'ait prévenu. Mesuré sur une partie réelle,
+le joueur compétent perdait ainsi son geste aux étés 1, 2, 3, 4, 5 et 7.
+`disponibleAEngager` est désormais la **seule** formule, lue par le panneau comme
+par le calque de visée : deux copies divergeraient au premier changement.
+
+**La jauge porte toutes les charges récurrentes**, et non le seul entretien :
+doctrine et exploitation déficitaire s'y ajoutent, une éclaircie bénéficiaire
+grossissant à l'inverse la recette. C'est le seul endroit où l'économie de l'été
+se lit d'un coup, et en omettre deux postes sur trois en faisait un instrument
+qui rassure à tort : sur une partie réelle elle affichait 1,7 de charge sur 12
+de recette quand l'été coûtait en fait 22. C'est aussi ce qui évite de répéter
+le reste en toutes lettres sous le budget.
+
+Ensuite un manque : **aucune ligne du compte rendu ne disait les comptes**. Les
+établissements et les gestes sont annoncés avant, les coupures se signalent
+quand elles tombent, mais la recette, l'exploitation et l'entretien ne
+laissaient aucune trace. Or une éclaircie déficitaire en terrain raide coûte
+jusqu'à 11 par été, davantage que tout ce que le joueur engage : le budget
+fondait ou restait collé à zéro sans une phrase pour l'expliquer.
+`bouclerBudget` pose donc une ligne par été, « Comptes de l'été : recette 12,
+exploitation −9,1, entretien −1,7, doctrine −1. Il reste 13,6 », **avant** les
+coupures puisque c'est ce solde qui les explique.
+
+**Enfin le budget est devenu un budget, et non une caisse** : le bouclage est
+passé **en tête d'été, avant les décisions**. La recette de l'année arrivait à la
+clôture, après les dépenses, si bien que « j'ai 12 de recette, 3 de charges, donc
+9 à engager », le raisonnement que tout joueur fait, était faux d'une année : on
+dépensait la réserve accumulée, pas le budget de l'exercice. Une collectivité
+vote son budget puis l'exécute, et peut engager sur des recettes à venir. Trois
+conséquences tenues ensemble : le choix fondateur du premier été est appliqué
+**avant** le bouclage, sinon la collectivité paierait la posture dont elle vient
+de se défaire ; le coût annuel de la doctrine est passé dans `bouclerBudget`,
+sans quoi la ligne de comptes ne pourrait pas dire « il reste » ; et la fenêtre
+d'après-feu est **lue** au bouclage mais **décomptée en fin de tour**, faute de
+quoi elle se fermerait un été trop tôt pour la décision et réformer coûterait 8
+au lieu de 2 au dernier été utile. Le compteur affiche « réserve 10 · été +9 »
+sous un disponible de 19, et l'addition se refait à l'œil.
+
+Le compte rendu n'a **plus de pied**. Il répétait « budget, contrat pastoral,
+parcelles tenues », c'est-à-dire les trois chiffres du bandeau, à quelques
+centimètres d'eux et sans les nommer pareil : son « budget 10 » contredisait même
+en apparence le 19 du bandeau, qui dit ce qui reste à engager. L'état des moyens
+se lit en haut, ce que l'été a fait se lit dans le fil.
+
+**La ligne de comptes se compose après les décisions, et se lit au rang du
+bouclage.** Écrite dans `bouclerBudget`, elle donnait le budget d'avant les
+engagements : un joueur qui plaçait quatre politiques au premier été lisait
+« il reste 19 » l'été suivant, avec 1 en caisse. `avancer` la compose donc une
+fois tout payé, avec un poste **engagements**, et l'insère à sa place, avant les
+coupures qu'elle explique. Deux postes de plus, sans lesquels elle ne tombe pas
+juste les années difficiles : **programmes coupés**, ce que la coupure rend au
+budget, et **découvert épongé**, le plancher de caisse qui remet à zéro. Chaque
+été, la ligne s'additionne à l'œil jusqu'au chiffre que le bandeau affichera.
+
+**Un été déficitaire ne doit pas enfermer.** Le refus de passer l'été se jugeait
+sur le budget projeté : l'année d'après une grosse installation, les charges
+excèdent la recette avant que le joueur ait rien décidé, et le bouton se
+désactivait en réclamant de retirer une décision qui n'existait pas. La partie
+s'arrêtait là. Ce qui se refuse est **d'engager plus qu'on ne peut**
+(`depassement`), jamais le découvert lui-même : celui-là appartient au modèle,
+qui puise dans la réserve et, sous le plancher, coupe une politique.
+
+**Quatre lectures de « finançable » à corriger ensemble**, toutes trouvées après
+coup : le bouton « été suivant » refusait en silence dès qu'on engageait plus que
+la réserve, bouton actif et clic sans effet, ce qui est le pire des symptômes ;
+la fiche d'une politique payable par la recette de l'année s'affichait hors de
+portée ; le secteur ne passait pas « activable » ; et le péril de coupure se
+jugeait sur la réserve d'avant bouclage, qui en diffère maintenant d'une année.
+Le remède est le même partout : **une seule formule**, `disponibleAEngager`, et
+le péril sur `budget + soldeDeLEte`, qui est le montant sur lequel la coupure se
+décide. La planche vérifie qu'une politique financée par la recette de l'année
+n'est pas refusée faute de réserve.
+
+**Calibration remesurée** (50 × 40) : les douze critères du §12 tiennent, le
+joueur compétent reste à 84 % du bâti et 52 % de fraction stratégique. Un chiffre
+bouge nettement, et c'est le bon : les **renoncements passent de 1,5 à 3,2 par
+partie**. Pouvoir engager la recette de l'année avant qu'elle ne soit encaissée,
+c'est pouvoir la dépenser deux fois quand l'exploitation déficitaire s'aggrave,
+et la coupure vient plus souvent. Les stratégies du harnais n'ont pas le
+garde-fou du découvert que l'interface impose au joueur : 3,2 est donc un
+majorant. La variabilité se resserre (écart-type 15,0 → 11,7, pire partie 42 →
+48 %) et les coupures multiples au même été deviennent possibles, ce que la
+planche 8 rend désormais en autant de bandes.
+
+**Engager une politique se voit à trois endroits, et à trois seulement.** Le
+bouton de la fiche en était un mauvais premier : « Engager · 6 » s'affichait en
+texte souligné, quand c'est le geste le plus lourd du jeu. Il est cerné de
+braise (pas plein, pour ne pas disputer le pas à « passer l'été », seul bouton
+qui engage le temps). Ensuite le tiroir **ne glisse plus qu'à son ouverture** :
+le panneau étant refait à chaque décision, il rejouait son entrée à chaque clic
+et toute la colonne repartait alors que rien n'avait bougé. Enfin la décision se
+**pose** dans le récapitulatif du pied, fond braise léger qui s'efface en une
+seconde : engagée depuis le tiroir, elle atterrit à l'autre bout de la colonne,
+et sans ce signal on ne voyait pas où elle était partie. C'est le seul mouvement
+de la colonne, il porte sur la ligne qui change et rien ne bouge sous
+`prefers-reduced-motion`.
+
+**L'état d'une fiche est dans son encadrement, sur les quatre côtés.** Il tenait
+dans un filet vertical le long du bord gauche, tireté tant que la politique
+n'était qu'activable : deux bordures de nature différente sur le même rectangle,
+dont une seule portait du sens, et le tireté se lisait comme un défaut
+d'alignement plutôt que comme un état. La couleur passe dans la bordure
+elle-même, uniforme, et les crans d'adoption disent le reste.
+
+**Passer l'été rend l'écran à son état de repos** : le secteur choisi est
+désélectionné, l'onglet revient aux politiques et le menu de doctrine se replie. Ce sont des états d'interface
+posés pour décider ; la décision prise, les garder ouverts fait lire le compte
+rendu du nouvel été derrière un tiroir ouvert sur les fiches de l'ancien, et
+laisse le versant sous un voile qui ne désigne plus rien. Chaque été s'ouvre sur
+le versant entier.
 
 **Écran d'ouverture** (`ouverture.ts`, §1 du patch). Il se pose **par-dessus le
 versant**, qui reste visible derrière : « le territoire pratique déjà une
@@ -794,3 +1069,9 @@ Avoid generic AI-generated aesthetics:
 Interpret creatively and make unexpected choices that feel genuinely designed for the context. Vary between light and dark themes, different fonts, different aesthetics. You still tend to converge on common choices (Space Grotesk, for example) across generations. Avoid this: it is critical that you think outside the box!
 </frontend_aesthetics>
 """
+
+Avoid generic AI patterns ("slop").
+- Tone/Style: Vary sentence length and rhythm. Do not use predictable transitional filler or buzzwords. Write with specific, grounded details rather than vague generalities.
+- Design/Code: Avoid cookie-cutter component arrangements. Use intentional whitespace, asymmetric or distinct structural choices, and specific typographical hierarchy.
+- Execution: Prioritize direct, substantive content over padding. If uncertain, rely on concrete evidence or real-world constraints rather than generic summaries.
+

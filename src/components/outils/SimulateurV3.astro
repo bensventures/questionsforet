@@ -19,6 +19,15 @@ import { SOURCES_MECANIQUES, SOURCES_POLITIQUES } from '../../lib/sources-simula
 import { TYPES } from '../../model/params';
 import { glyphe, couleurVegetation } from '../../rendu/palette';
 import { STYLES_REJEU } from '../../rendu/rejeu';
+import { agrege, jouerLot } from '../../harness/jouer';
+import {
+  coupuresSeules,
+  eclaircieSansProtection,
+  extinctionSystematique,
+  mixteCompetente,
+  neRienFaire,
+  toutDebroussailler,
+} from '../../harness/strategies';
 import { STYLES_OUVERTURE } from '../../rendu/panneau';
 
 /**
@@ -35,9 +44,11 @@ import { STYLES_OUVERTURE } from '../../rendu/panneau';
  * et déborde de la fenêtre en hauteur. Le simulateur s'ouvre donc par-dessus,
  * sans marge, sur toute la fenêtre.
  *
- * La page est celle d'un outil `brouillon`, donc absente des builds de
- * production : c'est ce qui autorise à sortir la carte entière à l'échelle
- * native, 727 Ko de SVG, plutôt qu'une fenêtre.
+ * La page est celle d'un outil `prive` : construite et servie, mais listée nulle
+ * part et en `noindex`. C'est ce qui autorise encore à sortir la carte entière à
+ * l'échelle native plutôt qu'une fenêtre. Le HTML pèse 913 Ko, presque tout en
+ * SVG, soit 126 Ko une fois compressé : tenable pour une relecture, à régler
+ * avant de lister la page.
  */
 
 interface Props {
@@ -96,6 +107,71 @@ const legendeFeu = [
   { nom: 'Construction détruite', href: glyphe('bati', 3, 'sain', 'ruine'), couleur: null },
 ];
 
+/**
+ * Six façons de jouer, et ce qu'elles donnent. **Les parties sont jouées au
+ * build**, par le harnais qui sert à calibrer le modèle : les chiffres ne sont
+ * pas recopiés, ils sont produits par le même noyau que la partie du lecteur,
+ * et ils bougent le jour où le modèle bouge. C'est la règle de la légende, une
+ * couche plus loin.
+ *
+ * Cinquante parties par stratégie, comme la calibration, et quarante étés
+ * chacune : moins d'une seconde et demie de build pour six colonnes qui ne
+ * peuvent pas mentir.
+ *
+ * La description dit ce que la stratégie fait, et rien de plus : elle doit
+ * pouvoir se vérifier ligne à ligne dans `src/harness/strategies.ts`.
+ */
+const FACONS = [
+  {
+    strat: neRienFaire,
+    nom: 'Ne rien faire',
+    fait: 'Aucune politique, aucun geste. Le territoire garde la doctrine choisie au premier été et laisse venir.',
+  },
+  {
+    strat: eclaircieSansProtection,
+    nom: 'Éclaircir la forêt partout',
+    fait: 'Un programme d’éclaircie dans tous les secteurs qui l’admettent, y compris ceux où l’opération perd de l’argent. Rien pour les constructions.',
+  },
+  {
+    strat: coupuresSeules,
+    nom: 'Compartimenter le paysage',
+    fait: 'Un contrat pastoral et un programme d’éclaircie, sur un secteur chacun. On travaille la végétation, on ne touche pas au bâti.',
+  },
+  {
+    strat: toutDebroussailler,
+    nom: 'Débroussailler large',
+    fait: 'Le contrôle des obligations partout où il s’applique, plus deux contrats pastoraux. Le périmètre des maisons, et rien sur les maisons elles-mêmes.',
+  },
+  {
+    strat: extinctionSystematique,
+    nom: 'Éteindre tout départ',
+    fait: 'La posture héritée tenue quarante étés, sans jamais la réformer et sans rien engager d’autre.',
+  },
+  {
+    strat: mixteCompetente,
+    nom: 'Jouer serré',
+    fait: 'Durcir le bâti d’abord, contrôler les obligations sur la couronne la plus habitée, entretenir le paysage ensuite, et réformer la doctrine dans la fenêtre qu’ouvre le premier incendie.',
+  },
+];
+const PARTIES = 50;
+const facons = FACONS.map(({ strat, nom, fait }) => {
+  const r = jouerLot(strat, PARTIES);
+  return {
+    nom,
+    fait,
+    chiffres: [
+      { quoi: 'constructions debout', valeur: `${agrege(r, 'batiPct').toFixed(0)} %` },
+      { quoi: 'versant parcouru par le feu', valeur: `${agrege(r, 'bruleePct').toFixed(0)} %` },
+      { quoi: 'friche à graminées', valeur: `${agrege(r, 'frichePct').toFixed(0)} %` },
+      { quoi: 'dépensé en quarante étés', valeur: agrege(r, 'depense').toFixed(0) },
+      {
+        quoi: 'programmes abandonnés faute de moyens',
+        valeur: agrege(r, 'renoncementsModele').toFixed(1).replace('.', ','),
+      },
+    ],
+  };
+});
+
 // Les sources, mécanisme par mécanisme : l'objet le plus argumenté du site ne
 // peut pas être le seul sans traçabilité.
 const mecanismes = await Promise.all(
@@ -108,10 +184,9 @@ const mecanismes = await Promise.all(
 
 <section class="v3" aria-label="Simulateur, aperçu statique">
   <p class="v3__note">
-    Quarante étés à tenir sur un versant du Diois. On choisit un secteur sur la carte, on y engage
-    des politiques, on règle la doctrine de lutte, puis vient l'été et avec lui le risque de feu.
-    Le simulateur s'ouvre sur toute la fenêtre : on s'y déplace en tirant la carte, et trois
-    échelles sont disponibles, chacune disant ce qu'elle perd.
+    Le simulateur s'ouvre sur toute la fenêtre. On tire la carte pour s'y déplacer, et trois
+    échelles sont proposées, chacune disant ce qu'elle perd. Chaque versant porte un numéro : le
+    même numéro redonne le même terrain.
   </p>
 
   <p class="v3__cta"><a href="#simulateur">Ouvrir le simulateur</a></p>
@@ -143,6 +218,38 @@ const mecanismes = await Promise.all(
     ))}
   </ul>
   <Fragment set:html={sprite} />
+
+  <h2 class="v3__h">Six façons de jouer, et ce qu'elles donnent</h2>
+  <p class="v3__note">
+    Six lignes de conduite jouées par la machine, {PARTIES} parties de quarante étés chacune, sur
+    des versants tirés au hasard. Ces moyennes sortent du modèle que vous allez manipuler : ce
+    sont les conséquences de ses règles, pas des observations de terrain.
+  </p>
+  <ol class="v3__jeux">
+    {facons.map((f) => (
+      <li>
+        <h3>{f.nom}</h3>
+        <p>{f.fait}</p>
+        <dl>
+          {f.chiffres.map((c) => (
+            <div>
+              <dt>{c.valeur}</dt>
+              <dd>{c.quoi}</dd>
+            </div>
+          ))}
+        </dl>
+      </li>
+    ))}
+  </ol>
+  <p class="v3__note">
+    Les deux premières lignes se valent, et c'est ce que le tableau a de plus utile : éclaircir
+    la forêt partout coûte deux fois plus cher que ne rien faire, pour le même nombre de maisons
+    debout. Le peuplement s'ouvre pourtant, et le feu parcourt moins de terrain. Deux raisons à ce
+    surplace. L'éclaircie est déficitaire en terrain raide et éloigné, si bien que les programmes
+    s'ouvrent et se referment faute de moyens, quatorze fois par partie. Et rien de ce qu'elle
+    achète ne protège une construction. Gérer la forêt et protéger les maisons sont deux métiers ;
+    le second se joue dans les cinquante mètres autour du bâti.
+  </p>
 
   <h2 class="v3__h">Ce sur quoi le modèle s'appuie</h2>
   <p class="v3__note">
@@ -266,6 +373,48 @@ const mecanismes = await Promise.all(
     width: 34px;
     height: 51px;
     flex: 0 0 34px;
+  }
+  /* Six façons de jouer. Une liste de blocs plutôt qu'un tableau : cinq
+     colonnes de chiffres dans une colonne d'article se lisent en travers, et
+     l'ordre du classement se perd au premier écran étroit. */
+  .v3__jeux {
+    margin: 0 0 1.6rem;
+    padding: 0;
+    list-style: none;
+    max-width: 46rem;
+    counter-reset: facon;
+  }
+  .v3__jeux > li + li {
+    margin-top: 1.4rem;
+    border-top: 1px solid var(--rule, #d8cfc0);
+    padding-top: 1.4rem;
+  }
+  .v3__jeux h3 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+  .v3__jeux p {
+    margin: 0.3rem 0 0.7rem;
+    color: var(--ink-2, #5a5148);
+    font-size: 0.95rem;
+  }
+  .v3__jeux dl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.6rem;
+    margin: 0;
+  }
+  .v3__jeux dt {
+    font-family: var(--font-display, Fraunces), serif;
+    font-size: 1.35rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .v3__jeux dd {
+    margin: 0.15rem 0 0;
+    font-size: 0.8rem;
+    color: var(--ink-2, #5a5148);
+    max-width: 9rem;
   }
   .v3__mecanismes {
     margin: 0;

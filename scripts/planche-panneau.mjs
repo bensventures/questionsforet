@@ -165,6 +165,117 @@ ajouter(
   /\.pan, \.decision \{/.test(css),
 );
 
+// ---- pré-débit des décisions en attente -------------------------------------
+// Le modèle ne prélève qu'au passage de l'été : le budget ne bougeait donc pas
+// d'un clic, ce qui laissait croire que décider était gratuit. L'affichage
+// pré-débite, le modèle non.
+const vueEngagee = {
+  ...moments[1].vue,
+  coutEnAttente: 9,
+  gestesEnAttente: 1,
+  enAttente: [
+    { nom: 'Contrat pastoral', ou: 'Fond de vallon', cout: 7 },
+    { nom: 'Durcir un hameau', ou: '(12, 7)', cout: 5 },
+  ],
+  ressources: { ...moments[1].vue.ressources, budgetProjete: moments[1].vue.ressources.budget - 9 },
+};
+const panneauEngage = panneau.rendrePanneau(vueEngagee);
+ajouter(
+  'le budget affiché pré-débite les décisions en attente',
+  /réserve .* · été [+−].* · engagé 9/.test(panneauEngage) && /à engager/.test(panneauEngage),
+);
+// **Le coût annuel de la posture est un prélèvement certain**, pris au début de
+// l'été avant les établissements et les gestes. L'omettre du pré-débit faisait
+// engager exactement ce qu'on croyait avoir, puis refusait le geste au passage
+// de l'été, sans que rien n'ait prévenu : c'est ce qui rendait le budget
+// incompréhensible.
+const vueNue = { ...moments[1].vue, coutEnAttente: 0, enAttente: [] };
+const nue = vueNue.ressources;
+// **Le budget de l'été est un budget, pas une caisse.** La recette arrivait à la
+// clôture, après les dépenses : « j'ai 12 de recette, 3 de charges, donc 9 à
+// engager » était faux d'une année. Le bouclage passe en tête d'été, et
+// l'affichage montre ce dont on disposera quand les décisions s'appliqueront.
+ajouter(
+  'le disponible compte la recette de l’année et ses charges',
+  nue.chargeDoctrine > 0 &&
+    Math.abs(nue.budget + nue.soldeDeLEte - (moments[1].vue.coutEnAttente ?? 0) - nue.budgetProjete) < 1e-9 &&
+    /réserve .* · été [+−]/.test(panneau.rendrePanneau(vueNue)),
+);
+// Régression : tout ce qui juge « finançable » doit lire le **même** disponible
+// que l'affichage. Sur la seule réserve, une politique payable par la recette de
+// l'année s'affichait hors de portée, le secteur ne passait pas « activable », et
+// le bouton « été suivant » restait actif sans rien faire — le pire des trois.
+const neuf = terrain.creerEtat(GRAINE, modele.creerRng(GRAINE), 40);
+neuf.moyens.budget = 0;
+const vueNeuve = panneau.vueDuPanneau(neuf, { secteur: 0 });
+const payables = vueNeuve.secteur.fiches.filter(
+  (f) => f.etat === 'activable' && f.etablissement <= vueNeuve.ressources.budgetProjete,
+);
+ajouter(
+  `ce que la recette de l’année finance n’est pas refusé faute de réserve (${payables.length} fiche(s))`,
+  vueNeuve.ressources.budget === 0 && payables.length > 0 && payables.every((f) => !f.refus),
+);
+
+// **Un seul endroit pour lire l'économie de l'été.** La jauge portait le seul
+// entretien : la doctrine, prélevée quoi qu'on décide, et l'exploitation, qui
+// peut coûter en un été plus que tout ce que le joueur engage, n'y étaient pas.
+// Elle rassurait à tort, et obligeait à répéter le reste en toutes lettres.
+const vueCharges = panneau.vueDuPanneau(etat, {});
+ajouter(
+  'la jauge porte toutes les charges récurrentes, doctrine comprise',
+  vueCharges.ressources.charge >= vueCharges.ressources.chargeDoctrine &&
+    vueCharges.ressources.chargeDoctrine > 0 &&
+    /de charge sur .* de recette, dont \d+ de doctrine/.test(panneau.rendrePanneau(vueCharges)),
+);
+// Chaque établissement et chaque geste avait sa ligne ; les charges récurrentes
+// n'en avaient aucune, si bien qu'une éclaircie déficitaire pouvait coûter en un
+// été plus que tout ce que le joueur engage, sans une phrase pour le dire.
+ajouter(
+  'le compte rendu tient les comptes de l’été, poste par poste',
+  moments.every((m) => m.vue.lignes.some((l) => /Comptes de l'été : .*doctrine .*Il reste/.test(l.texte))),
+);
+// Une politique engagée n'apparaissait que sur sa fiche, donc dans le tiroir de
+// son secteur : en ouvrir un autre la faisait disparaître de la vue.
+ajouter(
+  'le pied récapitule tout ce qui est engagé, secteurs confondus',
+  /pan__liste/.test(panneauEngage) &&
+    /Contrat pastoral/.test(panneauEngage) &&
+    /Fond de vallon/.test(panneauEngage) &&
+    /Durcir un hameau/.test(panneauEngage),
+);
+ajouter(
+  'chaque décision se retire depuis ce récapitulatif',
+  (panneauEngage.match(/data-annuler="\d+"/g) ?? []).length === vueEngagee.enAttente.length,
+);
+// Le compte et la liste doivent dire la même chose : calculé à part, le compte
+// ne voyait que les fiches du secteur ouvert.
+ajouter(
+  'le compte annoncé est celui de la liste',
+  new RegExp(`${vueEngagee.enAttente.length} décisions? en attente`).test(panneauEngage),
+);
+const aDecouvert = panneau.rendrePanneau({
+  ...vueEngagee,
+  coutEnAttente: 999,
+  ressources: { ...vueEngagee.ressources, budgetProjete: -4, trop: 4 },
+});
+ajouter(
+  'on n’engage pas plus qu’on ne peut, et le refus est chiffré',
+  /pan__suivant" type="button" disabled/.test(aDecouvert) && /dépassent de 4/.test(aDecouvert),
+);
+// **Mais un solde d'année négatif n'enferme pas.** L'année d'après une grosse
+// installation, les charges peuvent excéder la recette avant que le joueur ait
+// rien décidé : refuser l'été le laissait sans issue, sans rien à retirer.
+const soldeNegatif = panneau.rendrePanneau({
+  ...moments[1].vue,
+  coutEnAttente: 0,
+  enAttente: [],
+  ressources: { ...moments[1].vue.ressources, budgetProjete: -4.3, soldeDeLEte: -9.3, trop: 0 },
+});
+ajouter(
+  'un été déficitaire se joue quand même : rien à retirer, rien à bloquer',
+  !/pan__suivant" type="button" disabled/.test(soldeNegatif) && !/dépassent/.test(soldeNegatif),
+);
+
 // ---- plancher d'accessibilité clavier ---------------------------------------
 // La partie doit se jouer sans souris. Ce contrôle attrape la faute la plus
 // facile à commettre : une commande écrite en `div` cliquable, invisible au
@@ -187,6 +298,47 @@ ajouter(
   'la sélection d’un secteur a un chemin clavier',
   /class="secteurs__b[^"]*" data-secteur=/.test(toutLePanneau),
 );
+
+// ---- les deux registres de dépense -----------------------------------------
+// Les deux façons d'engager le budget ne se distinguaient que par leur place
+// dans la colonne. L'onglet les sépare, mais il ne doit pas cacher ce qui les
+// distingue : les deux règles restent lisibles en même temps, dans la barre.
+const ongletsHtml = panneau.rendrePanneau(moments[1].vue, { geste: 'ouvrirCoupure' });
+ajouter(
+  'deux onglets, et la barre porte la règle de chacun',
+  /onglets__n">Politiques<[\s\S]*?onglets__d">plusieurs étés</.test(ongletsHtml) &&
+    /onglets__n">Gestes<[\s\S]*?onglets__d">un été, une parcelle</.test(ongletsHtml),
+);
+ajouter(
+  'chaque registre dit sous la barre ce qu’il coûte et quand',
+  /onglets__vue--politiques[\s\S]*?se paient chaque été/.test(ongletsHtml) &&
+    /onglets__vue--gestes[\s\S]*?Payés une fois/.test(ongletsHtml),
+);
+// Les onglets se manœuvrent au clavier sans rien coder : un groupe de boutons
+// radio, ses flèches, ses étiquettes.
+ajouter(
+  'les onglets sont des boutons radio étiquetés, commutés en CSS',
+  /<label class="onglets__e"><input type="radio"/.test(ongletsHtml) &&
+    /\.onglets:has\(\.onglets__r--politiques:checked\) \.onglets__vue--gestes/.test(css),
+);
+// Le budget a trois emplois et non deux : la doctrine est une posture qu'on
+// tient, pas un achat qu'on fait, et sa place hors des onglets le dit.
+ajouter(
+  'la doctrine reste au-dessus des onglets',
+  ongletsHtml.indexOf('doc__pli') < ongletsHtml.indexOf('<div class="onglets">'),
+);
+// Deux panneaux dans une même page (cette planche) formeraient un seul groupe
+// de boutons radio et s'éteindraient l'un l'autre.
+ajouter(
+  'chaque panneau rendu a son propre groupe d’onglets',
+  new Set(rendus.map((h) => h.match(/name="(pan-onglet-\d+)"/)[1])).size === rendus.length,
+);
+// Là où « :has() » manquerait, on retombe sur les deux registres visibles,
+// c'est-à-dire la colonne d'avant les onglets, et non une colonne vide.
+ajouter(
+  'sans « :has() », les deux registres restent visibles',
+  !/\.onglets__vue \{[^}]*display: none/.test(css),
+);
 // L'écran est composé plus bas ; ici on n'a besoin que de son balisage.
 const ecranPourClavier = panneau.rendreEcran({
   sprite: '',
@@ -204,6 +356,53 @@ ajouter(
 ajouter(
   'un anneau de focus visible partout où l’on décide',
   /:focus-visible \{[^}]*outline/.test(css) && /ecran__carte:focus-visible/.test(panneau.STYLES_ECRAN),
+);
+
+// ---- doctrine repliée -------------------------------------------------------
+// Trois lignes dépliées en permanence prenaient un tiers de la colonne, pour un
+// réglage devenu rare. Replié n'est pas caché : le bloc s'ouvre de lui-même aux
+// moments où il a quelque chose à dire, et un « select » aurait mis les seuils
+// et les prix des deux autres postures derrière une interaction.
+const vueCalme = {
+  ...moments[2].vue,
+  doctrine: { ...moments[2].vue.doctrine, fenetre: 0, reforme: null, ouverture: false, demande: undefined },
+};
+const pli = (v) => panneau.rendrePanneau(v).match(/<details class="doc__pli"[^>]*>/)[0];
+ajouter('la doctrine est repliée quand rien ne s’y joue', !/open/.test(pli(vueCalme)));
+ajouter(
+  'elle s’ouvre d’elle-même en fenêtre et pendant une réforme',
+  ['fenetre', 'reforme'].every((cas) =>
+    /open/.test(
+      pli({
+        ...vueCalme,
+        doctrine: {
+          ...vueCalme.doctrine,
+          fenetre: cas === 'fenetre' ? 2 : 0,
+          reforme: cas === 'reforme' ? { vers: 3, dans: 2 } : null,
+        },
+      }),
+    ),
+  ),
+);
+// Mais **pas au premier été** : le joueur vient de choisir sa posture sur
+// l'écran d'ouverture, la rouvrir en grand lui fait relire sa propre décision.
+ajouter(
+  'elle reste repliée au premier été, le choix vient d’être fait',
+  !/open/.test(pli({ ...vueCalme, doctrine: { ...vueCalme.doctrine, ouverture: true } })),
+);
+ajouter(
+  'repliée, elle montre l’item choisi : posture, seuils et prix',
+  /doc__vigueur[\s\S]*?Feu géré[\s\S]*?doc__s">sécheresse[\s\S]*?doc__x">1/.test(panneau.rendrePanneau(vueCalme)),
+);
+ajouter(
+  'un bouton lisible ouvre le menu, et non un chevron seul',
+  /doc__ouvrir[\s\S]*?Changer de doctrine/.test(panneau.rendrePanneau(vueCalme)),
+);
+// Dépliée, la gamme entière porte l'item choisi : le redire sous le titre du
+// bloc écrivait deux fois la même chose dans le même écran.
+ajouter(
+  'dépliée, la posture en vigueur n’est plus redite sous le titre',
+  /\.doc__pli\[open\] \.doc__vigueur \{ display: none; \}/.test(panneau.STYLES_PANNEAU),
 );
 
 // ---- écran d'ouverture (patch §1) ------------------------------------------
@@ -305,9 +504,15 @@ if (momentCoupe) {
   const bloc = bande.match(/<li class="cr__coupe">[\s\S]*?<\/li>/)?.[0] ?? '';
   ajouter('la bande reste dans le fil du compte rendu, aucune fenêtre ne s’ouvre', /<ul class="cr">[\s\S]*cr__coupe/.test(bande));
   ajouter('la bande ne propose ni bouton, ni accusé de réception, ni remède', !/<button/.test(bloc));
+  // Le contrôle porte sur le **compte rendu** : la fiche d'une politique
+  // abandonnée s'adresse elle aussi à la deuxième personne, et c'est voulu.
+  // Compté sur le panneau entier, il dépendait de l'état des fiches du secteur
+  // ouvert, donc du tour où la coupe tombe.
+  const fil = bande.match(/<ul class="cr">[\s\S]*?<\/ul>/)?.[0] ?? '';
+  const bandes = (fil.match(/<li class="cr__coupe">/g) ?? []).length;
   ajouter(
-    'seule adresse à la deuxième personne de toute l’interface',
-    (bande.match(/\bVous\b/g) ?? []).length === 1,
+    `seule adresse à la deuxième personne du compte rendu (${bandes} bande(s))`,
+    bandes > 0 && (fil.match(/\bVous\b/g) ?? []).length === bandes,
   );
   const serif = [...css.matchAll(/\.cr__coupe h3[^}]*Fraunces/g)].length;
   ajouter('seule ligne du compte rendu composée en serif', serif === 1);
@@ -402,12 +607,26 @@ const defilants = [...sansCommentaires.matchAll(/([^{}]+)\{[^}]*overflow(-y)?:\s
 // Une colonne, un défilement : la pile du panneau **ou** le tiroir qui la
 // couvre, la carte dans son cadre, l'écran de fin qui remplace tout.
 ajouter(
-  `quatre zones défilantes, jamais imbriquées (${defilants.join(' / ')})`,
-  defilants.length === 4 &&
-    defilants.some((s) => s.includes('pan__pile')) &&
-    defilants.some((s) => s.includes('pan__tiroir')) &&
-    defilants.some((s) => s.includes('ecran__carte')) &&
-    defilants.some((s) => s.includes('fin__cadre')),
+  `cinq zones défilantes, jamais imbriquées (${defilants.join(' / ')})`,
+  defilants.length === 5 &&
+    ['pan__pile', 'pan__tiroir', 'pan__bloc--rendu', 'ecran__carte', 'fin__cadre'].every((c) =>
+      defilants.some((s) => s.includes(c)),
+    ),
+);
+// Le compte rendu a rejoint le bas fixe de la colonne : c'est là que le jeu
+// explique, faute de score agrégé, et cela ne peut dépendre ni du défilement
+// d'une pile que quatorze secteurs allongent, ni de l'absence du tiroir.
+ajouter(
+  'le compte rendu est hors du corps, borné et défilant chez lui',
+  /<\/div>\s*<section class="pan__bloc pan__bloc--rendu"/.test(panneau.rendrePanneau(moments[0].vue)) &&
+    /\.pan__bloc--rendu \{[\s\S]*?max-height: 38%[\s\S]*?overflow-y: auto/.test(sansCommentaires),
+);
+// Un bloc qui ne défile pas ne doit pas pouvoir descendre sous la hauteur de son
+// contenu : il ne rétrécit pas, il déborde sur son voisin. C'est ce que le
+// compte rendu faisait par-dessus le registre des gestes.
+ajouter(
+  'aucun bloc de la pile ne se comprime sous son contenu',
+  /\.pan__pile > \* \{ flex-shrink: 0; \}/.test(sansCommentaires),
 );
 // Le tiroir couvre la pile, il ne s'y insère pas : c'est ce qui fait qu'une
 // sélection se voit.
@@ -415,6 +634,45 @@ ajouter(
   'le tiroir couvre la colonne et se referme par sa croix',
   /\.pan__tiroir \{[^}]*position: absolute/.test(sansCommentaires) &&
     /data-fermer-secteur/.test(panneau.rendrePanneau(moments[0].vue)),
+);
+// Il glisse à son ouverture et **pas au réengendrement** : le panneau est refait
+// à chaque décision, et rejouer le glissement à l'engagement d'une politique
+// faisait repartir toute la colonne alors que rien n'avait bougé.
+ajouter(
+  'le tiroir ne glisse qu’à son ouverture',
+  /\.pan__tiroir--neuf \{ animation: pan-glisse/.test(sansCommentaires) &&
+    !/pan__tiroir--neuf/.test(panneau.rendrePanneau(moments[0].vue, { tiroirNeuf: false })) &&
+    /pan__tiroir--neuf/.test(panneau.rendrePanneau(moments[0].vue)),
+);
+// Une politique engagée depuis le tiroir atterrit à l'autre bout de la colonne :
+// sans signal, on ne voit pas où elle est partie.
+const piedSignale = panneau.rendrePanneau(
+  { ...moments[0].vue, enAttente: [{ nom: 'Contrat pastoral', ou: 'Serre du Puy', cout: 4 }] },
+  { signale: 0 },
+);
+ajouter(
+  'la décision engagée se signale en se posant dans le récapitulatif',
+  /<li class="pan__liste--pose">/.test(piedSignale) &&
+    /@keyframes pan-pose/.test(sansCommentaires) &&
+    // Rien ne bouge sous « prefers-reduced-motion », la règle du site vaut aussi
+    // pour ce mouvement-là.
+    /prefers-reduced-motion: no-preference\) \{\s*\.pan__liste--pose/.test(sansCommentaires),
+);
+// L'engagement d'une politique est le geste le plus lourd du jeu : il ne peut
+// pas se présenter comme une ligne de texte soulignée.
+ajouter(
+  'engager une politique se présente comme un bouton',
+  /\.fiche__appel \{[\s\S]*?border: 1px solid var\(--braise\)/.test(sansCommentaires),
+);
+// L'état de la fiche est dans son encadrement, sur les quatre côtés : deux
+// bordures de nature différente sur le même rectangle, dont une seule portait du
+// sens, se lisaient comme un défaut d'alignement.
+ajouter(
+  'les fiches n’ont qu’une bordure, uniforme, et elle porte l’état',
+  !/\.fiche::before/.test(sansCommentaires) &&
+    ['activable', 'montee', 'vigueur', 'levee', 'abandon'].every((e) =>
+      new RegExp(`\\.fiche--${e} \\{[^}]*border-color`).test(sansCommentaires),
+    ),
 );
 // L'unité de base des barres de position : ce que le cadre montrerait à
 // l'échelle native. Les trois échelles la multiplient par leur diviseur.

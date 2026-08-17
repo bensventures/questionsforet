@@ -325,7 +325,7 @@ export interface Decisions {
 export type ActionPonctuelle =
   | { type: 'durcirHameau'; cellule: number }
   | { type: 'ouvrirCoupure'; cellule: number }
-  | { type: 'traiterPointNoir'; cellule: number };
+  | { type: 'debroussailler'; cellule: number };
 
 /** Une ligne de compte rendu. Le noyau produit du texte, pas du DOM. */
 export interface Ligne {

@@ -32,7 +32,7 @@ export function rendreOuverture(o: { graine: number; cran: Doctrine }): string {
         <span class="doc__n">${d.nom}${d.cran === 1 ? ' <span class="doc__etat">héritée</span>' : ''}</span>
         <span class="doc__s">${d.seuils}</span>
       </span>
-      <span class="doc__x">${d.cout}</span>
+      <span class="doc__x">${d.cout}<span class="doc__u">par été</span></span>
     </button>`,
   ).join('');
 

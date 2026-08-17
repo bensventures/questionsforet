@@ -1,5 +1,5 @@
 import type { Cellule, Etat, Ligne, PolitiqueCoupee } from './types';
-import { TYPES, DENSITE } from './params';
+import { TYPES, DENSITE, DOCTRINE } from './params';
 import { politiqueParId } from './politiques';
 import { libererEleveur } from './partenaires';
 import { borne } from './util';
@@ -19,6 +19,15 @@ import { borne } from './util';
  * deviennent **émergentes** : aucune ligne du modèle ne dit qu'on ne
  * débroussaille pas le massif, c'est la géométrie des coûts qui le produit.
  */
+
+/** Un chiffre de compte rendu : entier quand il l'est, une décimale sinon. Les
+ *  postes doivent s'additionner à l'œil, sans quoi la ligne ajoute au mystère
+ *  qu'elle prétend lever. */
+export const nombreDeCompte = (x: number) =>
+  Math.abs(x - Math.round(x)) < 0.05 ? String(Math.round(x)) : x.toFixed(1);
+const nombre = nombreDeCompte;
+const signe = (x: number) => (x >= 0 ? `+${nombre(x)}` : `−${nombre(-x)}`);
+export const signeDeCompte = signe;
 
 /** Coût annuel du contrôle d'une construction. Le propriétaire paie l'exécution. */
 export const COUT_CONTROLE = 0.12;
@@ -123,19 +132,47 @@ export function comptes(etat: Etat): Comptes {
  * Boucle budgétaire du tour. Renvoie les lignes de compte rendu, et laisse le
  * budget dans `etat.moyens`.
  */
-export function bouclerBudget(etat: Etat): { lignes: Ligne[]; coupees: PolitiqueCoupee[] } {
+export function bouclerBudget(etat: Etat): { lignes: Ligne[]; coupees: PolitiqueCoupee[]; postes: string[] } {
   const lignes: Ligne[] = [];
   const coupees: PolitiqueCoupee[] = [];
+  /** Ce que les coupures rendent au budget. Sans ce poste, la ligne de comptes
+   *  ne tombe pas juste l'année où une politique lâche. */
+  let soulagement = 0;
   const c = comptes(etat);
 
-  etat.moyens.budget += BUDGET.parTour + c.recettes - c.entretien;
-  etat.cumul.depense += c.entretien;
+  // Le coût annuel de la posture est une charge récurrente comme une autre, et
+  // il se paie ici : la ligne de comptes ne pourrait pas dire « il reste » si un
+  // prélèvement certain tombait après elle.
+  const coutDoctrine = DOCTRINE[etat.doctrine].budget;
+  etat.moyens.budget += BUDGET.parTour + c.recettes - c.entretien - coutDoctrine;
+  etat.cumul.depense += c.entretien + coutDoctrine;
   etat.cumul.recettes += c.recettes;
 
-  if (etat.moyens.fenetrePostFeu > 0) {
-    etat.moyens.budget += BUDGET.fenetreMontant;
-    etat.moyens.fenetrePostFeu--;
-  }
+  // La fenêtre est **lue** ici et **décomptée** en fin de tour, dans `avancer` :
+  // le bouclage étant passé en tête d'été, la décompter ici la fermerait un été
+  // trop tôt du point de vue des décisions, qui viennent après.
+  const fenetre = etat.moyens.fenetrePostFeu > 0;
+  if (fenetre) etat.moyens.budget += BUDGET.fenetreMontant;
+
+  // **Les comptes de l'été se disent.** Chaque établissement et chaque geste
+  // avait sa ligne ; les charges récurrentes n'en avaient aucune, si bien que le
+  // budget montait, fondait ou restait collé à zéro sans qu'une seule phrase du
+  // compte rendu l'explique. Une éclaircie déficitaire peut coûter davantage en
+  // un été que tout ce que le joueur engage, et il ne pouvait pas le savoir.
+  //
+  // Les postes sont **rendus** plutôt qu'écrits ici : la ligne se compose dans
+  // `avancer`, une fois les décisions payées, sinon son « il reste » donnerait
+  // le budget d'avant les engagements. Lue un été plus tard dans le compte
+  // rendu, elle annonçait 19 quand la caisse en portait 5.
+  const postes = [
+    `recette ${nombre(BUDGET.parTour)}`,
+    c.recettes ? `exploitation ${signe(c.recettes)}` : '',
+    c.entretien ? `entretien ${signe(-c.entretien)}` : '',
+    // Prélevée en tête d'été, avant tout le reste : c'est le poste que le joueur
+    // ne décide pas chaque année et qu'il oubliait donc de compter.
+    `doctrine ${signe(-coutDoctrine)}`,
+    fenetre ? `moyens exceptionnels ${signe(BUDGET.fenetreMontant)}` : '',
+  ].filter(Boolean);
 
   // Budget négatif : on ne peut plus tout tenir. Les politiques les plus
   // coûteuses à entretenir lâchent, et les surfaces qu'elles tenaient partent
@@ -152,6 +189,7 @@ export function bouclerBudget(etat: Etat): { lignes: Ligne[]; coupees: Politique
     // c'est le contrat qui s'arrête, pas l'activité.
     if (perdue.a.id === 'pastoral') libererEleveur(etat.moyens.eleveurs);
     etat.moyens.budget += perdue.cout;
+    soulagement += perdue.cout;
     etat.cumul.renoncements++;
     coupees.push({ id: perdue.a.id, secteur: perdue.a.secteur });
     const s = etat.secteurs[perdue.a.secteur];
@@ -163,8 +201,13 @@ export function bouclerBudget(etat: Etat): { lignes: Ligne[]; coupees: Politique
     });
   }
 
-  if (etat.moyens.budget < 0) etat.moyens.budget = 0;
-  return { lignes, coupees };
+  // Le plancher de caisse remet à zéro : lui aussi doit figurer aux comptes,
+  // sans quoi « il reste » sort de nulle part.
+  const remise = etat.moyens.budget < 0 ? -etat.moyens.budget : 0;
+  if (remise) etat.moyens.budget = 0;
+  if (soulagement) postes.push(`programmes coupés ${signe(soulagement)}`);
+  if (remise) postes.push(`découvert épongé ${signe(remise)}`);
+  return { lignes, coupees, postes };
 }
 
 /**

@@ -7,7 +7,9 @@ import { tempsDeLecture } from '../../lib/lecture';
 
 const dossiers = (
   await getCollection('dossiers', ({ data }) =>
-    import.meta.env.PROD ? !data.brouillon : true,
+    // Une page privée est construite et servie, mais ne figure dans aucune
+    // liste : c'est ce qui distingue « donné à relire » de « publié ».
+    import.meta.env.PROD ? !data.brouillon && !data.prive : !data.prive,
   )
 ).sort((a, b) => b.data.publie.valueOf() - a.data.publie.valueOf());
 ---

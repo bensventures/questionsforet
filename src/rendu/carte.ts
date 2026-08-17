@@ -860,6 +860,9 @@ export function rendreCarte(
       (options.secteurs
         ? `<g class="couche-secteurs">${rendreCalqueSecteurs(etat, { ...options.secteurs, fenetre: f })}</g>`
         : '') +
+      // Vide au rendu serveur : l'îlot la remplit à la visée et à la
+      // désignation, sans retoucher au paysage.
+      `<g class="couche-gestes" pointer-events="none"></g>` +
       `<g class="couche-etiquettes" pointer-events="none">${cotes.join('')}</g>`,
     viewBox: `${f.x0 * S} ${f.y0 * S} ${f.largeur * S} ${f.hauteur * S}`,
   };

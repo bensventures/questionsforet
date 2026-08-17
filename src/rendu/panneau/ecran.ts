@@ -204,6 +204,8 @@ html:has(.plein:target) { overflow: hidden; overscroll-behavior-x: none; }
    (Pas d'accent grave dans cette feuille : elle est un gabarit de chaîne.) */
 .ecran__carte { flex: 1 1 auto; min-width: 0; overflow: auto; overscroll-behavior: contain; cursor: grab; }
 .ecran__carte[data-tire] { cursor: grabbing; }
+/* Geste armé : le curseur en croix, marque propre des ponctuelles (planche 3). */
+.ecran__carte[data-arme] { cursor: crosshair; }
 .ecran__carte[data-tire] * { pointer-events: none; }
 .ecran__carte > svg { display: block; height: auto; max-width: none; width: calc(var(--carte-largeur) / 3); }
 #echelle-proche:checked ~ .ecran__vue .ecran__carte > svg { width: calc(var(--carte-largeur) / 2); }

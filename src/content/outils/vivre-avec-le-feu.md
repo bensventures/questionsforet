@@ -1,9 +1,8 @@
 ---
 titre: Vivre avec le feu
 chapo: >-
-  Un simulateur de gestion : vingt étés à tenir sur un versant du Diois. On ne
-  peut pas empêcher le grand feu, seulement réduire ce qu'il emporte. À vous de
-  décider ce qui repousse, et ce qui protège.
+  Un simulateur de gestion : quarante étés à tenir sur un versant du Diois. On
+  ne peut pas empêcher le grand feu, seulement décider de ce qu'il emporte.
 publie: 2026-07-27
 format: simulation
 themes:
@@ -14,8 +13,6 @@ themes:
   - essences
   - post-incendie
   - pastoralisme
-  - brulage-dirige
-  - hydrologie
 sources:
   - cohen-home-ignition-zone
   - calfire-defensible-space
@@ -41,27 +38,23 @@ sources:
   - canopee-arbres-sensibles
   - baeza-santana
   - kreider-2024
-brouillon: true
+brouillon: false
+prive: true
 ---
 
-Ce simulateur met en jeu, sur un versant fictif du Diois, ce que la synthèse
-« Vivre avec le feu » établit page après page. Vous disposez chaque année d'un
-petit budget d'action pour agir sur le paysage et sur le bâti, puis vient l'été,
-et avec lui le risque de feu. La thèse est simple et dérangeante : on ne supprime
-pas le grand feu, on décide seulement de ce qu'il en reste.
+Un versant du Diois, quatorze secteurs, quarante étés à tenir. Chaque année, vous
+engagez ce que le budget permet : durcir des maisons, contrôler le
+débroussaillement, passer un contrat avec un éleveur, éclaircir un peuplement.
+Puis l'été se joue sans vous. La sécheresse et le vent sont tirés au sort, les
+départs de feu aussi, et il faut faire avec ce qu'ils ont laissé.
 
-Plusieurs leçons du dossier sont directement jouables. Le durcissement du bâti et
-la zone des cinq premiers mètres protègent les maisons sans réduire la surface
-brûlée, parce que ce sont les braises, et non le front, qui allument le plus
-souvent. Débroussailler casse la continuité du combustible, mais raser au même
-endroit finit par installer une friche à graminées, qui brûle plus vite qu'avant.
-Le troupeau, le brûlage dirigé, l'ouvrage hydraulique et la mosaïque de feuillus
-entretiennent un paysage moins inflammable, chacun avec ses limites et son coût.
+La première décision n'est pas un achat, c'est une posture. Les secours éteignent
+aujourd'hui tout départ de feu : vous pouvez garder cette doctrine de lutte ou la
+réformer. Elle fonctionne, et c'est précisément le piège. Chaque petit feu éteint
+laisse en place le combustible qu'il aurait consommé, la dette s'accumule sans
+rien coûter, et elle se solde d'un coup, un été de sécheresse.
 
-Les valeurs numériques du modèle sont des ordres de grandeur de jeu, calibrés
-pour produire des dynamiques justes, non des prédictions. Rien ici ne vaut
-diagnostic pour une parcelle réelle : les distances et obligations applicables
-relèvent de la réglementation locale, et ce modèle ne remplace ni un diagnostic
-de terrain ni l'expertise des services compétents. Le panneau « sources du
-modèle », en bas de page, relie chaque mécanique à la référence dont elle est
-tirée.
+Les valeurs du modèle sont des ordres de grandeur de jeu, pas des prédictions.
+Rien ici ne vaut diagnostic : les distances et obligations applicables relèvent
+de la réglementation locale, et ce modèle ne remplace ni un diagnostic de terrain
+ni l'expertise des services compétents.

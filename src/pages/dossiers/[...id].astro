@@ -9,6 +9,8 @@ import { tempsDeLecture } from '../../lib/lecture';
 export async function getStaticPaths() {
   // Drafts are visible while developing, hidden from the production build.
   const dossiers = await getCollection('dossiers', ({ data }) =>
+    // Une page privée **est** construite : c'est tout l'intérêt, on en donne
+    // l'adresse. C'est la liste des dossiers qui ne la montre pas.
     import.meta.env.PROD ? !data.brouillon : true,
   );
   return dossiers.map((dossier) => ({
@@ -18,7 +20,7 @@ export async function getStaticPaths() {
 }
 
 const { dossier } = Astro.props;
-const { titre, chapo, themes, publie, modifie, brouillon, avertissement, territoire } =
+const { titre, chapo, themes, publie, modifie, brouillon, prive, avertissement, territoire } =
   dossier.data;
 
 const { Content, headings } = await render(dossier);
@@ -33,7 +35,9 @@ const parties = headings.filter((h) => h.depth === 2);
 // question's frontmatter), so the two can never contradict each other.
 const questionsLiees = (
   await getCollection('questions', ({ data }) =>
-    import.meta.env.PROD ? !data.brouillon : true,
+    // Une page privée est construite et servie, mais ne figure dans aucune
+    // liste : c'est ce qui distingue « donné à relire » de « publié ».
+    import.meta.env.PROD ? !data.brouillon && !data.prive : !data.prive,
   )
 ).filter((q) => q.data.approfondit.some((ref) => ref.id === dossier.id));
 
@@ -44,9 +48,15 @@ const dateFmt = new Intl.DateTimeFormat('fr-FR', {
 });
 ---
 
-<Base titre={fr(titre)} description={fr(chapo)}>
+<Base titre={fr(titre)} description={fr(chapo)} noindex={prive}>
   <article class="dossier">
     {brouillon && <p class="brouillon">Brouillon (non publié).</p>}
+    {prive && (
+      <p class="brouillon">
+        Page de test, non listée sur le site et ignorée des moteurs de recherche. Elle se partage
+        par son adresse, et ce qu'elle contient peut encore changer.
+      </p>
+    )}
 
     <header class="dossier__entete">
       <ThemeTags themes={themes} link />

@@ -10,9 +10,11 @@ interface Props {
   description?: string;
   /** Use the wider column (e.g. the sources index). */
   large?: boolean;
+  /** Page publiée mais non listée : on demande aussi aux moteurs de l'ignorer. */
+  noindex?: boolean;
 }
 
-const { titre, description, large = false } = Astro.props;
+const { titre, description, large = false, noindex = false } = Astro.props;
 ---
 
 <!doctype html>
@@ -24,6 +26,7 @@ const { titre, description, large = false } = Astro.props;
     <title>{titre}</title>
     {description && <meta name="description" content={description} />}
     <meta name="generator" content={Astro.generator} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
   </head>
   <body>
     <a class="skip-link" href="#contenu">Aller au contenu</a>
@@ -42,7 +45,7 @@ const { titre, description, large = false } = Astro.props;
     <footer class="site-footer">
       <p>
         Vulgarisation sourcée sur la forêt et le feu de végétation. Chaque
-        affirmation renvoie à une source dont la nature est indiquée.
+        affirmation renvoie à une source dont la nature est indiquée. Auteur du site: Benoit Gilloz.
       </p>
     </footer>
   </body>

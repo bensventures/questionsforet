@@ -17,7 +17,7 @@ export async function getStaticPaths() {
 }
 
 const { outil } = Astro.props;
-const { titre, chapo, themes, brouillon, format } = outil.data;
+const { titre, chapo, themes, brouillon, prive, format } = outil.data;
 const isSimulation = format === 'simulation';
 
 const { Content } = await render(outil);
@@ -41,9 +41,15 @@ const cloture = outil.data.cloture;
 const clotureLien = cloture?.lien ? await getEntry(cloture.lien) : null;
 ---
 
-<Base titre={fr(titre)} description={fr(chapo)} large={isSimulation}>
+<Base titre={fr(titre)} description={fr(chapo)} large={isSimulation} noindex={prive}>
   <article class="outil">
     {brouillon && <p class="brouillon">Brouillon (non publié).</p>}
+    {prive && (
+      <p class="brouillon">
+        Page de test, non listée sur le site et ignorée des moteurs de recherche. Elle se partage
+        par son adresse, et ce qu'elle contient peut encore changer.
+      </p>
+    )}
 
     <header>
       <ThemeTags themes={themes} link />

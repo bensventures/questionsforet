@@ -2,9 +2,13 @@ import type { ActionPonctuelle, Decisions, Doctrine, Etat, IdPolitique } from '.
 import { creerRng, type Rng } from '../model/rng';
 import { creerEtat } from '../model/terrain';
 import { avancer } from '../model/avancer';
+import { politiqueParId } from '../model/politiques';
+import { COUTS_PONCTUELS } from '../model/ponctuelles';
+import { DOCTRINE, REFORME } from '../model/params';
 import { S } from '../rendu/cellule';
 import { rendreCalqueSecteurs, rendreCarte } from '../rendu/carte';
 import { DUREE_REJEU, rendreRejeu } from '../rendu/rejeu';
+import { empriseDuGeste, rendreCalqueGestes } from '../rendu/gestes';
 import {
   rendreOuverture,
   consequencesDeLaCoupe,
@@ -14,8 +18,11 @@ import {
   titreDeLaCoupe,
   vueDuPanneau,
   vueFinDePartie,
+  disponibleAEngager,
+  depassement,
   type GesteVue,
   type LigneVue,
+  type Onglet,
 } from '../rendu/panneau';
 
 /**
@@ -42,6 +49,9 @@ interface Partie {
   selection: number | null;
   survol: number | null;
   geste: GesteVue['type'] | null;
+  /** Registre de dépense affiché. La commutation est en CSS ; l'îlot ne retient
+   *  l'onglet que pour le rendre après un réengendrement du panneau. */
+  onglet: Onglet;
   lignes: LigneVue[];
   finie: boolean;
   /**
@@ -52,6 +62,13 @@ interface Partie {
    */
   dernierFeu: { arrivee: Uint16Array; braises: import('../model/feu').Braise[]; carteAvant: string } | null;
 }
+
+/** Nom des gestes, pour les lister quand ils attendent l'été. */
+const NOM_GESTE: Record<GesteVue['type'], string> = {
+  durcirHameau: 'Durcir un hameau',
+  ouvrirCoupure: 'Ouvrir une coupure',
+  debroussailler: 'Débroussailler une parcelle',
+};
 
 /** Attache d'une ligne : secteur, étape du tour, valeur du modèle en cause.
  *  C'est elle qui répond à « pourquoi celle-là et pas sa voisine ». */
@@ -87,6 +104,7 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
     selection: null,
     survol: null,
     geste: null,
+    onglet: 'politiques',
     lignes: [],
     finie: false,
     dernierFeu: null,
@@ -116,12 +134,101 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
     return id.includes('proche') ? 2 : id.includes('large') ? 4 : 3;
   }
 
+  /**
+   * Tout ce qui est engagé, dans l'ordre où l'été l'appliquera, avec de quoi le
+   * nommer et le retirer. L'ordre de cette liste **est** celui des indices
+   * d'annulation : le pied ne renvoie qu'un rang, jamais un type à décoder.
+   */
+  function listeEnAttente(): { nom: string; ou?: string; cout: number }[] {
+    const l: { nom: string; ou?: string; cout: number }[] = [];
+    if (partie.enAttente.doctrine) {
+      l.push({
+        nom: `Doctrine : ${DOCTRINE[partie.enAttente.doctrine].nom.toLowerCase()}`,
+        cout:
+          partie.etat.tour > 1
+            ? partie.etat.moyens.fenetrePostFeu > 0
+              ? REFORME.coutFenetre
+              : REFORME.cout
+            : 0,
+      });
+    }
+    for (const a of partie.enAttente.activer) {
+      l.push({
+        nom: politiqueParId(a.id).nom,
+        ou: partie.etat.secteurs[a.secteur]?.nom,
+        cout: politiqueParId(a.id).etablissement,
+      });
+    }
+    for (const g of partie.enAttente.ponctuelles) {
+      l.push({
+        nom: NOM_GESTE[g.type],
+        ou: `(${g.cellule % partie.etat.largeur}, ${Math.floor(g.cellule / partie.etat.largeur)})`,
+        cout: COUTS_PONCTUELS[g.type],
+      });
+    }
+    return l;
+  }
+
+  /** Retire la n-ième décision de ce récapitulatif. */
+  function annuler(rang: number): void {
+    let i = rang;
+    if (partie.enAttente.doctrine) {
+      if (i === 0) {
+        partie.enAttente.doctrine = undefined;
+        return;
+      }
+      i--;
+    }
+    if (i < partie.enAttente.activer.length) {
+      partie.enAttente.activer.splice(i, 1);
+      return;
+    }
+    partie.enAttente.ponctuelles.splice(i - partie.enAttente.activer.length, 1);
+  }
+
+  /**
+   * Ce que les décisions en attente prélèveront au passage de l'été. Le barème
+   * vient du modèle, jamais recopié : établissements, gestes, et la réforme de
+   * doctrine si elle est demandée hors du premier été, qui est gratuit.
+   */
+  function coutEnAttente(): number {
+    return (
+      partie.enAttente.activer.reduce((t, a) => t + politiqueParId(a.id).etablissement, 0) +
+      partie.enAttente.ponctuelles.reduce((t, g) => t + COUTS_PONCTUELS[g.type], 0) +
+      (partie.enAttente.doctrine && partie.etat.tour > 1
+        ? partie.etat.moyens.fenetrePostFeu > 0
+          ? REFORME.coutFenetre
+          : REFORME.cout
+        : 0)
+    );
+  }
+
   const optionsSecteurs = () => ({
-    donnees: etatsDesSecteurs(partie.etat),
+    donnees: etatsDesSecteurs(partie.etat, disponibleAEngager(partie.etat, coutEnAttente())),
     selectionne: partie.selection,
     survole: partie.survol,
     echelle: echelleAffichee(),
   });
+
+  /** Cellule visée par un geste armé, pour en montrer l'empreinte. */
+  let visee: number | null = null;
+
+  /**
+   * Calque des gestes : ce qui est désigné, et ce que la visée toucherait. Sans
+   * lui, on cliquait dans le vide et l'on ne savait qu'un été plus tard sur
+   * quelle parcelle.
+   */
+  function redessinerGestes(): void {
+    const couche = svg!.querySelector('.couche-gestes');
+    if (!couche) return;
+    couche.innerHTML = rendreCalqueGestes(partie.etat, {
+      designes: partie.enAttente.ponctuelles,
+      arme: partie.geste,
+      cible: visee,
+      budget: disponibleAEngager(partie.etat, coutEnAttente()),
+      echelle: echelleAffichee(),
+    });
+  }
 
   /** Le calque seul : au survol et à la sélection, le paysage n'a pas bougé. */
   function redessinerSecteurs(): void {
@@ -165,15 +272,37 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
     racine.querySelector<HTMLElement>(repere)?.focus();
   }
 
-  function redessinerPanneau(): void {
+  /**
+   * @param o.pliNeuf laisse le modèle décider si le menu de doctrine est
+   *   déplié. Vrai au changement d'été seulement : le reste du temps, le pli
+   *   est un état d'interface que le joueur a posé, et le panneau étant
+   *   réengendré en entier, ouvrir le menu puis cliquer un secteur le refermait.
+   */
+  /** Secteur sur lequel le tiroir est déjà ouvert, pour ne le faire glisser
+   *  qu'à son ouverture et non à chaque décision. */
+  let tiroirPose: number | null = null;
+
+  /** Rang, dans le récapitulatif du pied, de la décision qu'on vient de prendre.
+   *  Le pied est la seule vue qui les rassemble toutes, dans cet ordre. */
+  function rangEngage(quoi: 'politique' | 'geste'): number {
+    const d = partie.enAttente.doctrine ? 1 : 0;
+    return quoi === 'politique'
+      ? d + partie.enAttente.activer.length - 1
+      : d + partie.enAttente.activer.length + partie.enAttente.ponctuelles.length - 1;
+  }
+
+  function redessinerPanneau(o: { pliNeuf?: boolean; signale?: number } = {}): void {
     const ancien = racine.querySelector('.pan');
     if (!ancien) return;
+    const pli = o.pliNeuf ? null : ancien.querySelector<HTMLDetailsElement>('.doc__pli')?.open ?? null;
     const focus = repereDuFocus();
     const vue = vueDuPanneau(partie.etat, {
       secteur: partie.selection,
       lignes: partie.lignes,
       attente: partie.enAttente.activer,
       gestesEnAttente: partie.enAttente.ponctuelles.length,
+      enAttente: listeEnAttente(),
+      coutEnAttente: coutEnAttente(),
       // La doctrine demandée ne s'affiche **pas** comme en vigueur : depuis le
       // patch, la décider n'est qu'engager une réforme, qui prend des étés hors
       // fenêtre. L'écran montrait un cran appliqué que le modèle n'appliquait
@@ -181,9 +310,21 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
       doctrineDemandee: partie.enAttente.doctrine,
     });
     const gabarit = document.createElement('div');
-    gabarit.innerHTML = rendrePanneau(vue, { geste: partie.geste });
+    gabarit.innerHTML = rendrePanneau(vue, {
+      geste: partie.geste,
+      onglet: partie.onglet,
+      tiroirNeuf: partie.selection !== tiroirPose,
+      signale: o.signale,
+    });
+    tiroirPose = partie.selection;
     const nouveau = gabarit.firstElementChild;
     if (nouveau) ancien.replaceWith(nouveau);
+    // Le modèle peut déplier de lui-même (fenêtre, réforme, ouverture) ; il ne
+    // replie jamais ce que le joueur a ouvert.
+    if (pli) {
+      const d = racine.querySelector<HTMLDetailsElement>('.doc__pli');
+      if (d) d.open = true;
+    }
     rendreLeFocus(focus);
   }
 
@@ -217,6 +358,13 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
 
   function jouerLeTour(): void {
     if (partie.finie) return;
+    // Le modèle écarterait les engagements trop chers ; on ne le laisse pas
+    // arriver là, c'est le sens du bouton désactivé.
+    // Le refus se juge sur **le même disponible que l'affichage**. Comparé à la
+    // seule réserve, il bloquait l'été sans rien dire dès qu'on engageait plus
+    // que la réserve, alors que le budget de l'exercice le permettait : le
+    // bouton restait actif et le clic ne faisait rien.
+    if (depassement(partie.etat, coutEnAttente()) > 0) return;
     // Le paysage d'avant l'été, tel qu'il est encore à l'écran.
     const carteAvant = svg!.innerHTML;
     const decisions: Decisions = {
@@ -266,8 +414,16 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
       terminer();
       return;
     }
+    // **L'été passé rend l'écran à son état de repos.** Le tiroir d'un secteur
+    // et le menu de doctrine sont des états d'interface posés pour décider ; la
+    // décision prise, les garder ouverts fait lire le compte rendu du nouvel
+    // été derrière un tiroir ouvert sur les fiches de l'ancien, et laisse le
+    // versant sous un voile qui ne désigne plus rien. Chaque été s'ouvre donc
+    // sur le versant entier.
+    partie.selection = null;
+    partie.onglet = 'politiques';
     redessinerCarte();
-    redessinerPanneau();
+    redessinerPanneau({ pliNeuf: true });
   }
 
   // ---- désignation sur la carte --------------------------------------------
@@ -286,10 +442,15 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
     if (i == null) return;
 
     if (partie.geste) {
-      // Un geste armé s'exécutera à l'été suivant, comme toute décision.
+      // Un geste armé s'exécutera à l'été suivant, comme toute décision. On ne
+      // désigne que ce que le modèle accepterait : refuser en silence a déjà
+      // été notre erreur une fois.
+      if (!empriseDuGeste(partie.etat, partie.geste, i).length) return;
       partie.enAttente.ponctuelles.push({ type: partie.geste, cellule: i });
       partie.geste = null;
-      redessinerPanneau();
+      visee = null;
+      redessinerGestes();
+      redessinerPanneau({ signale: rangEngage('geste') });
       return;
     }
     // Recliquer le secteur choisi le referme : la carte désélectionne comme la
@@ -301,8 +462,14 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
   });
 
   boite.addEventListener('pointermove', (e) => {
-    if (depart) return; // on déplace la carte : pas de survol
+    if (depart) return; // on déplace la carte : ni visée ni survol
     const i = cellule(e);
+    if (partie.geste) {
+      if (i === visee) return;
+      visee = i;
+      redessinerGestes();
+      return;
+    }
     const s = i == null ? null : partie.etat.grille[i].secteur;
     if (s === partie.survol) return;
     partie.survol = s;
@@ -310,9 +477,22 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
   });
 
   boite.addEventListener('pointerleave', () => {
+    if (visee !== null) {
+      visee = null;
+      redessinerGestes();
+    }
     if (partie.survol === null) return;
     partie.survol = null;
     redessinerSecteurs();
+  });
+
+  // ---- registre affiché ------------------------------------------------------
+  // L'onglet commute en CSS : l'îlot n'a rien à redessiner, il se contente de
+  // s'en souvenir pour le rendre au réengendrement suivant. Sans cela, armer un
+  // geste puis cliquer la carte ramenait le joueur aux politiques.
+  racine.addEventListener('change', (e) => {
+    const r = (e.target as HTMLElement).closest<HTMLInputElement>('.onglets__r');
+    if (r) partie.onglet = r.value as Onglet;
   });
 
   // ---- décisions du panneau -------------------------------------------------
@@ -341,6 +521,15 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
       return;
     }
 
+    // Retirer une décision depuis le récapitulatif du pied : sans cela,
+    // dépasser son budget enferme, puisque l'été refuse de passer à découvert.
+    const annule = cible.closest<HTMLElement>('[data-annuler]');
+    if (annule) {
+      annuler(Number(annule.dataset.annuler));
+      redessinerPanneau();
+      return;
+    }
+
     const cran = cible.closest<HTMLElement>('[data-cran]');
     if (cran) {
       // Une réforme déjà engagée court seule : le modèle refuserait, autant ne
@@ -348,7 +537,8 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
       if (!partie.etat.reforme) {
         const vise = Number(cran.dataset.cran) as Doctrine;
         partie.enAttente.doctrine = vise === partie.etat.doctrine ? undefined : vise;
-        redessinerPanneau();
+        // Rang 0 : la doctrine ouvre le récapitulatif. Retirée, rien à signaler.
+        redessinerPanneau({ signale: partie.enAttente.doctrine ? 0 : undefined });
       }
       return;
     }
@@ -361,7 +551,7 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
           id: fiche.dataset.politique as IdPolitique,
           secteur: partie.selection,
         });
-        redessinerPanneau();
+        redessinerPanneau({ signale: rangEngage('politique') });
       }
       return;
     }
@@ -380,6 +570,8 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
     if (geste) {
       const type = geste.dataset.geste as GesteVue['type'];
       partie.geste = partie.geste === type ? null : type;
+      boite.toggleAttribute('data-arme', !!partie.geste);
+      redessinerGestes();
       redessinerPanneau();
     }
   });
@@ -423,6 +615,15 @@ export function monterSimulateur(racine: HTMLElement, graineParDefaut: number): 
     // Tant que l'ouverture est là, elle capte tout : les crans qu'elle porte
     // sont un choix fondateur, pas une réforme.
     e.stopPropagation();
+
+    // Retirer une décision depuis le récapitulatif du pied : sans cela,
+    // dépasser son budget enferme, puisque l'été refuse de passer à découvert.
+    const annule = cible.closest<HTMLElement>('[data-annuler]');
+    if (annule) {
+      annuler(Number(annule.dataset.annuler));
+      redessinerPanneau();
+      return;
+    }
 
     const cran = cible.closest<HTMLElement>('[data-cran]');
     if (cran) {

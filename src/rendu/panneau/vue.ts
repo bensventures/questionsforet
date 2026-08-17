@@ -50,7 +50,7 @@ export interface FicheVue {
 }
 
 export interface GesteVue {
-  type: 'durcirHameau' | 'ouvrirCoupure' | 'traiterPointNoir';
+  type: 'durcirHameau' | 'ouvrirCoupure' | 'debroussailler';
   nom: string;
   cout: number;
   emprise: string;
@@ -77,12 +77,48 @@ export interface VuePanneau {
   toursMax: number;
   /** Gestes désignés et pas encore appliqués : ils partent au prochain été. */
   gestesEnAttente?: number;
+  /**
+   * **Tout ce qui est engagé et pas encore appliqué**, dans l'ordre où l'été
+   * l'appliquera. Le pied du panneau le récapitule : une politique engagée
+   * n'apparaissait que sur sa fiche, donc dans le tiroir de son secteur, et
+   * disparaissait de la vue dès qu'on en ouvrait un autre. Le pied, lui, n'est
+   * jamais couvert.
+   */
+  enAttente?: { nom: string; ou?: string; cout: number }[];
+  /**
+   * Ce que les décisions en attente engageront à l'été suivant. Rien n'est
+   * débité pendant le tour — le noyau n'a qu'une porte — et le budget affiché
+   * ne bougeait donc pas d'un clic, ce qui laissait croire que les
+   * engagements étaient gratuits.
+   */
+  coutEnAttente?: number;
   ressources: {
     surfaceTenue: number;
     plafond: number;
     charge: number;
     recette: number;
     budget: number;
+    /**
+     * Ce qu'il restera à engager quand l'été s'ouvrira : la réserve, plus le
+     * solde de l'année, moins les décisions déjà prises. C'est un pré-débit
+     * d'affichage, le modèle ne prélève qu'au passage de l'été ; mais un budget
+     * qui ne bouge pas d'un clic laissait croire que décider était gratuit.
+     *
+     * **Le solde de l'année en fait partie** depuis que le bouclage est passé en
+     * tête d'été : recette, exploitation, entretien et doctrine sont acquis
+     * avant que les décisions s'appliquent, donc c'est bien sur eux qu'on
+     * engage.
+     */
+    budgetProjete: number;
+    /** Ce que l'été apporte et prélève de lui-même, avant toute décision. */
+    soldeDeLEte: number;
+    /** Ce qu'il faut retirer pour que l'été passe, 0 si rien ne dépasse. Un
+     *  solde d'année négatif n'en est pas un : voir `depassement`. */
+    trop: number;
+    /** Coût annuel de la posture en vigueur, prélevé quoi qu'on décide. Il est
+     *  compté dans `charge` : la jauge est le seul endroit où l'économie de
+     *  l'été se lit d'un coup. */
+    chargeDoctrine: number;
     plancher: number;
     fenetrePostFeu: number;
     eleveurs: Eleveurs;
@@ -144,6 +180,50 @@ export function surfacePourUneRecette(etat: Etat): number {
   if (!traitables.length) return 0;
   const moyen = traitables.reduce((s, c) => s + coutEntretien(c), 0) / traitables.length;
   return Math.round(BUDGET.parTour / moyen);
+}
+
+/**
+ * Ce que l'été apporte et prélève **de lui-même**, avant toute décision :
+ * recette de l'année, résultat de l'exploitation, entretien, coût de la posture,
+ * et les moyens exceptionnels tant que la fenêtre d'après-feu est ouverte.
+ *
+ * Le bouclage passe en tête d'été, donc ce solde est **acquis** au moment où les
+ * décisions s'appliquent : c'est bien sur lui qu'on engage. Il vaut le
+ * `bouclerBudget` du noyau, à ceci près qu'il ne peut pas anticiper une coupure
+ * de politique, laquelle ne survient qu'au-dessous du plancher.
+ */
+export function soldeDeLEte(etat: Etat): number {
+  const c = comptes(etat);
+  return (
+    BUDGET.parTour +
+    c.recettes -
+    c.entretien -
+    DOCTRINE[etat.doctrine].budget +
+    (etat.moyens.fenetrePostFeu > 0 ? BUDGET.fenetreMontant : 0)
+  );
+}
+
+/** Ce qui reste à engager cet été : la réserve, plus le solde de l'année, moins
+ *  ce qui est déjà décidé. Une seule formule, lue par le panneau **et** par le
+ *  calque de visée : deux copies divergeraient au premier changement. */
+export function disponibleAEngager(etat: Etat, coutEnAttente = 0): number {
+  return etat.moyens.budget + soldeDeLEte(etat) - coutEnAttente;
+}
+
+/**
+ * De combien les décisions dépassent ce que la collectivité peut engager, donc
+ * ce qu'il faut retirer pour que l'été passe. Zéro quand rien ne dépasse.
+ *
+ * **Un solde d'année négatif n'est pas un dépassement.** L'année d'après une
+ * grosse installation, les charges peuvent excéder la recette avant que le
+ * joueur ait rien décidé : refuser l'été dans ce cas l'enfermait sans issue,
+ * puisqu'il n'avait rien à retirer. Ce découvert-là appartient au modèle, qui
+ * puise dans la réserve et, sous le plancher, coupe une politique. Ce qui se
+ * refuse ici, c'est seulement d'engager plus qu'on ne peut.
+ */
+export function depassement(etat: Etat, coutEnAttente = 0): number {
+  const capacite = Math.max(0, disponibleAEngager(etat));
+  return Math.max(0, coutEnAttente - capacite);
 }
 
 /** Part d'un ensemble, dite en français. Le handoff interdit le pourcentage :
@@ -282,7 +362,7 @@ function empriseEnFrancais(
     }
     default: {
       const traitees = Math.max(1, Math.round(n * 0.45 * adoption));
-      return `${traitees} parcelle${traitees > 1 ? 's' : ''} éclaircie${traitees > 1 ? 's' : ''} ce tour, sur ${n} au-dessus du seuil`;
+      return `${traitees} parcelle${traitees > 1 ? 's' : ''} éclaircie${traitees > 1 ? 's' : ''} cet été, sur ${n} au-dessus du seuil`;
     }
   }
 }
@@ -302,7 +382,7 @@ function empriseDormante(id: IdPolitique, n: number): string {
   return `${n} parcelle${n > 1 ? 's' : ''} à faire pâturer`;
 }
 
-function ficheDe(etat: Etat, s: Secteur, id: IdPolitique): FicheVue | null {
+function ficheDe(etat: Etat, s: Secteur, id: IdPolitique, disponible: number): FicheVue | null {
   const p = politiqueParId(id);
   if (!applicable(p, s)) return null;
   const active = etat.politiques.find((a) => a.id === id && a.secteur === s.id);
@@ -325,7 +405,9 @@ function ficheDe(etat: Etat, s: Secteur, id: IdPolitique): FicheVue | null {
 
   if (!active) {
     const manqueEleveur = id === 'pastoral' && etat.moyens.eleveurs.disponibles <= 0;
-    const manqueArgent = etat.moyens.budget < p.etablissement;
+    // Sur le disponible, jamais sur la seule réserve : le budget de l'exercice
+    // est acquis quand l'été s'ouvre, et ce qui est déjà engagé ne l'est plus.
+    const manqueArgent = disponible < p.etablissement;
     return {
       ...base,
       emprise: empriseDormante(id, emprise.length),
@@ -337,7 +419,7 @@ function ficheDe(etat: Etat, s: Secteur, id: IdPolitique): FicheVue | null {
       refus: manqueEleveur
         ? 'aucun·e éleveur·euse disponible'
         : manqueArgent
-          ? `budget ${Math.round(etat.moyens.budget)}, manque ${Math.ceil(p.etablissement - etat.moyens.budget)}`
+          ? `budget ${Math.round(disponible)}, manque ${Math.ceil(p.etablissement - disponible)}`
           : undefined,
     };
   }
@@ -361,23 +443,32 @@ export function vueDuPanneau(
     attente?: { id: IdPolitique; secteur: number }[];
     /** Gestes désignés ce tour, en attente eux aussi. */
     gestesEnAttente?: number;
+    /** Récapitulatif des décisions en attente, pour le pied. */
+    enAttente?: { nom: string; ou?: string; cout: number }[];
     /** Cran de doctrine demandé ce tour et pas encore engagé. */
     doctrineDemandee?: Doctrine;
+    /** Ce que ces décisions coûteront quand l'été passera. */
+    coutEnAttente?: number;
   } = {},
 ): VuePanneau {
   const c = comptes(etat);
   const s = options.secteur != null ? etat.secteurs[options.secteur] : null;
-  const donnees = etatsDesSecteurs(etat);
+  const solde = soldeDeLEte(etat);
+  const disponible = disponibleAEngager(etat, options.coutEnAttente ?? 0);
+  const donnees = etatsDesSecteurs(etat, disponible);
 
   const gestes: GesteVue[] = [
     { type: 'durcirHameau', nom: 'Durcir un hameau', cout: COUTS_PONCTUELS.durcirHameau, emprise: 'une construction' },
     { type: 'ouvrirCoupure', nom: 'Ouvrir une coupure', cout: COUTS_PONCTUELS.ouvrirCoupure, emprise: '9 parcelles' },
-    { type: 'traiterPointNoir', nom: 'Traiter un point noir', cout: COUTS_PONCTUELS.traiterPointNoir, emprise: 'une parcelle' },
+    { type: 'debroussailler', nom: 'Débroussailler', cout: COUTS_PONCTUELS.debroussailler, emprise: 'une parcelle' },
   ].map((g) => ({
     ...g,
+    // Ce qui reste **vraiment** : le budget moins ce qui est déjà engagé et
+    // moins la doctrine, que l'été prélève avant tout geste. Comparer au budget
+    // brut laissait proposer un geste que l'été refuserait ensuite.
     refus:
-      etat.moyens.budget < g.cout
-        ? `budget ${Math.round(etat.moyens.budget)}, manque ${Math.ceil(g.cout - etat.moyens.budget)}`
+      disponible < g.cout
+        ? `budget ${Math.round(disponible)}, manque ${Math.ceil(g.cout - disponible)}`
         : undefined,
   }));
 
@@ -385,12 +476,27 @@ export function vueDuPanneau(
     tour: etat.tour,
     toursMax: etat.toursMax,
     gestesEnAttente: options.gestesEnAttente ?? 0,
+    enAttente: options.enAttente ?? [],
+    coutEnAttente: options.coutEnAttente ?? 0,
     ressources: {
       surfaceTenue: c.surfaceTenue,
       plafond: surfacePourUneRecette(etat),
-      charge: c.entretien,
-      recette: BUDGET.parTour,
+      // **Toutes les charges récurrentes, pas seulement l'entretien.** La jauge
+      // est le seul endroit où l'économie de l'été se lit d'un coup ; y omettre
+      // la doctrine, prélevée quoi qu'on décide, et l'exploitation, qui peut
+      // coûter en un été plus que tout ce que le joueur engage, en faisait un
+      // instrument qui rassure à tort. Une éclaircie bénéficiaire, elle,
+      // grossit la recette.
+      charge: c.entretien + DOCTRINE[etat.doctrine].budget + Math.max(0, -c.recettes),
+      recette:
+        BUDGET.parTour +
+        Math.max(0, c.recettes) +
+        (etat.moyens.fenetrePostFeu > 0 ? BUDGET.fenetreMontant : 0),
       budget: etat.moyens.budget,
+      budgetProjete: disponible,
+      soldeDeLEte: solde,
+      trop: depassement(etat, options.coutEnAttente ?? 0),
+      chargeDoctrine: DOCTRINE[etat.doctrine].budget,
       plancher: BUDGET.plancher,
       fenetrePostFeu: etat.moyens.fenetrePostFeu,
       // Copie, jamais la référence : une vue est une valeur. Sans cela, trois
@@ -419,7 +525,7 @@ export function vueDuPanneau(
           id: s.id,
           nom: s.nom,
           sous: `${NATURE_SECTEUR[s.nature].toLowerCase()} · ${s.cellules.length} cellules`,
-          fiches: POLITIQUES.map((p) => ficheDe(etat, s, p.id))
+          fiches: POLITIQUES.map((p) => ficheDe(etat, s, p.id, disponible))
             .filter((x): x is FicheVue => !!x)
             .map((f) => ({
               ...f,
@@ -442,9 +548,12 @@ export function vueDuPanneau(
  * plancher, le secteur marqué est celui dont le modèle couperait la politique
  * la plus coûteuse, exactement celle que `bouclerBudget` choisirait.
  */
-export function etatsDesSecteurs(etat: Etat): DonneesSecteur[] {
+export function etatsDesSecteurs(etat: Etat, disponible = disponibleAEngager(etat)): DonneesSecteur[] {
   let menace: number | null = null;
-  if (etat.moyens.budget - BUDGET.plancher <= 3) {
+  // Le péril se juge sur le budget **d'après bouclage**, puisque c'est là que la
+  // coupure tombe, et non sur la réserve d'avant : depuis que la recette arrive
+  // en tête d'été, les deux diffèrent d'une année entière.
+  if (etat.moyens.budget + soldeDeLEte(etat) - BUDGET.plancher <= 3) {
     const candidates = etat.politiques
       .map((a) => ({ a, cout: coutPolitique(etat, a.id, a.secteur) }))
       .filter((x) => x.cout > 0)
@@ -468,7 +577,7 @@ export function etatsDesSecteurs(etat: Etat): DonneesSecteur[] {
       POLITIQUES.some(
         (p) =>
           applicable(p, s) &&
-          etat.moyens.budget >= p.etablissement &&
+          disponible >= p.etablissement &&
           (p.id !== 'pastoral' || etat.moyens.eleveurs.disponibles > 0),
       )
     ) {
@@ -483,9 +592,11 @@ export function etatsDesSecteurs(etat: Etat): DonneesSecteur[] {
       crans: enCharge
         ? { pleins: Math.min(politiqueParId(enCharge.id).delai, enCharge.tours), total: politiqueParId(enCharge.id).delai }
         : undefined,
+      // Le budget d'après bouclage, celui sur lequel la coupure se décide : la
+      // réserve d'avant en diffère désormais d'une année entière.
       ecartPlancher:
         s.id === menace
-          ? `budget ${Math.round(etat.moyens.budget)} · plancher ${BUDGET.plancher}`
+          ? `budget ${Math.round(etat.moyens.budget + soldeDeLEte(etat))} · plancher ${BUDGET.plancher}`
           : undefined,
     };
   });

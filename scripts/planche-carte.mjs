@@ -305,6 +305,43 @@ const a4 = cartouche.rendreCalqueSecteurs(dernier.etat, { ...OPT_SECTEURS, echel
 // étiquettes, qui doit toujours suivre la réduction.
 const corps = (svg) => Number(svg.match(/font-size="(\d+)"/)?.[1] ?? 0);
 
+// ---- calque des gestes (planche 3) -----------------------------------------
+// Un geste se désigne à la parcelle : il faut voir laquelle, à la visée comme
+// une fois désigné. Sans cela on clique dans le vide et on l'apprend un été
+// plus tard, dans le compte rendu.
+const gestes = await charger('src/rendu/gestes.ts');
+// Au dernier tour, le bâti est durci ou détruit : on désigne un débroussaillage,
+// toujours admissible en forêt, plutôt qu'un durcissement qui n'aurait pas de
+// cible et ferait passer le contrôle à vide.
+const forets = dernier.grille.filter((c) => c.type === 'chene');
+const iForet = forets[0] ? forets[0].y * largeur + forets[0].x : 0;
+const iAutre = forets[1] ? forets[1].y * largeur + forets[1].x : iForet;
+const visee = gestes.rendreCalqueGestes(dernier.etat, {
+  designes: [{ type: 'debroussailler', cellule: iAutre }],
+  arme: 'ouvrirCoupure',
+  cible: iForet,
+  budget: 12,
+  echelle: 3,
+});
+const refus = gestes.rendreCalqueGestes(dernier.etat, {
+  designes: [],
+  arme: 'ouvrirCoupure',
+  cible: iForet,
+  budget: 1,
+  echelle: 3,
+});
+console.log('\ncalque des gestes (planche 3) :');
+for (const [libelle, ok] of [
+  [
+    `l'empreinte donne le compte réel de parcelles (${gestes.empriseDuGeste(dernier.etat, 'ouvrirCoupure', iForet).length} pour une coupure)`,
+    new RegExp(`${gestes.empriseDuGeste(dernier.etat, 'ouvrirCoupure', iForet).length} parcelles`).test(visee),
+  ],
+  ['elle montre l’état après le geste, au motif de sous-bois traité', /fill="url\(#m-sb1\)"/.test(visee)],
+  ['un geste désigné garde sa marque jusqu’à l’été', /stroke-dasharray="7 5"/.test(visee)],
+  ['la visée refusée est hachurée et sa raison chiffrée', /gestes-hachure/.test(refus) && /manque \d/.test(refus)],
+  ['l’étiquette se pose hors de l’empreinte', /<text[^>]*y="(-?\d+)"/.test(visee)],
+]) console.log(`  ${ok ? '✓' : '✗'} ${libelle}`);
+
 console.log('\ncalque secteur (planche 4) :');
 for (const [libelle, ok] of [
   [`${secteursVus.length} secteurs visibles, ${limites.length} limite(s) tracée(s)`, limites.length >= secteursVus.length],

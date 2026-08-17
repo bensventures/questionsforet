@@ -26,8 +26,14 @@ const nombre = (n: number) => n.toFixed(Math.abs(n) < 10 && !Number.isInteger(n)
 export function bandeauRessources(v: VuePanneau): string {
   const r = v.ressources;
   // Seule jauge bornée du panneau, et elle borne ce que le handoff borne
-  // vraiment : la charge d'entretien par rapport à la recette. La surface
-  // tenue reste dessous, en observation (voir `surfacePourUneRecette`).
+  // vraiment : la charge par rapport à la recette. La surface tenue reste
+  // dessous, en observation (voir `surfacePourUneRecette`).
+  //
+  // **Elle porte toutes les charges récurrentes**, entretien, doctrine et
+  // exploitation déficitaire, et non le seul entretien. C'est le seul endroit
+  // où l'économie de l'été se lit d'un coup ; en omettre deux postes sur trois
+  // en faisait un instrument qui rassure à tort, et obligeait à répéter le
+  // reste en toutes lettres sous le budget.
   const part = r.recette ? Math.min(1, r.charge / r.recette) : 0;
   const debord = r.recette && r.charge > r.recette ? Math.min(1, (r.charge - r.recette) / r.recette) : 0;
 
@@ -35,6 +41,12 @@ export function bandeauRessources(v: VuePanneau): string {
   // recette du tour suivant arrive.
   const b = r.budget;
   const classeBudget = b <= r.plancher ? 'budget--coupe' : b <= r.plancher + 2 ? 'budget--braise' : '';
+  // **Pré-débit.** Le grand chiffre est ce qui restera à engager quand l'été
+  // s'ouvrira : la réserve, plus le solde de l'année (recette, exploitation,
+  // entretien, doctrine), moins ce qui est déjà décidé. Les trois termes sont
+  // dits dessous, pour que l'addition se refasse à l'œil. Le modèle, lui, ne
+  // bouge pas : il ne prélève qu'au passage de l'été.
+  const engage = (v.coutEnAttente ?? 0) > 0;
 
   const e = r.eleveurs;
   const groupe = (n: number, classe: string, titre: string) =>
@@ -58,13 +70,15 @@ export function bandeauRessources(v: VuePanneau): string {
   <h2>Moyens</h2>
   <div class="res">
     <div>
-      <div class="res__t">Entretien</div>
+      <div class="res__t">Charges de l’été</div>
       <div class="jauge">
         <div class="jauge__p" style="width:${(part * 100).toFixed(0)}%"></div>
         ${debord ? `<div class="jauge__d" style="width:${(debord * 100).toFixed(0)}%"></div>` : ''}
         <div class="jauge__s" style="left:calc(100% - 1px)"></div>
       </div>
-      <div class="res__u">${nombre(r.charge)} de charge sur ${r.recette} de recette</div>
+      <div class="res__u">${nombre(r.charge)} de charge sur ${nombre(r.recette)} de recette${
+        r.chargeDoctrine ? `, dont ${nombre(r.chargeDoctrine)} de doctrine` : ''
+      }</div>
       <div class="res__u">${r.surfaceTenue} parcelle${r.surfaceTenue > 1 ? 's' : ''} tenue${r.surfaceTenue > 1 ? 's' : ''}</div>
     </div>
     <div>
@@ -75,11 +89,16 @@ export function bandeauRessources(v: VuePanneau): string {
         ${groupe(e.perdus, 'perdu', 'perdu·es')}
       </div>
       ${crans}
-      ${e.perdus && e.retourAu ? `<div class="res__u">retour possible au tour ${e.retourAu}</div>` : ''}
+      ${e.perdus && e.retourAu ? `<div class="res__u">retour possible à l’été ${e.retourAu}</div>` : ''}
     </div>
     <div>
       <div class="res__t">Budget</div>
-      <div class="res__n ${classeBudget}">${nombre(b)}</div>
+      <div class="res__n ${classeBudget}${r.budgetProjete < 0 ? ' budget--braise' : ''}">${nombre(
+        r.budgetProjete,
+      )}</div>
+      <div class="res__u">réserve ${nombre(b)} · été ${r.soldeDeLEte >= 0 ? '+' : '−'}${nombre(
+        Math.abs(r.soldeDeLEte),
+      )}${engage ? ` · engagé ${nombre(v.coutEnAttente ?? 0)}` : ''}</div>
       ${b <= r.plancher + 2 ? `<div class="res__u">plancher ${r.plancher}</div>` : ''}
       ${r.fenetrePostFeu ? `<div class="res__u">moyens exceptionnels, ${r.fenetrePostFeu} tour(s)</div>` : ''}
     </div>
@@ -129,7 +148,7 @@ export function selecteurDoctrine(v: VuePanneau): string {
     }>
       <span class="doc__p"></span>
       <span><span class="doc__n">${ech(d.nom)} ${mention}</span><span class="doc__s">${ech(d.seuils)}</span></span>
-      <span class="doc__x">${d.cout}</span>
+      <span class="doc__x">${d.cout}<span class="doc__u">par été</span></span>
     </button>`;
   }).join('');
 
@@ -150,12 +169,47 @@ export function selecteurDoctrine(v: VuePanneau): string {
         ? `<p class="doc__note doc__note--fenetre">L'incendie a ouvert une fenêtre : réformer coûte ${d0.cout} et prend ${d0.delai} été${d0.delai > 1 ? 's' : ''}. Elle se referme dans ${d0.fenetre} été${d0.fenetre > 1 ? 's' : ''}.</p>`
         : `<p class="doc__note">Réformer coûte ${d0.cout} et prend ${d0.delai} étés. Un incendie ouvre une fenêtre où c'est plus rapide et bien moins cher.</p>`;
 
+  // **Replié par défaut, et c'est le patch qui l'autorise** : depuis qu'elle est
+  // une posture debout et non une action de tour, la doctrine se règle rarement,
+  // et trois lignes dépliées en permanence prenaient un tiers de la colonne.
+  //
+  // Replié n'est pas caché : un `select` natif aurait mis les seuils et les prix
+  // des deux autres postures derrière une interaction, or c'est là qu'est la
+  // leçon, le cran le moins cher étant le plus risqué. Le pli en garde la forme
+  // (l'item choisi, et un bouton clair pour en changer) mais déplie la gamme
+  // entière, seuils compris. Le bloc s'ouvre **de lui-même** aux moments où il
+  // a quelque chose à dire : dans la fenêtre où réformer est bon marché, et
+  // pendant une réforme. **Pas au premier été** : le joueur vient de choisir sa
+  // posture sur l'écran d'ouverture, la rouvrir en grand lui fait relire ce
+  // qu'il vient de décider. La note du premier été reste, elle, sous les lignes.
+  //
+  // Replié, l'item en vigueur est le seul contenu ; déplié, il **disparaît du
+  // sommaire**, la gamme le montrant deux lignes plus bas. Le redire sous le
+  // titre du bloc, c'était écrire deux fois la même chose dans le même écran.
+  const ouvert = d0.fenetre > 0 || d0.reforme || d0.demande;
+  const enForce = CRANS_DOCTRINE.find((c) => c.cran === d0.cran)!;
   return `<section class="pan__bloc">
-  <h2>Doctrine de lutte</h2>
-  <div class="doc">${lignes}</div>
-  ${economie}
-  <p class="doc__note">Près des maisons, les secours attaquent quel que soit le cran : c'est vrai des trois.</p>
-  <div class="tranquillite" title="étés passés en extinction systématique">${tranquillite}</div>
+  <details class="doc__pli"${ouvert ? ' open' : ''}>
+    <summary>
+      <span class="doc__pli-t">Doctrine de lutte</span>
+      <span class="doc__ouvrir">
+        <span class="doc__lbl doc__lbl--ouvrir">Changer de doctrine</span>
+        <span class="doc__lbl doc__lbl--fermer">Fermer</span>
+        <i class="doc__chevron" aria-hidden="true">▾</i>
+      </span>
+      <span class="doc__vigueur">
+        <span class="doc__p"></span>
+        <span><span class="doc__n">${ech(enForce.nom)} <span class="doc__etat">en vigueur</span></span><span class="doc__s">${ech(
+          enForce.seuils,
+        )}</span></span>
+        <span class="doc__x">${enForce.cout}<span class="doc__u">par été</span></span>
+      </span>
+    </summary>
+    <div class="doc">${lignes}</div>
+    ${economie}
+    <p class="doc__note">Près des maisons, les secours attaquent quel que soit le cran : c'est vrai des trois.</p>
+    <div class="tranquillite" title="étés passés en extinction systématique">${tranquillite}</div>
+  </details>
 </section>`;
 }
 
@@ -182,7 +236,7 @@ export function fichePolitique(f: FicheVue): string {
   <p class="fiche__c">${ech(f.chaine)}</p>
   <div class="fiche__prix">
     <div><b>${f.etablissement}</b><span>établissement, une fois</span></div>
-    <div><b class="${f.charge.startsWith('aucune') ? 'aucune' : ''}">${ech(f.charge)}</b><span>par tour</span></div>
+    <div><b class="${f.charge.startsWith('aucune') ? 'aucune' : ''}">${ech(f.charge)}</b><span>par été</span></div>
   </div>
   <div class="crans">${crans}</div>
   ${pied}
@@ -190,7 +244,7 @@ export function fichePolitique(f: FicheVue): string {
   ${f.condition ? `<div class="fiche__cond">${ech(f.condition)}</div>` : ''}
   ${
     f.enAttente
-      ? '<p class="fiche__attente">Engagée. Elle prendra effet à l’été suivant.</p>'
+      ? `<p class="fiche__attente">Engagée pour ${f.etablissement}, elle prendra effet à l’été suivant.</p>`
       : f.etat === 'activable'
         ? f.refus
           ? `<p class="fiche__refus">Hors de portée : ${ech(f.refus)}.</p>`
@@ -226,7 +280,7 @@ export function fichePolitique(f: FicheVue): string {
 export function listeSecteurs(v: VuePanneau): string {
   if (!v.secteurs?.length) return '';
   return `<section class="pan__bloc">
-  <h2>Secteurs</h2>
+  <p class="onglets__regle">Elles s’établissent en plusieurs étés et se paient chaque été. Choisissez un secteur, dans la liste ou sur la carte.</p>
   <ul class="secteurs">
     ${v.secteurs
       .map(
@@ -242,9 +296,59 @@ export function listeSecteurs(v: VuePanneau): string {
 </section>`;
 }
 
-export function blocSecteur(v: VuePanneau): string {
+/* ------------------------------------------------------- les deux registres */
+
+export type Onglet = 'politiques' | 'gestes';
+
+/**
+ * Deux façons d'engager le budget, séparées et **nommées par ce qui les
+ * sépare**. Jusqu'ici les deux registres ne se distinguaient que par leur
+ * position dans la colonne, convention muette que rien n'énonçait, et la pile
+ * portait d'affilée la doctrine, quatorze secteurs et trois gestes sans que ces
+ * blocs aient le même statut.
+ *
+ * L'étiquette ne dit donc pas une catégorie (« politiques », « actions »), qui
+ * laisserait le joueur ignorer ce qui les sépare, mais **la règle** : plusieurs
+ * étés contre un été, et sous l'onglet actif, ce que ça coûte et quand. Les
+ * deux sous-titres restent lisibles en même temps, sans quoi l'onglet cacherait
+ * la moitié du contraste, qui est un enseignement du modèle et pas un rangement.
+ *
+ * **La doctrine reste dehors**, au-dessus : le budget a trois emplois et non
+ * deux, et celui-là est une posture qu'on tient, pas un achat qu'on fait.
+ *
+ * Deux boutons radio et leurs étiquettes, comme le sélecteur d'échelle : la
+ * commutation est en CSS, les flèches du clavier marchent seules. Le groupe
+ * porte un nom unique par rendu, sans quoi deux panneaux dans une même page
+ * (la planche) formeraient un seul groupe et s'éteindraient l'un l'autre.
+ */
+let groupe = 0;
+export function ongletsDesRegistres(v: VuePanneau, arme: GesteVue['type'] | null, actif: Onglet): string {
+  const n = `pan-onglet-${++groupe}`;
+  const onglet = (valeur: Onglet, nom: string, regle: string) =>
+    `<label class="onglets__e"><input type="radio" class="onglets__r onglets__r--${valeur}" name="${n}" value="${valeur}"${
+      actif === valeur ? ' checked' : ''
+    }><span class="onglets__n">${nom}</span><span class="onglets__d">${regle}</span></label>`;
+
+  return `<div class="onglets">
+  <div class="onglets__barre" role="group" aria-label="Deux façons d’engager le budget">
+    ${onglet('politiques', 'Politiques', 'plusieurs étés')}
+    ${onglet('gestes', 'Gestes', 'un été, une parcelle')}
+  </div>
+  <div class="onglets__vue onglets__vue--politiques">${listeSecteurs(v)}</div>
+  <div class="onglets__vue onglets__vue--gestes">${registreGestes(v, arme)}</div>
+</div>`;
+}
+
+/**
+ * @param neuf le tiroir vient de s'ouvrir sur ce secteur, il glisse depuis la
+ *   droite. Faux quand le panneau est simplement réengendré, ce qu'il fait à
+ *   chaque décision : rejouer le glissement à l'engagement d'une politique
+ *   faisait repartir toute la colonne alors que rien n'avait bougé, et on
+ *   cherchait ce qui venait de changer au mauvais endroit.
+ */
+export function blocSecteur(v: VuePanneau, neuf = true): string {
   if (!v.secteur) return '';
-  return `<section class="pan__tiroir" data-secteur="${v.secteur.id}">
+  return `<section class="pan__tiroir${neuf ? ' pan__tiroir--neuf' : ''}" data-secteur="${v.secteur.id}">
   <header class="tiroir__tete">
     <button class="tiroir__fermer" type="button" data-fermer-secteur aria-label="Fermer et désélectionner">✕</button>
     <div>
@@ -300,7 +404,6 @@ export function bandeCoupe(l: LigneVue): string {
 }
 
 export function compteRendu(v: VuePanneau): string {
-  const r = v.ressources;
   const lignes = v.lignes.length
     ? v.lignes.map((l: LigneVue) => (l.coupe ? bandeCoupe(l) : ligneOrdinaire(l))).join('')
     : // Seule ligne du bloc qui ne vienne pas du noyau, et signalée comme telle.
@@ -308,28 +411,28 @@ export function compteRendu(v: VuePanneau): string {
 
   // `aria-live` : sans score agrégé, c'est ici que le jeu explique, et un
   // lecteur d'écran doit entendre l'été qui vient de passer.
+  // **Aucun pied de bloc.** Il répétait « budget, contrat pastoral, parcelles
+  // tenues », c'est-à-dire les trois chiffres du bandeau, à trois centimètres
+  // d'eux et sans les nommer pareil : le budget y paraissait même contredire
+  // celui du bandeau, qui montre ce qui reste à engager quand l'été s'ouvre.
+  // L'état des moyens se lit en haut, ce que l'été a fait se lit ici.
   return `<section class="pan__bloc pan__bloc--rendu" aria-live="polite">
   <h2>Été ${v.tour}</h2>
   <ul class="cr">${lignes}</ul>
-  <div class="cr__pied">Budget ${nombre(r.budget)} · ${
-    r.eleveurs.engages
-      ? `${r.eleveurs.engages} éleveur·euse${r.eleveurs.engages > 1 ? 's' : ''} engagé·e${r.eleveurs.engages > 1 ? 's' : ''}`
-      : 'aucun contrat pastoral'
-  } · ${r.surfaceTenue} parcelle${r.surfaceTenue > 1 ? 's' : ''} tenue${r.surfaceTenue > 1 ? 's' : ''}</div>
 </section>`;
 }
 
 /* ------------------------------------------------------------------- gestes */
 
 /** Registre des actions ponctuelles : l'autre registre de décision, celui qui
- *  soulage tout de suite sans rien transformer. Contre le bord bas, là où la
- *  main revient. */
+ *  soulage tout de suite sans rien transformer. Sous son onglet, qui dit en
+ *  toutes lettres ce que sa place dans la colonne disait à mots couverts. */
 export function registreGestes(v: VuePanneau, arme?: GesteVue['type'] | null): string {
-  const attente = v.gestesEnAttente
-    ? `<p class="fiche__attente">${v.gestesEnAttente} geste${v.gestesEnAttente > 1 ? 's' : ''} désigné${v.gestesEnAttente > 1 ? 's' : ''}, à exécuter à l’été suivant.</p>`
-    : '';
+  // Les gestes désignés se récapitulent dans le pied, avec le reste : c'est le
+  // seul endroit que le tiroir ne couvre pas.
+  const attente = '';
   return `<section class="pan__bloc pan__bloc--gestes">
-  <h2>Gestes · à désigner sur la carte</h2>
+  <p class="onglets__regle">Payés une fois, sans charge d’entretien ensuite. À désigner sur la carte, parcelle par parcelle.</p>
   ${attente}
   ${v.gestes
     .map(
@@ -347,13 +450,60 @@ export function registreGestes(v: VuePanneau, arme?: GesteVue['type'] | null): s
 
 /* --------------------------------------------------------------------- pied */
 
-export function piedTour(v: VuePanneau, enAttente = 0): string {
+/**
+ * @param signale rang de la décision qui vient d'être engagée. Elle s'annonce
+ *   en se posant dans le récapitulatif : une politique engagée depuis le tiroir
+ *   atterrit à l'autre bout de la colonne, et sans ce signal on ne voyait pas
+ *   où elle était partie. C'est le seul mouvement de la colonne, et il porte
+ *   sur ce qui a changé, pas sur ce qui l'entoure.
+ */
+export function piedTour(v: VuePanneau, enAttente = 0, signale?: number): string {
   const restants = Math.max(0, v.toursMax - v.tour + 1);
-  return `<div class="pan__tour">
+  // Ce que l'été suivant va prélever : rien n'est débité pendant le tour, et le
+  // budget qui ne bougeait pas d'un clic laissait croire à la gratuité.
+  const cout = v.coutEnAttente ?? 0;
+  // Le modèle écarterait les engagements trop chers ; autant l'empêcher avant,
+  // et le dire chiffré plutôt que de griser un bouton en silence.
+  //
+  // **On ne bloque que ce que le joueur peut défaire.** Jugé sur le budget
+  // projeté, le refus s'appliquait aussi quand le solde de l'année était négatif
+  // sans qu'il ait rien décidé : l'été ne passait plus et il n'avait rien à
+  // retirer. Ce découvert-là appartient au modèle, qui puise dans la réserve et,
+  // sous le plancher, coupe une politique.
+  const trop = v.ressources.trop;
+  const liste = (v.enAttente ?? []).length
+    ? `<ul class="pan__liste">${(v.enAttente ?? [])
+        .map(
+          (d, i) => `<li${i === signale ? ' class="pan__liste--pose"' : ''}>
+      <span class="pan__liste-n">${ech(d.nom)}${d.ou ? ` <span>${ech(d.ou)}</span>` : ''}</span>
+      <span class="pan__liste-c">${d.cout ? nombre(d.cout) : '—'}</span>
+      <button type="button" class="fiche__retirer" data-annuler="${i}" aria-label="Retirer : ${ech(d.nom)}">Retirer</button>
+    </li>`,
+        )
+        .join('')}</ul>`
+    : '';
+
+  return `<div class="pan__pied">
+  ${liste}
+  <div class="pan__tour">
   <div>
     <b>${restants} été${restants > 1 ? 's' : ''} restant${restants > 1 ? 's' : ''}</b>
-    ${enAttente ? `<span class="pan__attente">${enAttente} décision${enAttente > 1 ? 's' : ''} en attente</span>` : ''}
+    ${
+      enAttente
+        ? `<span class="pan__attente">${enAttente} décision${enAttente > 1 ? 's' : ''} en attente${
+            cout ? `, ${nombre(cout)} à engager` : ''
+          }</span>`
+        : ''
+    }
+    ${
+      trop
+        ? `<span class="pan__decouvert">Vos engagements dépassent de ${nombre(
+            trop,
+          )} ce que la collectivité peut engager. Retirez-en un.</span>`
+        : ''
+    }
   </div>
-  <button class="pan__suivant" type="button">Été suivant</button>
+  <button class="pan__suivant" type="button"${trop ? ' disabled' : ''}>Été suivant</button>
+  </div>
 </div>`;
 }

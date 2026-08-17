@@ -1,5 +1,5 @@
 import type { ActionPonctuelle, Etat, Ligne } from './types';
-import { TYPES, SOUS_BOIS } from './params';
+import { SOUS_BOIS } from './params';
 import { dans, idx } from './util';
 
 /**
@@ -15,7 +15,7 @@ import { dans, idx } from './util';
 export const COUTS_PONCTUELS = {
   durcirHameau: 5,
   ouvrirCoupure: 3,
-  traiterPointNoir: 2,
+  debroussailler: 2,
 };
 
 export function appliquerPonctuelles(etat: Etat, actions: ActionPonctuelle[]): Ligne[] {
@@ -23,7 +23,15 @@ export function appliquerPonctuelles(etat: Etat, actions: ActionPonctuelle[]): L
 
   for (const a of actions) {
     const cout = COUTS_PONCTUELS[a.type];
-    if (etat.moyens.budget < cout) continue;
+    if (etat.moyens.budget < cout) {
+      // Comme pour les politiques : un geste désigné et abandonné en silence
+      // laisse croire qu'il a eu lieu.
+      lignes.push({
+        texte: `Geste abandonné : il coûte ${cout}, la collectivité n'a que ${Math.floor(etat.moyens.budget)}.`,
+        ton: 'chaud',
+      });
+      continue;
+    }
     const c = etat.grille[a.cellule];
     if (!c) continue;
 
@@ -53,13 +61,18 @@ export function appliquerPonctuelles(etat: Etat, actions: ActionPonctuelle[]): L
         lignes.push({ texte: `Coupure ouverte sur ${n} parcelles en (${c.x},${c.y}). Sans reprise, elle partira en friche.` });
         break;
       }
-      case 'traiterPointNoir': {
-        // Traiter un point noir identifié après un feu.
+      case 'debroussailler': {
+        // Le geste le plus simple : couper le sous-bois d'une parcelle. Il ne
+        // touche ni la densité de tiges ni le statut de gestion, qui relèvent
+        // de l'éclaircie : débroussailler n'est pas gérer un peuplement. Et la
+        // parcelle devient une surface ouverte comme une autre, donc soumise au
+        // même piège.
         if (c.type === 'bati' || c.type === 'rocher') continue;
         c.sousBois = Math.min(c.sousBois, SOUS_BOIS.seuilTraite * 0.5);
         c.ouverture = Math.max(1, c.ouverture);
-        if (TYPES[c.type].arbore) c.gestion = 0;
-        lignes.push({ texte: `Point noir traité en (${c.x},${c.y}).` });
+        lignes.push({
+          texte: `Parcelle débroussaillée en (${c.x},${c.y}). Sans reprise, elle partira en friche.`,
+        });
         break;
       }
     }
