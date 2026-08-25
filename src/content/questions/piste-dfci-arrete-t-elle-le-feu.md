@@ -3,7 +3,7 @@ titre: Une piste DFCI arrête-t-elle le feu ?
 chapo: >-
   On pense souvent que l'incendie va s'arrêter en bordure de route, de piste ou
   de rivière. C'est même un argument utilisé pour la création de nouvelles
-  pistes dans nos forêts. La recherche nous montre la valeur de ces ouvrages
+  pistes. La recherche nous montre la valeur de ces ouvrages
   dits DFCI : l'accès facilité et sécurisé, jamais des remparts contre le feu.
 verdict: >-
   Tout l'intérêt d'une piste tient dans l'accès. Les secours se rendent vite sur
