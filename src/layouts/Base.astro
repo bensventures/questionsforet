@@ -6,12 +6,12 @@ import '@fontsource-variable/hanken-grotesk/wght-italic.css';
 import '../styles/global.css';
 
 interface Props {
-  titre: string;
-  description?: string;
-  /** Use the wider column (e.g. the sources index). */
-  large?: boolean;
-  /** Page publiée mais non listée : on demande aussi aux moteurs de l'ignorer. */
-  noindex?: boolean;
+    titre: string;
+    description?: string;
+    /** Use the wider column (e.g. the sources index). */
+    large?: boolean;
+    /** Page publiée mais non listée : on demande aussi aux moteurs de l'ignorer. */
+    noindex?: boolean;
 }
 
 const { titre, description, large = false, noindex = false } = Astro.props;
@@ -19,34 +19,39 @@ const { titre, description, large = false, noindex = false } = Astro.props;
 
 <!doctype html>
 <html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico"/>
     <title>{titre}</title>
-    {description && <meta name="description" content={description} />}
-    <meta name="generator" content={Astro.generator} />
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
-  </head>
-  <body>
-    <a class="skip-link" href="#contenu">Aller au contenu</a>
-    <header class="site-header">
-      <a class="site-title" href="/">Forêt <span class="amp">&amp;</span> feu</a>
-      <nav>
+    {description &&
+            <meta name="description" content={description}/>}
+    <meta name="generator" content={Astro.generator}/>
+    {noindex &&
+            <meta name="robots" content="noindex, nofollow"/>}
+    <!-- 100% privacy-first analytics -->
+    <script async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+
+</head>
+<body>
+<a class="skip-link" href="#contenu">Aller au contenu</a>
+<header class="site-header">
+    <a class="site-title" href="/">Forêt <span class="amp">&amp;</span> feu</a>
+    <nav>
         <a href="/questions">Questions</a>
         <a href="/dossiers">Dossiers</a>
         <a href="/outils">Outils</a>
         <a href="/sources">Toutes les sources</a>
-      </nav>
-    </header>
-    <main id="contenu" class={large ? 'wide' : undefined}>
-      <slot />
-    </main>
-    <footer class="site-footer">
-      <p>
+    </nav>
+</header>
+<main id="contenu" class={large ? 'wide' : undefined}>
+    <slot/>
+</main>
+<footer class="site-footer">
+    <p>
         Vulgarisation sourcée sur la forêt et le feu de végétation. Chaque
         affirmation renvoie à une source dont la nature est indiquée. Auteur du site: Benoit Gilloz.
-      </p>
-    </footer>
-  </body>
+    </p>
+</footer>
+</body>
 </html>
