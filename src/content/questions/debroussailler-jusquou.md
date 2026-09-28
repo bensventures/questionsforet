@@ -11,19 +11,26 @@ verdict: >-
   végétation sans tout supprimer ; et le massif entier, lui, n'a pas vocation à
   être débroussaillé.
 publie: 2026-07-26
+modifie: 2026-09-28
 themes:
   - debroussaillement
   - bati
   - combustible
+  - hydrologie
+approfondit:
+  - vivre-avec-le-feu
+brouillon: false
 sources:
   - pimont-2019-debroussaillement
   - syphard-2014
   - wragg-2018
   - csfs-grasslands
-  - canopee-debroussailler
   - revertegat-2025-vulnefeu
-approfondit:
-  - vivre-avec-le-feu
+  - frontiers-2026
+  - sohn-2016
+  - giuggiola-2018
+  - vila-vilardell-2023
+  - prevosto-microclimat-2020
 ---
 
 Dans une grande partie du sud-est de la France, débroussailler autour de sa
@@ -89,24 +96,61 @@ systématique peut assécher les sols. [[cite:revertegat-2025-vulnefeu]]
 celle d'un sous-bois éclairci et entretenu, pas d'un sol nu couvert d'herbe
 sèche en été.
 
+### Enlever le sous-bois assèche-t-il le sol ?
+
+C'est l'objection qui revient le plus souvent : en gardant le couvert des grands
+arbres mais en retirant le sous-bois, ne va-t-on pas assécher le sol ? Le plus
+souvent, non, et c'est même plutôt l'inverse. Le sous-bois consomme lui aussi
+l'eau du sol ; le réduire diminue la concurrence pour l'eau, et l'humidité du sol
+tend alors à se maintenir, voire à augmenter, ce qui soulage le stress hydrique
+des arbres conservés. [[cite:sohn-2016]] Une étude menée dans une pinède sèche de
+pin sylvestre, l'essence la plus répandue dans le Diois, le montre directement :
+y retirer le sous-bois allège la concurrence pour l'eau au profit des grands
+pins. [[cite:giuggiola-2018]]
+
+Deux effets s'opposent, il est vrai : d'un côté la concurrence pour l'eau en
+moins, de l'autre l'évaporation d'un sol plus exposé une fois le sous-bois parti.
+Le bilan dépend du contexte (climat, sol, litière, intensité), et il n'existe pas
+de règle unique. Mais le facteur qui pèse le plus n'est pas le sous-bois : c'est
+le couvert des grands arbres. Tant qu'il reste fermé, il entretient l'ombrage et
+la fraîcheur qui gardent le sous-bois et le sol humides. [[cite:prevosto-microclimat-2020]]
+Ce qui assèche vraiment une forêt, c'est d'ouvrir ce couvert par une éclaircie
+forte, pas d'éclaircir un sous-bois sous des arbres conservés ; et une éclaircie
+trop appuyée relance en outre la végétation basse, si bien que son bénéfice
+s'estompe avec le temps. [[cite:vila-vilardell-2023]] Et le cas où le
+débroussaillement assèche réellement le sol est précis : celui d'un traitement
+répété qui met le sol à nu, dégrade sa structure et favorise les
+graminées. [[cite:revertegat-2025-vulnefeu]]
+
+On ne peut donc résumer le risque ni à « plus de végétation = plus d'humidité »,
+ni à « moins de végétation = moins de risque ». C'est le jeu combiné du couvert,
+de la structure de la végétation, de l'eau du sol et du climat qui décide. La
+hiérarchie, elle, est claire : le couvert d'abord, le sous-bois ensuite. Et
+réduire un sous-bois sous un couvert maintenu n'est pas, en soi, une opération
+asséchante.
+
 ## Sur quel espace : la zone du bâti, pas le massif
 
-Reste le « jusqu'où » que l'on oublie le plus souvent : celui de l'étendue. Faut-il,
-par prévention, débroussailler la forêt tout entière ? Non, et pas seulement
-pour une question de moyens. Les espaces à traiter sont ceux qui entourent les
-constructions, les routes et les équipements, ainsi que ceux qui servent la
-défense des forêts contre l'incendie ; le reste du massif n'a pas vocation à
-l'être. [[cite:canopee-debroussailler]]
+Reste le « jusqu'où » que l'on oublie le plus souvent : celui de l'étendue.
+Faut-il, par prévention, débroussailler la forêt tout entière ? Non, et pas
+seulement pour une question de moyens. Une synthèse de 2026 sur la gestion du
+risque incendie en Méditerranée le formule clairement : ce qui compte n'est pas
+seulement le type de traitement, mais son emplacement. Les interventions les
+plus utiles sont ciblées, là où elles protègent des enjeux ou rompent une
+continuité dangereuse (abords des constructions, des routes, des équipements,
+coupures stratégiques), plutôt qu'un débroussaillement uniforme sur tout un
+massif. [[cite:frontiers-2026]]
 
-La raison est écologique, et elle boucle avec le reste de la page. Un couvert
-forestier fermé maintient un microclimat plus frais, par l'ombrage et
+La raison est aussi écologique, et elle boucle avec le reste de la page. Un
+couvert forestier fermé maintient un microclimat plus frais, par l'ombrage et
 l'évapotranspiration, limite l'installation d'espèces envahissantes et conserve
-l'humidité dans le sous-bois et dans le sol. [[cite:canopee-debroussailler]] En
-ouvrant tout, on assécherait précisément ce qui rend une forêt moins
-inflammable. D'où cette formule, qui résume le renversement de regard : une
-forêt n'est jamais « sale », et le mot de nettoyage n'a pas de sens en son
-sein. [[cite:canopee-debroussailler]] Débroussailler tout le massif reviendrait
-à traiter les conséquences sans s'attaquer aux causes. [[cite:canopee-debroussailler]]
+l'humidité dans le sous-bois et dans le sol. [[cite:prevosto-microclimat-2020]]
+En ouvrant tout, on assécherait précisément ce qui rend une forêt moins
+inflammable. Et un débroussaillement étendu à tout le paysage et sans cesse
+répété a un coût : il appauvrit durablement les milieux, sans pour autant
+s'attaquer aux causes du risque. [[cite:frontiers-2026]] Une forêt n'est pas
+« sale », et l'idée de la « nettoyer » d'un bout à l'autre n'a pas grand sens
+face au feu.
 
 ## Ce qu'il faut en retenir
 
@@ -114,9 +158,10 @@ sein. [[cite:canopee-debroussailler]] Débroussailler tout le massif reviendrait
 En distance : 50 mètres au moins autour du bâti, un minimum de sécurité qui ne
 se discute pas. En intensité, à l'intérieur de cette zone : réduire et
 discontinuer, couper les échelles vers les cimes et le toit, entretenir ce qui
-reste, sans faire le vide. En étendue : cette zone, et non la forêt entière,
-dont le couvert fermé est un atout à préserver. Le bon débroussaillement n'est
-pas le plus radical, c'est le mieux placé.
+reste, sans faire le vide, et sans craindre pour l'humidité du sol tant que le
+couvert est conservé. En étendue : cette zone, et non la forêt entière, dont le
+couvert fermé est un atout à préserver. Le bon débroussaillement n'est pas le
+plus radical, c'est le mieux placé.
 
 ---
 

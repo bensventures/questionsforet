@@ -47,6 +47,20 @@
   themes: [climat, regime-feu]
   reserve: Cité de seconde main via la synthèse VULNEFEU ; retrouver la source primaire.
 
+- id: frontiers-2026
+  auteurs: >-
+    Harrison S. P., Prentice I. C., Ascoli D., Fernandes P. M.,
+    Xanthopoulos G., Oliveras Menor I., et al.
+  annee: 2026
+  titre: >-
+    Land management to mitigate the risks of future fire in the Mediterranean
+    region: strategies and barriers to their adoption
+  support: Frontiers in Environmental Science, 14:1867890
+  url: https://doi.org/10.3389/fenvs.2026.1867890
+  type: pair
+  langue: en
+  themes: [regime-feu, debroussaillement, combustible, pastoralisme, brulage-dirige, post-incendie]
+
 # --- Humidité, structure forestière, microclimat ------------------------------
 
 - id: millikin-2024
@@ -99,6 +113,43 @@
   url: https://www.grec-sud.fr/article-cahier/les-articles-du-cahier-agriculture-et-foret/le-changement-climatique-une-nouvelle-contrainte-pour-la-foret-mediterraneenne/
   type: rapport
   themes: [climat, combustible]
+
+- id: sohn-2016
+  auteurs: Sohn J. A., Saha S., Bauhus J.
+  annee: 2016
+  titre: >-
+    Potential of forest thinning to mitigate drought stress: a meta-analysis
+  support: Forest Ecology and Management, 380:261–273
+  url: https://doi.org/10.1016/j.foreco.2016.07.046
+  type: pair
+  langue: en
+  themes: [debroussaillement, hydrologie, climat]
+
+- id: giuggiola-2018
+  auteurs: >-
+    Giuggiola A., Zweifel R., Feichtinger L. M., Vollenweider P., Bugmann H.
+  annee: 2018
+  titre: >-
+    Competition for water in a xeric forest ecosystem: effects of understory
+    removal on soil micro-climate, growth and physiology of dominant Scots pine
+    trees
+  support: Forest Ecology and Management, 409:241–249
+  url: https://doi.org/10.1016/j.foreco.2017.11.002
+  type: pair
+  langue: en
+  themes: [debroussaillement, hydrologie, essences]
+
+- id: prevosto-microclimat-2020
+  auteurs: Prévosto B., Helluy M., Gavinet J., Fernandez C., Balandier P.
+  annee: 2020
+  titre: >-
+    Microclimate in Mediterranean pine forests: what is the influence of the
+    shrub layer?
+  support: Agricultural and Forest Meteorology, 282–283:107856
+  url: https://doi.org/10.1016/j.agrformet.2019.107856
+  type: pair
+  langue: en
+  themes: [debroussaillement, hydrologie, combustible]
 
 # --- Braises et projection ----------------------------------------------------
 
@@ -171,8 +222,8 @@
   titre: >-
     The role of defensible space for residential structure protection during
     wildfires
-  support: International Journal of Wildland Fire, 23:1165–1175
-  url: https://consbio.org/publications/defensible-space-for-residential-structure-protection-during-wildfires/
+  support: International Journal of Wildland Fire, 23(8):1165–1175
+  url: https://doi.org/10.1071/WF13158
   type: pair
   langue: en
   themes: [bati, debroussaillement]
@@ -543,6 +594,18 @@
   type: pair
   langue: en
   themes: [combustible]
+
+- id: vila-vilardell-2023
+  auteurs: Vilà-Vilardell L., De Cáceres M., Piqué M., Casals P.
+  annee: 2023
+  titre: >-
+    Prescribed fire after thinning increased resistance of sub-Mediterranean
+    pine forests to drought events and wildfires
+  support: Forest Ecology and Management, 527:120602
+  url: https://doi.org/10.1016/j.foreco.2022.120602
+  type: pair
+  langue: en
+  themes: [debroussaillement, hydrologie, essences, brulage-dirige]
 
 # --- Post-incendie ------------------------------------------------------------
 
