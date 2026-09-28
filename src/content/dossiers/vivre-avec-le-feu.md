@@ -6,6 +6,7 @@ chapo: >-
   change avec la distance aux enjeux, pour prévenir les grands incendies et,
   après un feu, reconstruire autrement plutôt qu'à l'identique.
 publie: 2026-08-11
+modifie: 2026-09-28
 territoire: Diois (Drôme)
 themes:
   - regime-feu
@@ -27,6 +28,7 @@ avertissement: >-
   (OLD, arrêtés préfectoraux).
 sources:
   - kreider-2024
+  - frontiers-2026
   - metailie-savoir-bruler
   - millikin-2024
   - greiser-2023
@@ -78,6 +80,9 @@ sources:
   - grec-sud-foret-mediterraneenne
   - bigelow-north-2012
   - banerjee-2020
+  - sohn-2016
+  - giuggiola-2018
+  - prevosto-microclimat-2020
   - heat-is-on-2025
   - baeza-santana
   - challot-1987
@@ -93,7 +98,7 @@ Le cadre repose sur **cinq leviers complémentaires**, agencés selon un **zonag
 
 ### 1.1 Le paradoxe de la suppression
 
-La suppression systématique de tout départ de feu est aujourd'hui identifiée comme partie du problème. En éliminant les feux les moins intenses, elle sélectionne les événements les plus extrêmes (un « biais de suppression ») tout en laissant le combustible s'accumuler ; une modélisation publiée dans *Nature Communications* estime que, sur une vie humaine, l'effet de ce biais peut dépasser celui de l'accumulation de combustible ou du changement climatique pris isolément. [[cite:kreider-2024]] En Méditerranée, le nombre de feux diminue mais leur taille augmente : signature d'un paysage qui s'est densifié et fermé faute d'entretien. [[cite:metailie-savoir-bruler]]
+La suppression systématique de tout départ de feu est aujourd'hui identifiée comme partie du problème. En éliminant les feux les moins intenses, elle sélectionne les événements les plus extrêmes (un « biais de suppression ») tout en laissant le combustible s'accumuler ; une modélisation publiée dans *Nature Communications* estime que, sur une vie humaine, l'effet de ce biais peut dépasser celui de l'accumulation de combustible ou du changement climatique pris isolément. [[cite:kreider-2024]] En Méditerranée, le nombre de feux diminue mais leur taille augmente : signature d'un paysage qui s'est densifié et fermé faute d'entretien. [[cite:metailie-savoir-bruler]] Ce constat fonde le tournant qu'opèrent aujourd'hui les politiques du feu en Méditerranée, d'une doctrine de suppression vers une gestion intégrée mêlant prévention, aménagement et cohabitation. [[cite:frontiers-2026]]
 
 ### 1.2 La tension humidité / combustible, et sa résolution
 
@@ -160,13 +165,13 @@ Limites documentées : le pâturage seul ne contient jamais totalement les ligne
 
 Le brûlage dirigé est l'emploi contrôlé du feu courant en saison de repos végétatif, par temps sec et sans vent, pour réduire le combustible en imitant le régime de feu doux historique. C'est la réponse directe au paradoxe de la suppression. En France, l'écobuage pastoral et le brûlage dirigé DFCI relèvent de la même technique pour deux finalités souvent conjointes. [[cite:wikipedia-brulage-pastoral]] [[cite:green-et-vert-2026]] Les données d'efficacité sont encourageantes mais nuancées : au Portugal, le feu passé réduit l'étendue des feux suivants, avec un retour sur effort d'au moins 1 pour 5 dans le pire scénario, croissant avec l'échelle. [[cite:fernandes-2022]] Le brûlage atténue la sévérité, mais les traitements méditerranéens sont petits, souvent moins de 30 ha, et dispersés, avec une faible probabilité d'être effectivement recoupés par un feu. [[cite:prescribed-burning-shrublands-2024]] Son effet est de courte durée en climat humide, le combustible se reconstituant vite. [[cite:reburning-humid-2023]] La meilleure réduction d'intensité s'obtient en **combinant éclaircie et brûlage**. [[cite:thinning-burning-2022]] La pratique est par ailleurs coût-efficace, y compris du point de vue du carbone. [[cite:prescribed-burning-cost-2021]]
 
-Contraste France / péninsule ibérique : le Portugal dispose d'un programme national ; la France structure la pratique via le Réseau des équipes de brûlage dirigé, surtout dans le Sud-Est et les Pyrénées, mais l'usage reste plus contraint (déprise agropastorale, perte du « savoir-brûler », multifonctionnalité de la montagne, empilement réglementaire). [[cite:ofme-bd24]] [[cite:ribet-rigolot]] Limites à ne pas minimiser : opération dangereuse strictement encadrée, avec des échappées possibles, et production de fumées et de polluants, même si l'exposition reste limitée à une dizaine de jours par an. [[cite:pastoralisme-bearn-ecobuage]] [[cite:ofme-bd18-fumees]]
+Contraste France / péninsule ibérique : le Portugal dispose d'un programme national ; la France structure la pratique via le Réseau des équipes de brûlage dirigé, surtout dans le Sud-Est et les Pyrénées, mais l'usage reste plus contraint (déprise agropastorale, perte du « savoir-brûler », multifonctionnalité de la montagne, empilement réglementaire). [[cite:ofme-bd24]] [[cite:ribet-rigolot]] [[cite:frontiers-2026]] Limites à ne pas minimiser : opération dangereuse strictement encadrée, avec des échappées possibles, et production de fumées et de polluants, même si l'exposition reste limitée à une dizaine de jours par an. [[cite:pastoralisme-bearn-ecobuage]] [[cite:ofme-bd18-fumees]]
 
 ## 4. Points de vigilance et controverses
 
 La littérature n'est pas unanime. Une politique crédible doit en tenir compte plutôt que de survendre une solution unique.
 
-- **Éclaircie et assèchement.** Ouvrir fortement la canopée peut créer des environnements plus chauds, plus secs et plus ventés [[cite:millikin-2024]] et relancer un sous-bois combustible [[cite:canopee-debroussailler]] [[cite:grec-sud-foret-mediterraneenne]] ; mais dans les éclaircies classiques de réduction, l'effet microclimatique sur le comportement du feu peut rester minime. [[cite:bigelow-north-2012]] [[cite:banerjee-2020]] D'où la prudence sur les éclaircies brutales, et la préférence pour desserrer progressivement.
+- **Éclaircie et assèchement.** Le point est plus subtil qu'il n'y paraît, et souvent contre-intuitif. Réduire la végétation, c'est aussi retirer de la concurrence pour l'eau : sous un couvert conservé, alléger le sous-bois n'assèche pas le sol en règle générale, et tend même à y maintenir l'humidité. [[cite:sohn-2016]] [[cite:giuggiola-2018]] Ce qui assèche réellement, c'est d'ouvrir fortement la canopée, source d'environnements plus chauds, plus secs et plus ventés [[cite:millikin-2024]] et d'un sous-bois combustible relancé [[cite:canopee-debroussailler]] [[cite:grec-sud-foret-mediterraneenne]] : le facteur qui domine est le couvert des grands arbres, pas le sous-bois. [[cite:prevosto-microclimat-2020]] Et même là, l'effet reste souvent modéré : dans les éclaircies classiques de réduction, l'influence microclimatique sur le comportement du feu peut rester faible. [[cite:bigelow-north-2012]] [[cite:banerjee-2020]] D'où la prudence sur les éclaircies brutales, et la préférence pour desserrer progressivement.
 - **Efficacité de l'espace défendable.** Les études se partagent entre effet significatif et effet faible ; le durcissement du bâti ressort souvent comme plus déterminant que la distance. [[cite:heat-is-on-2025]]
 - **Braises.** Elles franchissent tout tampon : argument pour concentrer l'effort sur la cible, bâti et zone 0, plutôt que sur un périmètre. [[cite:pybrands-2023]]
 - **Arbitrages écologiques.** Pâturage (surpâturage, tassement), brûlage (fumées, biodiversité), débroussaillement répété (sols, régénération) comportent des coûts à peser localement.
@@ -180,7 +185,7 @@ Après un feu, le risque majeur est de **reconstruire à l'identique** la struct
 Le Diois (moyenne montagne à influence méditerranéenne, pinèdes denses et peu diversifiées [[cite:gilloz-2026-ifn-diois]], adrets à pins et pelouses sèches, forte identité pastorale ovine et enjeu de déprise, habitat souvent diffus, sécheresses estivales marquées) réunit les conditions où ces cinq leviers s'appliquent. Les pistes ci-dessous constituent un *cadre à instruire avec les données et acteurs locaux* (SDIS 26, ONF, DFCI, PNR du Vercors et des Baronnies provençales, Chambre d'agriculture, communes et communautés de communes, éleveurs) et non des prescriptions techniques prêtes à l'emploi.
 
 1. **Prioriser le bâti et la zone 0** au contact des hameaux et de l'habitat diffus : c'est le levier au meilleur rendement (matériaux, ventilations, cinq premiers mètres minéraux, houppiers dégagés).
-2. **Cartographier des coupures stratégiques** le long des crêtes, adrets et talwegs : un réseau hiérarchisé qui compartimente le paysage, non un anneau continu autour des villages.
+2. **Cartographier des coupures stratégiques** le long des crêtes, adrets et talwegs : un réseau hiérarchisé qui compartimente le paysage, non un anneau continu autour des villages ; les traitements les mieux placés, aux abords des routes et sur les coupures, l'emportent sur un débroussaillement uniforme. [[cite:frontiers-2026]]
 3. **Desserrer les pinèdes denses.** La densité relevée sur les placettes et la faiblesse du recrutement feuillu plaident pour une éclaircie progressive vers des structures plus mélangées et discontinues, moins propices au feu de cime, plutôt que pour le statu quo ou la coupe rase. Le sous-étage feuillu est déjà présent : l'enjeu est de lui laisser la place, pas de le réinstaller. Reste à établir ce qui le retient, que les relevés ne disent pas. [[cite:gilloz-2026-ifn-diois]] [[cite:revertegat-2025-vulnefeu]]
 4. **Faire du pastoralisme un outil de DFCI reconnu et rémunéré** : coupures vertes ombragées pâturées, contractualisation avec les éleveurs, lutte contre la déprise comme prévention à part entière.
 5. **Relancer le brûlage dirigé** via le Réseau des équipes de brûlage dirigé, en lien avec les éleveurs (couplage brûlage et pâturage) et en combinaison avec l'éclaircie légère là où c'est pertinent.
